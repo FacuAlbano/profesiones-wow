@@ -1,5 +1,11 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/_index";
+import {
+  Card,
+  CardContent,
+} from "~/components/ui/card";
+import { Separator } from "~/components/ui/separator";
+import { EXPANSIONS } from "~/lib/constants";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -12,67 +18,49 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-/** Expansiones disponibles (rutas y títulos). Se irán añadiendo guías por expansión. */
-const EXPANSIONS = [
-  { slug: "the-war-within", name: "The War Within", short: "TWW" },
-  { slug: "midnight", name: "Midnight", short: "Midnight" },
-  // Futuro: Classic Era, TBC, MoP, etc.
-] as const;
-
 export default function HomePage() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-10 border-b border-stone-800 bg-stone-950/90 backdrop-blur-sm">
-        <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6">
-          <h1 className="text-lg font-semibold text-amber-400 sm:text-xl">
-            Profesiones WoW
-          </h1>
-          <p className="mt-0.5 text-sm text-stone-500">Guías en español · eldonqu</p>
-        </div>
-      </header>
+    <div className="mx-auto w-full max-w-5xl px-3 py-6 sm:px-6 sm:py-10">
+      <section className="py-8 text-center sm:py-12 md:py-16">
+        <h2 className="title-hero font-heading text-2xl font-semibold leading-tight xs:text-3xl sm:text-4xl md:text-5xl">
+          Página de profesiones de eldonqu
+        </h2>
+        <p className="mx-auto mt-3 max-w-xl px-1 text-sm text-muted-foreground sm:mt-4 sm:text-base">
+          Guías de profesiones de World of Warcraft en español. Elige una
+          expansión para ver nivelado y especializaciones.
+        </p>
+      </section>
 
-      <main className="flex-1 mx-auto w-full max-w-5xl px-4 py-10 sm:px-6">
-        <section className="text-center py-12 sm:py-16">
-          <h2 className="text-3xl font-bold text-stone-100 sm:text-4xl">
-            Página de profesiones de eldonqu
-          </h2>
-          <p className="mt-4 text-stone-400 max-w-xl mx-auto">
-            Guías de profesiones de World of Warcraft en español. Elige una expansión para ver nivelado y especializaciones.
-          </p>
-        </section>
+      <Separator className="separator-faction my-6 sm:my-8" />
 
-        <section className="mt-10">
-          <h3 className="text-sm font-medium uppercase tracking-wider text-stone-500 mb-4">
-            Expansiones
-          </h3>
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {EXPANSIONS.map((exp) => (
-              <li key={exp.slug}>
-                <Link
-                  to={`/expansion/${exp.slug}`}
-                  className="block rounded-xl border border-stone-800 bg-stone-900/50 p-5 transition hover:border-amber-600/50 hover:bg-stone-900"
-                >
-                  <span className="font-semibold text-stone-200">{exp.name}</span>
-                  <span className="ml-2 text-xs text-stone-500">({exp.short})</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <footer className="mt-16 pt-8 border-t border-stone-800 text-center text-sm text-stone-500">
-          Guías basadas en{" "}
-          <a
-            href="https://www.wow-professions.com"
-            target="_blank"
-            rel="noreferrer noopener"
-            className="text-amber-500 hover:underline"
-          >
-            wow-professions.com
-          </a>{" "}
-          · Traducidas y adaptadas al español · eldonqu
-        </footer>
-      </main>
+      <section className="mt-6 sm:mt-10">
+        <h3 className="title-underline-faction font-heading mb-3 text-base font-medium uppercase tracking-wider text-muted-foreground sm:mb-4 sm:text-xl">
+          Expansiones
+        </h3>
+        <ul className="grid grid-cols-1 gap-2 xs:gap-3 sm:grid-cols-2">
+          {EXPANSIONS.map((exp) => (
+            <li key={exp.slug}>
+              <Link to={`/expansion/${exp.slug}`} className="block link-faction min-h-[44px]">
+                <Card className="card-faction h-full transition-all duration-200">
+                  <CardContent className="flex flex-nowrap items-center gap-3 p-3 text-card-foreground xs:gap-4 xs:p-4 sm:p-5">
+                    <img
+                      src={exp.logo}
+                      alt=""
+                      className="h-12 w-12 shrink-0 object-contain"
+                    />
+                    <span className="min-w-0 truncate font-semibold text-sm xs:text-base">
+                      {exp.name}
+                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      ({exp.short})
+                    </span>
+                  </CardContent>
+                </Card>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 }

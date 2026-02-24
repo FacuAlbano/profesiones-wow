@@ -1,20 +1,496 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+
+@custom-variant horde (&:where(.horde, .horde *));
+@custom-variant alliance (&:where(.alliance, .alliance *));
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-heading: "Cinzel", ui-serif, Georgia, serif;
+  /* Breakpoint extra pequeño para móviles (p. ej. 320px) */
+  --breakpoint-xs: 23.4375rem; /* 375px */
 }
 
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--foreground-muted);
+  --color-border: var(--border-soft);
+  --color-card: var(--surface-2);
+  --color-card-foreground: var(--foreground);
+  --color-header: var(--header-bg);
+  --color-header-foreground: var(--header-fg);
+  --color-table-header: var(--table-header-bg);
+  --color-table-header-text: var(--table-header-fg);
+  --color-accent: var(--accent);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+}
+
+/* Valores por defecto de shadcn (se sobrescriben por .alliance / .horde en el html) */
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+/* ========== ALIANZA — "Biblioteca Arcana" (todo dorado sobre fondo azul oscuro) ========== */
+.alliance {
+  /* Fondos oscuros con matiz azul — logo azul visible */
+  --surface: #0f172a;
+  --surface-2: #1e293b;
+  --border-soft: rgba(30, 58, 138, 0.4);
+  --border-strong: rgba(59, 130, 246, 0.5);
+  --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-strong: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --primary: #3b82f6;
+  --primary-hover: #60a5fa;
+  --primary-foreground: #ffffff;
+  --accent: #d4af37;
+  --foreground: #e6c35c;
+  --foreground-muted: #c9a227;
+  --header-bg: #0f172a;
+  --header-fg: #e6c35c;
+  --header-fg-hover: #f5d76e;
+  --radius: 0.375rem;
+  --table-header-bg: #1e3a8a;
+  --table-header-fg: #e6c35c;
+  --muted: #1e293b;
+  --muted-foreground: #c9a227;
+  --glow-hover: 0 0 12px rgba(212, 175, 55, 0.35);
+  --glow-strong: 0 0 16px rgba(212, 175, 55, 0.5);
+  --logo-glow: 0 0 8px rgba(212, 175, 55, 0.7);
+  --state-recommended-bg: rgba(30, 58, 138, 0.25);
+  --state-recommended-border: #d4af37;
+  --state-warning-bg: rgba(245, 158, 11, 0.2);
+  --state-warning-border: #d97706;
+  --state-expensive-bg: rgba(220, 38, 38, 0.2);
+  --state-expensive-border: #b91c1c;
+  --state-optional-bg: rgba(100, 116, 139, 0.2);
+  --state-optional-border: #64748b;
+  /* Colores de texto/UI: todo dorado (shadcn y sidebar) */
+  --background: #0f172a;
+  --card: #1e293b;
+  --card-foreground: #e6c35c;
+  --popover: #1e293b;
+  --popover-foreground: #e6c35c;
+  --secondary: #1e293b;
+  --secondary-foreground: #e6c35c;
+  --accent-foreground: #e6c35c;
+  --sidebar: #1e293b;
+  --sidebar-foreground: #e6c35c;
+  --sidebar-primary: #3b82f6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1e3a8a;
+  --sidebar-accent-foreground: #e6c35c;
+  --sidebar-border: rgba(30, 58, 138, 0.4);
+  --sidebar-ring: #d4af37;
+}
+
+/* ========== HORDA — "Forja de Guerra" (todo rojo sangre sobre fondo oscuro) ========== */
+.horde {
+  --surface: #09090b;
+  --surface-2: #18181b;
+  --border-soft: rgba(127, 29, 29, 0.6);
+  --border-strong: #7f1d1d;
+  --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-strong: 0 4px 14px rgba(0, 0, 0, 0.6);
+  --primary: #dc2626;
+  --primary-hover: #ef4444;
+  --primary-foreground: #ffffff;
+  --accent: #dc2626;
+  --foreground: #fca5a5;
+  --foreground-muted: #f87171;
+  --header-bg: #09090b;
+  --header-fg: #fca5a5;
+  --header-fg-hover: #fecaca;
+  --radius: 0.25rem;
+  --table-header-bg: #450a0a;
+  --table-header-fg: #fca5a5;
+  --muted: #27272a;
+  --muted-foreground: #f87171;
+  --glow-hover: 0 0 14px rgba(220, 38, 38, 0.5);
+  --glow-strong: 0 0 20px rgba(220, 38, 38, 0.6);
+  --logo-glow: 0 0 10px rgba(220, 38, 38, 0.8);
+  --state-recommended-bg: rgba(220, 38, 38, 0.2);
+  --state-recommended-border: #dc2626;
+  --state-warning-bg: rgba(185, 28, 28, 0.25);
+  --state-warning-border: #b91c1c;
+  --state-expensive-bg: rgba(220, 38, 38, 0.25);
+  --state-expensive-border: #dc2626;
+  --state-optional-bg: rgba(63, 63, 70, 0.4);
+  --state-optional-border: #52525b;
+  /* Colores de texto/UI: todo rojo sangre (shadcn y sidebar) */
+  --background: #09090b;
+  --card: #18181b;
+  --card-foreground: #fca5a5;
+  --popover: #18181b;
+  --popover-foreground: #fca5a5;
+  --secondary: #18181b;
+  --secondary-foreground: #fca5a5;
+  --accent-foreground: #fca5a5;
+  --sidebar: #18181b;
+  --sidebar-foreground: #fca5a5;
+  --sidebar-primary: #dc2626;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #450a0a;
+  --sidebar-accent-foreground: #fca5a5;
+  --sidebar-border: rgba(127, 29, 29, 0.6);
+  --sidebar-ring: #dc2626;
+}
+
+/* ========== Transición al cambiar facción ========== */
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
-  @apply bg-stone-950 text-stone-100 antialiased;
   font-family: var(--font-sans);
+  @apply antialiased;
+  background-color: var(--surface);
+  color: var(--foreground);
+  transition: background-color 0.5s ease, color 0.5s ease;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  /* Safe area para muescas (iPhone, etc.) */
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
-/* Enlaces externos (Wowhead, etc.) */
+.alliance,
+.horde {
+  color-scheme: dark;
+}
+
+/* Título principal: mismo color que el resto del texto (foreground) */
+.title-hero {
+  color: var(--foreground);
+}
+
+/* ========== Cards con identidad (borde + hover glow + panel mágico) ========== */
+.card-faction {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.2s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.card-faction:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-strong), var(--glow-hover);
+}
+
+/* Panel mágico: brillo diagonal al hover */
+.card-faction::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    var(--accent) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.alliance .card-faction::before {
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    rgba(212, 175, 55, 0.08) 100%
+  );
+}
+
+.horde .card-faction::before {
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    rgba(220, 38, 38, 0.1) 100%
+  );
+}
+
+.card-faction:hover::before {
+  opacity: 1;
+}
+
+/* Contenido de la card por encima del overlay */
+.card-faction > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ========== Tipografía: Inter (cuerpo) + Cinzel (títulos) ========== */
+.font-heading {
+  font-family: var(--font-heading);
+}
+
+/* Alianza: títulos elegantes, tracking normal, más aire */
+.alliance .font-heading {
+  letter-spacing: 0.02em;
+  font-weight: 600;
+}
+
+/* Horda: mismo tamaño que Alianza (mismo tracking y peso para consistencia) */
+.horde .font-heading {
+  letter-spacing: 0.02em;
+  font-weight: 600;
+}
+
+/* Títulos principales (mismo color que el resto del texto por facción) */
+.title-faction {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.alliance .title-faction {
+  letter-spacing: 0.02em;
+}
+
+.horde .title-faction {
+  letter-spacing: 0.02em;
+}
+
+/* Subrayado por facción (para h2/h3) */
+.title-underline-faction {
+  position: relative;
+}
+
+.alliance .title-underline-faction::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 2rem;
+  height: 2px;
+  background: linear-gradient(to right, #3b82f6, #d4af37);
+  border-radius: 1px;
+}
+
+.horde .title-underline-faction::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 2rem;
+  height: 3px;
+  background: #dc2626;
+  border-radius: 2px;
+}
+
+/* ========== Tablas guía ========== */
+.guide-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--surface-2);
+  box-shadow: var(--shadow-soft);
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+}
+
+.guide-table th {
+  background-color: var(--table-header-bg);
+  color: var(--table-header-fg);
+  font-weight: 600;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid var(--border-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.guide-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.guide-table tr:last-child td {
+  border-bottom: none;
+}
+
+.guide-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.guide-table tbody tr:hover {
+  background-color: var(--surface);
+}
+
+/* ========== Links con identidad (hover dorado / rojo) ========== */
+.link-faction {
+  transition: color 0.2s ease;
+}
+
+.alliance .link-faction:hover {
+  color: #d4af37;
+}
+
+.horde .link-faction:hover {
+  color: #dc2626;
+}
+
+/* ========== Separador con personalidad ========== */
+.separator-faction {
+  height: 2px;
+  border: none;
+  margin: 0;
+}
+
+.alliance .separator-faction {
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(212, 175, 55, 0.4),
+    transparent
+  );
+}
+
+.horde .separator-faction {
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(220, 38, 38, 0.6),
+    transparent
+  );
+}
+
+/* ========== Estados semánticos (recomendado, advertencia, caro, opcional) ========== */
+.state-recommended {
+  background-color: var(--state-recommended-bg);
+  border-left: 3px solid var(--state-recommended-border);
+}
+
+.state-warning {
+  background-color: var(--state-warning-bg);
+  border-left: 3px solid var(--state-warning-border);
+}
+
+.state-expensive {
+  background-color: var(--state-expensive-bg);
+  border-left: 3px solid var(--state-expensive-border);
+}
+
+.state-optional {
+  background-color: var(--state-optional-bg);
+  border-left: 3px solid var(--state-optional-border);
+}
+
+/* ========== Glow solo donde importa (botón principal, ítem seleccionado) ========== */
+.glow-on-hover {
+  transition: box-shadow 0.3s ease;
+}
+
+.alliance .glow-on-hover:hover {
+  box-shadow: var(--glow-hover);
+}
+
+.horde .glow-on-hover:hover {
+  box-shadow: var(--glow-hover);
+}
+
+/* Enlace externo (Wowhead, etc.) */
 a[target="_blank"]:not(.no-icon)::after {
   content: "";
   display: inline-block;
@@ -25,4 +501,15 @@ a[target="_blank"]:not(.no-icon)::after {
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3Cpolyline points='15 3 21 3 21 9'/%3E%3Cline x1='10' y1='14' x2='21' y2='3'/%3E%3C/svg%3E") center/contain no-repeat;
   vertical-align: 0.1em;
   opacity: 0.7;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    @apply bg-background text-foreground;
+  }
 }

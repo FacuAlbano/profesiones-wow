@@ -2,9 +2,32 @@
 export const EXPANSION_SLUGS = [
   "the-war-within",
   "midnight",
+  "classic",
+  "the-burning-crusade",
+  "wrath-of-the-lich-king",
+  "cataclysm",
+  "mists-of-pandaria",
+  "warlords-of-draenor",
 ] as const;
 
 export type ExpansionSlug = (typeof EXPANSION_SLUGS)[number];
+
+/** Datos de cada expansión: nombre, abreviatura y logo */
+export const EXPANSIONS = [
+  { slug: "the-war-within" as const, name: "The War Within", short: "TWW", logo: "/images/logo-tww.png" },
+  { slug: "midnight" as const, name: "Midnight", short: "Midnight", logo: "/images/logo-midnight.png" },
+  { slug: "classic" as const, name: "World of Warcraft Classic", short: "Classic", logo: "/images/logo-classic.png" },
+  { slug: "the-burning-crusade" as const, name: "The Burning Crusade", short: "TBC", logo: "/images/logo-tbc.png" },
+  { slug: "wrath-of-the-lich-king" as const, name: "Wrath of the Lich King", short: "WotLK", logo: "/images/logo-lk.png" },
+  { slug: "cataclysm" as const, name: "Cataclysm", short: "Cata", logo: "/images/logo-cata.png" },
+  { slug: "mists-of-pandaria" as const, name: "Mists of Pandaria", short: "MoP", logo: "/images/logo-mop.png" },
+  { slug: "warlords-of-draenor" as const, name: "Warlords of Draenor", short: "WoD", logo: "/images/logo-draenor.png" },
+] as const;
+
+/** Mapa slug → nombre para meta y títulos */
+export const EXPANSION_NAMES: Record<ExpansionSlug, string> = Object.fromEntries(
+  EXPANSIONS.map((e) => [e.slug, e.name])
+) as Record<ExpansionSlug, string>;
 
 /** Profesiones de WoW (nombre para UI y slug para rutas) */
 export const PROFESSIONS = [
