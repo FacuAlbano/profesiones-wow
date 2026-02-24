@@ -1,0 +1,84 @@
+import {
+  isRouteErrorResponse,
+  Links,
+  Meta,
+  Outlet,
+  Scripts,
+  ScrollRestoration,
+} from "react-router";
+import "./app.css";
+
+export const links = () => [
+  { rel: "preconnect", href: "https://fonts.googleapis.com" },
+  {
+    rel: "preconnect",
+    href: "https://fonts.gstatic.com",
+    crossOrigin: "anonymous",
+  },
+  {
+    rel: "stylesheet",
+    href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+  },
+];
+
+const DEFAULT_TITLE = "Profesiones WoW - Guías en español | eldonqu";
+const DEFAULT_DESCRIPTION =
+  "Guías de profesiones de World of Warcraft en español. The War Within y más expansiones.";
+
+export function meta() {
+  return [
+    { title: DEFAULT_TITLE },
+    { name: "description", content: DEFAULT_DESCRIPTION },
+  ];
+}
+
+export function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="es">
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <Meta />
+        <Links />
+      </head>
+      <body>
+        {children}
+        <ScrollRestoration />
+        <Scripts />
+      </body>
+    </html>
+  );
+}
+
+export default function App() {
+  return <Outlet />;
+}
+
+export function ErrorBoundary({ error }: { error: unknown }) {
+  let message = "¡Ups!";
+  let details = "Ocurrió un error inesperado.";
+  let stack: string | undefined;
+
+  if (isRouteErrorResponse(error)) {
+    message = error.status === 404 ? "404" : "Error";
+    details =
+      error.status === 404
+        ? "La página solicitada no se encontró."
+        : error.statusText || details;
+  } else if (import.meta.env.DEV && error instanceof Error) {
+    details = error.message;
+    stack = error.stack;
+  }
+
+  return (
+    <main className="min-h-screen flex flex-col items-center justify-center p-4">
+      <h1 className="text-2xl font-bold text-amber-400">{message}</h1>
+      <p className="text-stone-400 mt-2">{details}</p>
+      {stack && (
+        <pre className="w-full max-w-2xl mt-6 p-4 overflow-x-auto text-xs bg-stone-900 rounded-lg border border-stone-700">
+          <code>{stack}</code>
+        </pre>
+      )}
+    </main>
+  );
+}
