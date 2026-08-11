@@ -38,21 +38,29 @@ describe("hubs Classic como expansiones", () => {
     expect(EXPANSION_SLUGS).not.toContain("classic");
   });
 
-  it("asocia el espejo classic a Era, no a Hardcore ni SoD", () => {
+  it("asocia Era, Hardcore y SoD a nativas distintas (Hardcore y SoD no heredan el espejo)", () => {
     expect(resolveProfessionGuide("classic-era", "alchemy")).toMatchObject({
-      kind: "provisional",
-      mirrorUrl: "/guides-mirror/classic/alchemy-leveling-guide-classic-wow/index.html",
+      kind: "nativa",
+      nativeId: "alchemy-classic-era",
     });
-    expect(resolveProfessionGuide("classic-hardcore", "alchemy").kind).toBe("vacio");
-    expect(resolveProfessionGuide("season-of-discovery", "alchemy").kind).toBe("vacio");
+    expect(resolveProfessionGuide("classic-hardcore", "alchemy")).toMatchObject({
+      kind: "nativa",
+      nativeId: "alchemy-classic-hardcore",
+    });
+    expect(resolveProfessionGuide("season-of-discovery", "alchemy")).toMatchObject({
+      kind: "nativa",
+      nativeId: "alchemy-sod",
+    });
   });
 
   it("no mezcla MoP Classic con Mists of Pandaria", () => {
-    expect(resolveProfessionGuide("mists-of-pandaria", "alchemy").kind).toBe(
-      "provisional",
-    );
+    expect(resolveProfessionGuide("mists-of-pandaria", "alchemy")).toMatchObject({
+      kind: "nativa",
+      nativeId: "alchemy-mop",
+    });
     expect(resolveProfessionGuide("mop-classic", "alchemy")).toMatchObject({
-      kind: "vacio",
+      kind: "nativa",
+      nativeId: "alchemy-mop-classic",
       path: "/expansion/mop-classic/profesion/alchemy",
     });
   });

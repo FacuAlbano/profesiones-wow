@@ -10,9 +10,12 @@ export type WowheadGame =
   | "tbc"
   | "classic"
   | "wotlk"
+  | "cata"
+  | "mop-classic"
   | "shadowlands"
   | "the-war-within"
-  | "midnight";
+  | "midnight"
+  | "retail";
 
 export type WowheadEntityTipo =
   | "objeto"
@@ -50,7 +53,7 @@ const TIPO_TO_KIND: Record<WowheadEntityTipo, WowheadKind> = {
 };
 
 function gamePrefix(juego: WowheadGame): string {
-  return juego === "midnight" ? "" : `/${juego}`;
+  return juego === "midnight" || juego === "retail" ? "" : `/${juego}`;
 }
 
 export function wowheadEntity(entity: WowheadEntity): WowheadEntityLink {

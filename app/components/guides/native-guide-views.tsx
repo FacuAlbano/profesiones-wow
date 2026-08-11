@@ -26,6 +26,9 @@ import type { TwwSubidaSpec } from "~/lib/tww-subida-types";
 import { WotlkSubidaGuide, wotlkSubidaIndex } from "~/components/guides/wotlk-subida-guide";
 import { WOTLK_SUBIDA_GUIDES } from "~/lib/wotlk-subida-guides";
 import type { WotlkSubidaSpec } from "~/lib/wotlk-subida-types";
+import { CatalogSubidaGuide, catalogSubidaIndex } from "~/components/guides/catalog-subida-guide";
+import { WAVE_SUBIDA_BUNDLES } from "~/lib/wave-subida-guides";
+import type { CatalogSubidaBundle } from "~/lib/catalog-subida-types";
 
 export type NativeGuideView = {
   Guide: ComponentType;
@@ -66,6 +69,23 @@ function wotlkSubidaView(spec: WotlkSubidaSpec): NativeGuideView {
   };
 }
 
+function catalogSubidaView(bundle: CatalogSubidaBundle): NativeGuideView {
+  const cap = bundle.spec.ranges.at(-1)?.to ?? 0;
+  return {
+    Guide: function CatalogNativeGuide() {
+      return <CatalogSubidaGuide bundle={bundle} />;
+    },
+    index: catalogSubidaIndex(bundle.spec),
+    summary: `Subida de nivel 1-${cap} para ${bundle.spec.title.replace("Subida de nivel de ", "").replace(/ de .+ en /, " en ")}. Lista de compras, entrenadores y ruta por rangos.`,
+  };
+}
+
+const WAVE_VIEWS: Partial<Record<NativeGuideId, NativeGuideView>> = Object.fromEntries(
+  WAVE_SUBIDA_BUNDLES.filter((bundle) => bundle.spec.nativeId !== "tailoring-shadowlands").map(
+    (bundle) => [bundle.spec.nativeId, catalogSubidaView(bundle)],
+  ),
+);
+
 function twwSubidaView(spec: TwwSubidaSpec): NativeGuideView {
   const cap = spec.ranges.at(-1)?.to ?? 100;
   return {
@@ -77,7 +97,8 @@ function twwSubidaView(spec: TwwSubidaSpec): NativeGuideView {
   };
 }
 
-export const NATIVE_GUIDE_VIEWS: Record<NativeGuideId, NativeGuideView> = {
+export const NATIVE_GUIDE_VIEWS = {
+  ...WAVE_VIEWS,
   "alchemy-tbc": {
     Guide: AlchemyTBCGuide,
     index: ALCHEMY_TBC_INDEX,
@@ -150,4 +171,4 @@ export const NATIVE_GUIDE_VIEWS: Record<NativeGuideId, NativeGuideView> = {
   "jewelcrafting-wotlk": wotlkSubidaView(WOTLK_SUBIDA_GUIDES["jewelcrafting-wotlk"]),
   "fishing-wotlk": wotlkSubidaView(WOTLK_SUBIDA_GUIDES["fishing-wotlk"]),
   "inscription-wotlk": wotlkSubidaView(WOTLK_SUBIDA_GUIDES["inscription-wotlk"]),
-};
+} as Record<NativeGuideId, NativeGuideView>;

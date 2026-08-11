@@ -1,5 +1,6 @@
 import type { ExpansionSlug, ProfessionSlug } from "~/lib/constants";
 import { guideMirrorUrl } from "~/lib/guide-mirror-paths";
+import { waveNativeEntries } from "~/lib/wave-subida-guides";
 
 export const GUIDE_TIPOS = [
   "subida-de-nivel",
@@ -76,7 +77,33 @@ export type NativeGuideId =
   | "cooking-wotlk"
   | "jewelcrafting-wotlk"
   | "fishing-wotlk"
-  | "inscription-wotlk";
+  | "inscription-wotlk"
+  | `${FullWaveProf}-cata`
+  | `${FullWaveProf}-mop`
+  | `${FullWaveProf}-mop-classic`
+  | `${FullWaveProf}-wod`
+  | `${FullWaveProf}-bfa`
+  | `${FullWaveProf}-shadowlands`
+  | `${ClassicWaveProf}-classic-era`
+  | `${ClassicWaveProf}-classic-hardcore`
+  | `${ClassicWaveProf}-sod`;
+
+type FullWaveProf =
+  | "alchemy"
+  | "blacksmithing"
+  | "enchanting"
+  | "engineering"
+  | "leatherworking"
+  | "tailoring"
+  | "herbalism"
+  | "mining"
+  | "skinning"
+  | "cooking"
+  | "fishing"
+  | "jewelcrafting"
+  | "inscription";
+
+type ClassicWaveProf = Exclude<FullWaveProf, "jewelcrafting" | "inscription">;
 
 export type ProfessionPageResolution = {
   kind: ProfessionPageKind;
@@ -141,6 +168,7 @@ const NATIVE_SUBIDA: Record<string, NativeGuideId> = {
   "wrath-of-the-lich-king:jewelcrafting": "jewelcrafting-wotlk",
   "wrath-of-the-lich-king:fishing": "fishing-wotlk",
   "wrath-of-the-lich-king:inscription": "inscription-wotlk",
+  ...waveNativeEntries(),
 };
 
 function nativeKey(expansion: ExpansionSlug, profession: ProfessionSlug): string {
