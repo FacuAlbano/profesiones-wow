@@ -2,6 +2,8 @@ import { Link, useLocation } from "react-router";
 import { cn } from "~/lib/utils";
 import { EXPANSIONS } from "~/lib/constants";
 import { PROFESSIONS } from "~/lib/constants";
+import { ExpansionLogo } from "~/components/expansion-logo";
+import { ProfessionIcon } from "~/components/profession-icon";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 
@@ -47,8 +49,9 @@ export function Sidebar() {
                 return (
                   <li key={exp.slug}>
                     <Button variant="ghost" size="sm" className={navLinkClass(active)} asChild>
-                      <Link to={href} className="truncate">
-                        {exp.name}
+                      <Link to={href} className="flex min-w-0 items-center gap-2">
+                        <ExpansionLogo slug={exp.slug} className="size-5" />
+                        <span className="truncate">{exp.name}</span>
                       </Link>
                     </Button>
                   </li>
@@ -72,8 +75,9 @@ export function Sidebar() {
                 return (
                   <li key={prof.slug}>
                     <Button variant="ghost" size="sm" className={navLinkClass(active)} asChild>
-                      <Link to={href} className="truncate">
-                        {prof.name}
+                      <Link to={href} className="flex min-w-0 items-center gap-2">
+                        <ProfessionIcon slug={prof.slug} className="size-5" />
+                        <span className="truncate">{prof.name}</span>
                       </Link>
                     </Button>
                   </li>

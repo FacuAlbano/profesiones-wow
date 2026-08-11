@@ -28,7 +28,19 @@ export type NativeGuideId =
   | "alchemy-tbc"
   | "alchemy-midnight"
   | "herbalism-tbc"
-  | "tailoring-shadowlands";
+  | "tailoring-shadowlands"
+  | "blacksmithing-midnight"
+  | "enchanting-midnight"
+  | "engineering-midnight"
+  | "leatherworking-midnight"
+  | "tailoring-midnight"
+  | "herbalism-midnight"
+  | "mining-midnight"
+  | "skinning-midnight"
+  | "cooking-midnight"
+  | "jewelcrafting-midnight"
+  | "fishing-midnight"
+  | "inscription-midnight";
 
 export type ProfessionPageResolution = {
   kind: ProfessionPageKind;
@@ -45,6 +57,18 @@ const NATIVE_SUBIDA: Record<string, NativeGuideId> = {
   "the-burning-crusade:herbalism": "herbalism-tbc",
   "shadowlands:tailoring": "tailoring-shadowlands",
   "midnight:alchemy": "alchemy-midnight",
+  "midnight:blacksmithing": "blacksmithing-midnight",
+  "midnight:enchanting": "enchanting-midnight",
+  "midnight:engineering": "engineering-midnight",
+  "midnight:leatherworking": "leatherworking-midnight",
+  "midnight:tailoring": "tailoring-midnight",
+  "midnight:herbalism": "herbalism-midnight",
+  "midnight:mining": "mining-midnight",
+  "midnight:skinning": "skinning-midnight",
+  "midnight:cooking": "cooking-midnight",
+  "midnight:jewelcrafting": "jewelcrafting-midnight",
+  "midnight:fishing": "fishing-midnight",
+  "midnight:inscription": "inscription-midnight",
 };
 
 function nativeKey(expansion: ExpansionSlug, profession: ProfessionSlug): string {

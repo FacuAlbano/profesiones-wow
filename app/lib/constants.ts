@@ -41,20 +41,20 @@ export const EXPANSION_NAMES: Record<ExpansionSlug, string> = Object.fromEntries
 
 /** Profesiones de WoW (nombre para UI y slug para rutas) */
 export const PROFESSIONS = [
-  { slug: "alchemy", name: "Alquimia" },
-  { slug: "blacksmithing", name: "Herrería" },
-  { slug: "enchanting", name: "Encantamiento" },
-  { slug: "engineering", name: "Ingeniería" },
-  { slug: "inscription", name: "Inscripción" },
-  { slug: "jewelcrafting", name: "Joyería" },
-  { slug: "leatherworking", name: "Peletería" },
-  { slug: "tailoring", name: "Sastrería" },
-  { slug: "herbalism", name: "Herboristería" },
-  { slug: "mining", name: "Minería" },
-  { slug: "skinning", name: "Desuello" },
-  { slug: "cooking", name: "Cocina" },
-  { slug: "fishing", name: "Pesca" },
-  { slug: "fishing-cooking", name: "Pesca + Cocina" },
+  { slug: "alchemy", name: "Alquimia", icon: "/images/professions/alchemy.png" },
+  { slug: "blacksmithing", name: "Herrería", icon: "/images/professions/blacksmithing.png" },
+  { slug: "enchanting", name: "Encantamiento", icon: "/images/professions/enchanting.png" },
+  { slug: "engineering", name: "Ingeniería", icon: "/images/professions/engineering.png" },
+  { slug: "inscription", name: "Inscripción", icon: "/images/professions/inscription.png" },
+  { slug: "jewelcrafting", name: "Joyería", icon: "/images/professions/jewelcrafting.png" },
+  { slug: "leatherworking", name: "Peletería", icon: "/images/professions/leatherworking.png" },
+  { slug: "tailoring", name: "Sastrería", icon: "/images/professions/tailoring.png" },
+  { slug: "herbalism", name: "Herboristería", icon: "/images/professions/herbalism.png" },
+  { slug: "mining", name: "Minería", icon: "/images/professions/mining.png" },
+  { slug: "skinning", name: "Desuello", icon: "/images/professions/skinning.png" },
+  { slug: "cooking", name: "Cocina", icon: "/images/professions/cooking.png" },
+  { slug: "fishing", name: "Pesca", icon: "/images/professions/fishing.png" },
+  { slug: "fishing-cooking", name: "Pesca + Cocina", icon: "/images/professions/fishing-cooking.png" },
 ] as const;
 
 export type ProfessionSlug = (typeof PROFESSIONS)[number]["slug"];
