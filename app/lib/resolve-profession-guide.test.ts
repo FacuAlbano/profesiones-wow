@@ -69,6 +69,38 @@ describe("resolveProfessionGuide", () => {
     });
   });
 
+  it.each([
+    ["alchemy", "alchemy-wotlk"],
+    ["blacksmithing", "blacksmithing-wotlk"],
+    ["enchanting", "enchanting-wotlk"],
+    ["engineering", "engineering-wotlk"],
+    ["leatherworking", "leatherworking-wotlk"],
+    ["tailoring", "tailoring-wotlk"],
+    ["herbalism", "herbalism-wotlk"],
+    ["mining", "mining-wotlk"],
+    ["skinning", "skinning-wotlk"],
+    ["cooking", "cooking-wotlk"],
+    ["jewelcrafting", "jewelcrafting-wotlk"],
+    ["fishing", "fishing-wotlk"],
+    ["inscription", "inscription-wotlk"],
+  ] as const)("resuelve %s Wrath of the Lich King como Subida de nivel nativa", (profession, nativeId) => {
+    expect(resolveProfessionGuide("wrath-of-the-lich-king", profession)).toMatchObject({
+      kind: "nativa",
+      tipo: "subida-de-nivel",
+      path: `/expansion/wrath-of-the-lich-king/profesion/${profession}`,
+      nativeId,
+    });
+  });
+
+  it("deja Recetas y conocimiento de Alquimia Wrath of the Lich King como vacío", () => {
+    expect(
+      resolveProfessionGuide("wrath-of-the-lich-king", "alchemy", "recetas-y-conocimiento"),
+    ).toMatchObject({
+      kind: "vacio",
+      tipo: "recetas-y-conocimiento",
+    });
+  });
+
   it("deja Recetas y conocimiento de Alquimia The War Within como vacío", () => {
     expect(
       resolveProfessionGuide("the-war-within", "alchemy", "recetas-y-conocimiento"),
