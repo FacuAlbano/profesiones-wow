@@ -139,10 +139,3 @@ export function guideMirrorUrl(expansionSlug: ExpansionSlug, professionSlug: Pro
   return `${BASE}/${path}`;
 }
 
-/** Si esta combinación tiene guía nativa en React (español, nuestro layout). */
-export function hasNativeGuide(expansionSlug: ExpansionSlug, professionSlug: ProfessionSlug): boolean {
-  if (expansionSlug === "the-burning-crusade")
-    return professionSlug === "alchemy" || professionSlug === "herbalism";
-  if (expansionSlug === "shadowlands") return professionSlug === "tailoring";
-  return false;
-}

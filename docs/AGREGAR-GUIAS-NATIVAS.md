@@ -21,11 +21,8 @@ Puedes extraer IDs e iconos del HTML del mirror (enlaces `wowhead.com/tbc/item=.
 
 ### 3. Registrar la guía como nativa
 
-- En `app/lib/guide-mirror-paths.ts`, en `hasNativeGuide()`, añade la combinación (expansión, profesión) que corresponda. Ejemplo:  
-  `return professionSlug === "alchemy" || professionSlug === "herbalism";`
-- En `app/routes/expansion.$slug.profesion.$profSlug.tsx`:
-  - Importa el componente y el `INDEX` de la nueva guía.
-  - Añade una condición para `isTBCBlacksmithing` (o la que sea) y usa ese componente e índice en lugar del iframe o de “en construcción”.
+- En el resolver (`resolveProfessionGuide`), registra la combinación expansión + profesión + tipo (hoy: Subida de nivel) con un `nativeId`.
+- En el mapa de vistas nativas, asocia ese `nativeId` al componente, al índice y al resumen. La ruta no lleva un `if` por guía.
 
 ### 4. Contenido en español
 

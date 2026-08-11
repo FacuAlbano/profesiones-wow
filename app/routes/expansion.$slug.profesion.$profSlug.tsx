@@ -12,11 +12,9 @@ import {
   TabsList,
   TabsTrigger,
 } from "~/components/ui/tabs";
-import { AlchemyTBCGuide, ALCHEMY_TBC_INDEX } from "~/components/guides/alchemy-tbc-guide";
-import { HerbalismTBCGuide, HERBALISM_TBC_INDEX } from "~/components/guides/herbalism-tbc-guide";
-import { ShadowlandsTailoringGuide, SHADOWLANDS_TAILORING_INDEX } from "~/components/guides/shadowlands-tailoring-guide";
+import { NATIVE_GUIDE_VIEWS } from "~/components/guides/native-guide-views";
 import { MirrorGuideContent } from "~/components/mirror-guide-content";
-import { guideMirrorUrl, hasNativeGuide } from "~/lib/guide-mirror-paths";
+import { resolveProfessionGuide } from "~/lib/resolve-profession-guide";
 
 export function meta({ params }: Route.MetaArgs) {
   const expansionName = EXPANSION_NAMES[params.slug as keyof typeof EXPANSION_NAMES] ?? params.slug;
@@ -33,6 +31,17 @@ export function meta({ params }: Route.MetaArgs) {
   ];
 }
 
+const DEFAULT_INDEX = [
+  { id: "nivelado", label: "Nivelado" },
+  { id: "especializaciones", label: "Especializaciones" },
+  { id: "recetas", label: "Recetas clave" },
+];
+
+const PROVISIONAL_SUMMARY =
+  "Guía integrada con los estilos de la app. Contenido original en inglés; las guías en español se irán añadiendo progresivamente.";
+
+const VACIO_SUMMARY = "Guía de nivelado y especializaciones. (Contenido en construcción.)";
+
 export function loader({ params }: Route.LoaderArgs) {
   if (
     !EXPANSION_SLUGS.includes(params.slug as (typeof EXPANSION_SLUGS)[number])
@@ -40,40 +49,31 @@ export function loader({ params }: Route.LoaderArgs) {
     throw new Response("Expansión no encontrada", { status: 404 });
   }
   const profession = PROFESSIONS.find((p) => p.slug === params.profSlug);
+  const page = resolveProfessionGuide(
+    params.slug as ExpansionSlug,
+    params.profSlug as ProfessionSlug,
+  );
   return {
     slug: params.slug,
-    profSlug: params.profSlug,
     expansionName: EXPANSION_NAMES[params.slug as keyof typeof EXPANSION_NAMES] ?? params.slug,
     professionName: profession?.name ?? params.profSlug,
+    page,
   };
 }
 
-const DEFAULT_INDEX = [
-  { id: "nivelado", label: "Nivelado" },
-  { id: "especializaciones", label: "Especializaciones" },
-  { id: "recetas", label: "Recetas clave" },
-];
-
 export default function ProfessionPage() {
-  const { slug, profSlug, expansionName, professionName } =
+  const { slug, expansionName, professionName, page } =
     useLoaderData<typeof loader>();
 
-  const isNative = hasNativeGuide(slug as ExpansionSlug, profSlug as ProfessionSlug);
-  const mirrorUrl = guideMirrorUrl(slug as ExpansionSlug, profSlug as ProfessionSlug);
-  const isTBCAlchemy = slug === "the-burning-crusade" && profSlug === "alchemy";
-  const isTBCHerbalism = slug === "the-burning-crusade" && profSlug === "herbalism";
-  const isSLTailoring = slug === "shadowlands" && profSlug === "tailoring";
-  const indexSections = isTBCAlchemy
-    ? ALCHEMY_TBC_INDEX
-    : isTBCHerbalism
-      ? HERBALISM_TBC_INDEX
-      : isSLTailoring
-        ? SHADOWLANDS_TAILORING_INDEX
-        : DEFAULT_INDEX;
+  const nativeView = page.nativeId ? NATIVE_GUIDE_VIEWS[page.nativeId] : undefined;
+  const indexSections = nativeView?.index ?? DEFAULT_INDEX;
+  const summary =
+    nativeView?.summary ??
+    (page.kind === "provisional" ? PROVISIONAL_SUMMARY : VACIO_SUMMARY);
+  const NativeGuide = nativeView?.Guide;
 
   return (
     <div className="flex min-h-0 w-full flex-1">
-      {/* Contenido scrolleable */}
       <div
         className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-3 py-6 sm:px-6 sm:py-8"
         data-main-scroll
@@ -98,27 +98,15 @@ export default function ProfessionPage() {
             {professionName}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-            {isTBCAlchemy
-              ? "Guía de nivelado 1-375 para TBC Classic. Lista de compras, instructores y pasos por rangos."
-              : isTBCHerbalism
-                ? "Guía de nivelado 1-375 para TBC Classic. Instructores y rutas por rangos de herboristería."
-                : isSLTailoring
-                  ? "Resumen de Sastrería en Shadowlands: instructor, materiales, bases legendarias, armaduras y bolsas en español."
-                  : mirrorUrl
-                    ? "Guía integrada con los estilos de la app. Contenido original en inglés; las guías en español se irán añadiendo progresivamente."
-                    : "Guía de nivelado y especializaciones. (Contenido en construcción.)"}
+            {summary}
           </p>
           <Separator className="separator-faction my-4 sm:my-6" />
 
           <div className="mt-6 sm:mt-8">
-            {isTBCAlchemy ? (
-              <AlchemyTBCGuide />
-            ) : isTBCHerbalism ? (
-              <HerbalismTBCGuide />
-            ) : isSLTailoring ? (
-              <ShadowlandsTailoringGuide />
-            ) : mirrorUrl ? (
-              <MirrorGuideContent mirrorUrl={mirrorUrl} />
+            {page.kind === "nativa" && NativeGuide ? (
+              <NativeGuide />
+            ) : page.kind === "provisional" && page.mirrorUrl ? (
+              <MirrorGuideContent mirrorUrl={page.mirrorUrl} />
             ) : (
               <Tabs defaultValue="nivelado" className="w-full">
                 <TabsList variant="default" className="mb-4 flex w-full min-w-0 overflow-x-auto overflow-y-hidden py-1 scrollbar-none [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden sm:w-auto sm:overflow-visible">
@@ -164,7 +152,6 @@ export default function ProfessionPage() {
         </div>
       </div>
 
-      {/* Sidebar derecha: índice "En esta guía" (igual que sidebar izquierda) */}
       <aside
         className="z-30 hidden w-56 shrink-0 flex-col self-stretch border-l border-border bg-card shadow-sm transition-colors duration-500 lg:flex"
         aria-label="En esta guía"
