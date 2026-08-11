@@ -63,7 +63,20 @@ export type NativeGuideId =
   | "cooking-tww"
   | "jewelcrafting-tww"
   | "fishing-tww"
-  | "inscription-tww";
+  | "inscription-tww"
+  | "alchemy-wotlk"
+  | "blacksmithing-wotlk"
+  | "enchanting-wotlk"
+  | "engineering-wotlk"
+  | "leatherworking-wotlk"
+  | "tailoring-wotlk"
+  | "herbalism-wotlk"
+  | "mining-wotlk"
+  | "skinning-wotlk"
+  | "cooking-wotlk"
+  | "jewelcrafting-wotlk"
+  | "fishing-wotlk"
+  | "inscription-wotlk";
 
 export type ProfessionPageResolution = {
   kind: ProfessionPageKind;
@@ -115,6 +128,19 @@ const NATIVE_SUBIDA: Record<string, NativeGuideId> = {
   "the-war-within:jewelcrafting": "jewelcrafting-tww",
   "the-war-within:fishing": "fishing-tww",
   "the-war-within:inscription": "inscription-tww",
+  "wrath-of-the-lich-king:alchemy": "alchemy-wotlk",
+  "wrath-of-the-lich-king:blacksmithing": "blacksmithing-wotlk",
+  "wrath-of-the-lich-king:enchanting": "enchanting-wotlk",
+  "wrath-of-the-lich-king:engineering": "engineering-wotlk",
+  "wrath-of-the-lich-king:leatherworking": "leatherworking-wotlk",
+  "wrath-of-the-lich-king:tailoring": "tailoring-wotlk",
+  "wrath-of-the-lich-king:herbalism": "herbalism-wotlk",
+  "wrath-of-the-lich-king:mining": "mining-wotlk",
+  "wrath-of-the-lich-king:skinning": "skinning-wotlk",
+  "wrath-of-the-lich-king:cooking": "cooking-wotlk",
+  "wrath-of-the-lich-king:jewelcrafting": "jewelcrafting-wotlk",
+  "wrath-of-the-lich-king:fishing": "fishing-wotlk",
+  "wrath-of-the-lich-king:inscription": "inscription-wotlk",
 };
 
 function nativeKey(expansion: ExpansionSlug, profession: ProfessionSlug): string {

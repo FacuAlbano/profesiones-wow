@@ -23,6 +23,9 @@ import type { TbcSubidaSpec } from "~/lib/tbc-subida-types";
 import { TwwSubidaGuide, twwSubidaIndex } from "~/components/guides/tww-subida-guide";
 import { TWW_SUBIDA_GUIDES } from "~/lib/tww-subida-guides";
 import type { TwwSubidaSpec } from "~/lib/tww-subida-types";
+import { WotlkSubidaGuide, wotlkSubidaIndex } from "~/components/guides/wotlk-subida-guide";
+import { WOTLK_SUBIDA_GUIDES } from "~/lib/wotlk-subida-guides";
+import type { WotlkSubidaSpec } from "~/lib/wotlk-subida-types";
 
 export type NativeGuideView = {
   Guide: ComponentType;
@@ -49,6 +52,17 @@ function tbcSubidaView(spec: TbcSubidaSpec): NativeGuideView {
     index: tbcSubidaIndex(spec),
     summary:
       "Subida de nivel 1-375 para The Burning Crusade. Lista de compras, entrenadores y ruta por rangos.",
+  };
+}
+
+function wotlkSubidaView(spec: WotlkSubidaSpec): NativeGuideView {
+  return {
+    Guide: function WotlkNativeGuide() {
+      return <WotlkSubidaGuide spec={spec} />;
+    },
+    index: wotlkSubidaIndex(spec),
+    summary:
+      "Subida de nivel 1-450 para Wrath of the Lich King. Lista de compras, entrenadores y ruta por rangos.",
   };
 }
 
@@ -123,4 +137,17 @@ export const NATIVE_GUIDE_VIEWS: Record<NativeGuideId, NativeGuideView> = {
   "jewelcrafting-tww": twwSubidaView(TWW_SUBIDA_GUIDES["jewelcrafting-tww"]),
   "fishing-tww": twwSubidaView(TWW_SUBIDA_GUIDES["fishing-tww"]),
   "inscription-tww": twwSubidaView(TWW_SUBIDA_GUIDES["inscription-tww"]),
+  "alchemy-wotlk": wotlkSubidaView(WOTLK_SUBIDA_GUIDES["alchemy-wotlk"]),
+  "blacksmithing-wotlk": wotlkSubidaView(WOTLK_SUBIDA_GUIDES["blacksmithing-wotlk"]),
+  "enchanting-wotlk": wotlkSubidaView(WOTLK_SUBIDA_GUIDES["enchanting-wotlk"]),
+  "engineering-wotlk": wotlkSubidaView(WOTLK_SUBIDA_GUIDES["engineering-wotlk"]),
+  "leatherworking-wotlk": wotlkSubidaView(WOTLK_SUBIDA_GUIDES["leatherworking-wotlk"]),
+  "tailoring-wotlk": wotlkSubidaView(WOTLK_SUBIDA_GUIDES["tailoring-wotlk"]),
+  "herbalism-wotlk": wotlkSubidaView(WOTLK_SUBIDA_GUIDES["herbalism-wotlk"]),
+  "mining-wotlk": wotlkSubidaView(WOTLK_SUBIDA_GUIDES["mining-wotlk"]),
+  "skinning-wotlk": wotlkSubidaView(WOTLK_SUBIDA_GUIDES["skinning-wotlk"]),
+  "cooking-wotlk": wotlkSubidaView(WOTLK_SUBIDA_GUIDES["cooking-wotlk"]),
+  "jewelcrafting-wotlk": wotlkSubidaView(WOTLK_SUBIDA_GUIDES["jewelcrafting-wotlk"]),
+  "fishing-wotlk": wotlkSubidaView(WOTLK_SUBIDA_GUIDES["fishing-wotlk"]),
+  "inscription-wotlk": wotlkSubidaView(WOTLK_SUBIDA_GUIDES["inscription-wotlk"]),
 };

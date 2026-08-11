@@ -26,6 +26,14 @@ describe("wowheadEntity", () => {
     });
   });
 
+  it("usa prefijo wotlk para Wrath of the Lich King", () => {
+    expect(wowheadEntity({ tipo: "objeto", id: 36901, juego: "wotlk" })).toEqual({
+      href: "https://es.wowhead.com/wotlk/item=36901",
+      dataWowhead: "item=36901&domain=es",
+      wowheadKind: "item",
+    });
+  });
+
   it("usa prefijo the-war-within para The War Within", () => {
     expect(wowheadEntity({ tipo: "objeto", id: 210796, juego: "the-war-within" })).toEqual({
       href: "https://es.wowhead.com/the-war-within/item=210796",
