@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import { GuideIndex } from "~/components/guide-index";
+import { ProfessionIcon } from "~/components/profession-icon";
 import { NATIVE_GUIDE_VIEWS } from "~/components/guides/native-guide-views";
 import { MirrorGuideContent } from "~/components/mirror-guide-content";
 import { Badge } from "~/components/ui/badge";
@@ -55,7 +56,8 @@ export function ProfessionGuidePage({
             </Button>
           </div>
 
-          <h1 className="title-faction text-2xl font-semibold leading-tight xs:text-3xl sm:text-4xl md:text-5xl">
+          <h1 className="title-faction flex items-center gap-3 text-2xl font-semibold leading-tight xs:text-3xl sm:text-4xl md:text-5xl">
+            <ProfessionIcon slug={profSlug} className="size-9 sm:size-11" />
             {professionName}
           </h1>
           <p className="mt-1 text-sm font-medium text-primary sm:text-base">{tipoLabel}</p>

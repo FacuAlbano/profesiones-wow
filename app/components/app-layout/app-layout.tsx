@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router";
 import { cn } from "~/lib/utils";
 import { FactionSelector } from "~/components/faction-selector";
+import { ExpansionLogo } from "~/components/expansion-logo";
 import { AllianceLogo } from "./alliance-logo";
 import { HordeLogo } from "./horde-logo";
 import { Sidebar } from "./sidebar";
@@ -13,18 +14,18 @@ interface AppLayoutProps {
   className?: string;
 }
 
-const NAV_ITEMS = [
-  { path: "/expansion/midnight", label: "Midnight" },
-  { path: "/expansion/the-war-within", label: "The War Within" },
-  { path: "/expansion/classic-era", label: "Era" },
-  { path: "/expansion/classic-hardcore", label: "Hardcore" },
-  { path: "/expansion/season-of-discovery", label: "SoD" },
-  { path: "/expansion/mop-classic", label: "MoP Classic" },
-  { path: "/expansion/the-burning-crusade", label: "TBC" },
-  { path: "/expansion/mists-of-pandaria", label: "MoP" },
-  { path: "/guia", label: "Guías" },
-  { path: "/", label: "Inicio" },
-];
+const HEADER_LINKS = [
+  { path: "/expansion/midnight", label: "Midnight", slug: "midnight" },
+  { path: "/expansion/the-war-within", label: "The War Within", slug: "the-war-within" },
+  { path: "/expansion/classic-era", label: "Era", slug: "classic-era" },
+  { path: "/expansion/classic-hardcore", label: "Hardcore", slug: "classic-hardcore" },
+  { path: "/expansion/season-of-discovery", label: "SoD", slug: "season-of-discovery" },
+  { path: "/expansion/mop-classic", label: "MoP Classic", slug: "mop-classic" },
+  { path: "/expansion/the-burning-crusade", label: "TBC", slug: "the-burning-crusade" },
+  { path: "/expansion/mists-of-pandaria", label: "MoP", slug: "mists-of-pandaria" },
+  { path: "/guia", label: "Guías", slug: null },
+  { path: "/", label: "Inicio", slug: null },
+] as const;
 
 export function AppLayout({ children, className }: AppLayoutProps) {
   const { faction } = useFaction();
@@ -66,7 +67,7 @@ export function AppLayout({ children, className }: AppLayoutProps) {
           </Link>
 
           <nav className="flex min-w-0 flex-1 items-center justify-end gap-0.5 overflow-x-auto overflow-y-hidden py-1 scrollbar-none sm:flex-initial sm:overflow-visible [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden">
-            {NAV_ITEMS.map((item) => (
+            {HEADER_LINKS.map((item) => (
               <Button
                 key={item.label}
                 variant="ghost"
@@ -77,7 +78,10 @@ export function AppLayout({ children, className }: AppLayoutProps) {
                   isActive(item.path) && "bg-white/10"
                 )}
               >
-                <Link to={item.path}>{item.label}</Link>
+                <Link to={item.path} className="flex items-center gap-1.5">
+                  {item.slug ? <ExpansionLogo slug={item.slug} className="size-4" /> : null}
+                  {item.label}
+                </Link>
               </Button>
             ))}
           </nav>

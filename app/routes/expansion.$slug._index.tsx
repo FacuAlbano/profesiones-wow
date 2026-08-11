@@ -1,6 +1,7 @@
 import { Link, useOutletContext } from "react-router";
 import type { Route } from "./+types/expansion.$slug._index";
 import { EXPANSION_NAMES, PROFESSIONS } from "~/lib/constants";
+import { ProfessionIcon } from "~/components/profession-icon";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
@@ -63,7 +64,8 @@ export default function ExpansionIndexPage() {
                   className="block link-faction min-h-[44px]"
                 >
                   <Card className="card-faction h-full transition-all duration-200">
-                    <CardContent className="flex items-center p-3 xs:p-4 text-card-foreground">
+                    <CardContent className="flex items-center gap-3 p-3 xs:p-4 text-card-foreground">
+                      <ProfessionIcon slug={prof.slug} className="size-8" />
                       <span className="font-medium text-sm sm:text-base">{prof.name}</span>
                     </CardContent>
                   </Card>

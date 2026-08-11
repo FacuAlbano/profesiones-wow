@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Separator } from "~/components/ui/separator";
+import { ProfessionIcon } from "~/components/profession-icon";
 import { PROFESSIONS } from "~/lib/constants";
 
 interface TBCContentProps {
@@ -91,7 +92,8 @@ export function TBCContent({ expansionSlug }: TBCContentProps) {
                 className="block link-faction min-h-[44px]"
               >
                 <Card className="card-faction h-full transition-all duration-200">
-                  <CardContent className="flex items-center p-3 text-card-foreground">
+                  <CardContent className="flex items-center gap-2 p-3 text-card-foreground">
+                    <ProfessionIcon slug={slug} className="size-6" />
                     <span className="font-medium text-sm">{name}</span>
                   </CardContent>
                 </Card>
@@ -100,21 +102,24 @@ export function TBCContent({ expansionSlug }: TBCContentProps) {
           ))}
           <li>
             <Card className="card-faction h-full cursor-pointer border-dashed">
-              <CardContent className="flex items-center p-3 text-card-foreground">
+              <CardContent className="flex items-center gap-2 p-3 text-card-foreground">
+                <ProfessionIcon slug="fishing-cooking" className="size-6" />
                 <span className="font-medium text-sm">Pesca + Cocina</span>
               </CardContent>
             </Card>
           </li>
           <li>
             <Card className="card-faction h-full cursor-pointer border-dashed">
-              <CardContent className="flex items-center p-3 text-card-foreground">
+              <CardContent className="flex items-center gap-2 p-3 text-card-foreground">
+                <ProfessionIcon slug="first-aid" className="size-6" />
                 <span className="font-medium text-sm">Primeros auxilios</span>
               </CardContent>
             </Card>
           </li>
           <li>
             <Card className="card-faction h-full cursor-pointer border-dashed">
-              <CardContent className="flex items-center p-3 text-card-foreground">
+              <CardContent className="flex items-center gap-2 p-3 text-card-foreground">
+                <ProfessionIcon slug="lockpicking" className="size-6" />
                 <span className="font-medium text-sm">Ganzúa</span>
               </CardContent>
             </Card>
