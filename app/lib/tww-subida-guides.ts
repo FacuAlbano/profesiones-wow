@@ -205,12 +205,11 @@ export const TWW_SUBIDA_GUIDES: Record<TwwNativeId, TwwSubidaSpec> = {
     tomtomNote:
       "Copiá el macro, pegalo en el chat y usá /ttpaste con TomTom para marcar a Arhdas.",
     shoppingNote:
-      "Lote estimado para 1-40. Del 40 al tope entra chatarra y recetas de Lyrendal. La calidad no importa para subir.",
+      "Lote estimado para 1-40 (mena). Del 40 al tope la chatarra no se compra: sale de {r:447310|Buscar entre la chatarra} y de nodos de Ingeniería. La calidad no importa para subir.",
     shopping: [
       { materialKey: "bismuth", quantity: 260 },
       { materialKey: "aqirite", quantity: 22 },
       { materialKey: "crystallinePowder", quantity: 4 },
-      { materialKey: "heapOfUnstableScrap", quantity: 85 },
     ],
     ranges: [
       {

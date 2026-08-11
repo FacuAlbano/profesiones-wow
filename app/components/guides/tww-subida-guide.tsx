@@ -202,14 +202,11 @@ export function TwwSubidaGuide({ spec }: { spec: TwwSubidaSpec }) {
           TomTom y pin
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">{renderRichText(spec.tomtomNote)}</p>
-        <div className="mt-4">
-          {spec.tomtom ? (
-            <TomTomMacro macro={spec.tomtom} />
-          ) : (
-            <span className="rounded-full border border-dashed border-border px-3 py-1.5 text-xs text-muted-foreground">
-              Pin del mapa: próximamente
-            </span>
-          )}
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+          {spec.tomtom ? <TomTomMacro macro={spec.tomtom} /> : null}
+          <span className="rounded-full border border-dashed border-border px-3 py-1.5 text-xs text-muted-foreground">
+            Pin del mapa: próximamente
+          </span>
         </div>
       </section>
 
