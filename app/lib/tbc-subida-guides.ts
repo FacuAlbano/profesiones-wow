@@ -9,10 +9,10 @@ export const TBC_SUBIDA_GUIDES: Record<TbcCatalogId, TbcSubidaSpec> = {
       "Esta guía te lleva Herrería de The Burning Crusade del 1 al 375 por la ruta más barata que podemos estimar. Las cantidades son aproximadas: varias recetas se ponen amarillas.",
       "Minería va de la mano: si fundís la mena vos, te ahorrás un montón. Si no tenés Minería, comprá el lote de una.",
     ],
-    trainerHordeKey: "roxok",
+    trainerHordeKey: "rohok",
     trainerAllianceKey: "humphry",
     trainerNote:
-      "Del 1 al 300 aprendé en la capital (Saru en Orgrimmar, Bengus en Forjaz). El tope de Outland (300-375) lo enseñan Rohok en Thrallmar y Humphry en Bastión del Honor.",
+      "Del 1 al 300 aprendé en la capital ({n:saru} en Orgrimmar, {n:bengus} en Forjaz). El tope de Terrallende (300-375) lo enseñan {n:rohok} en Thrallmar y {n:humphry} en Bastión del Honor.",
     tomtom:
       "/way #1944 53.2 38.2 Rohok\n/way #1944 56.8 63.8 Humphry",
     tomtomNote:
@@ -77,7 +77,7 @@ export const TBC_SUBIDA_GUIDES: Record<TbcCatalogId, TbcSubidaSpec> = {
       {
         from: 300,
         to: 375,
-        intro: "Aprendé Herrería de Outland con {n:roxok} o {n:humphry}.",
+        intro: "Aprendé Herrería de Terrallende con {n:rohok} o {n:humphry}.",
         steps: [
           {
             text: "Piedras de afilar viles y cota de {i:felIronBar} hasta ~330. Después adamantita y pedidos de armas. El tope pide {i:adamantiteBar} o korio si está barato.",
@@ -102,7 +102,7 @@ export const TBC_SUBIDA_GUIDES: Record<TbcCatalogId, TbcSubidaSpec> = {
     trainerAllianceKey: "johanBarnes",
     extraNpcs: [{ key: "madameRuby", role: "Fórmulas en Shattrath" }],
     trainerNote:
-      "Del 1 al 300 aprendé en la capital. Outland lo enseñan Felannia en Thrallmar y Johan Barnes en Bastión del Honor (torre del acantilado, segundo piso).",
+      "Del 1 al 300 aprendé en la capital. Terrallende lo enseñan {n:felannia} en Thrallmar y {n:johanBarnes} en Bastión del Honor (torre del acantilado, segundo piso).",
     tomtom:
       "/way #1944 52.2 36.0 Felannia\n/way #1944 53.6 66.0 Johan Barnes",
     tomtomNote:
@@ -164,7 +164,7 @@ export const TBC_SUBIDA_GUIDES: Record<TbcCatalogId, TbcSubidaSpec> = {
       {
         from: 300,
         to: 375,
-        intro: "Aprendé Encantamiento de Outland con {n:felannia} o {n:johanBarnes}.",
+        intro: "Aprendé Encantamiento de Terrallende con {n:felannia} o {n:johanBarnes}.",
         steps: [
           {
             text: "Aceites y encantamientos de anillo con {i:arcaneDust}. {n:madameRuby} vende las fórmulas de aceite superior. El tramo final usa {i:largePrismaticShard}.",
@@ -188,7 +188,7 @@ export const TBC_SUBIDA_GUIDES: Record<TbcCatalogId, TbcSubidaSpec> = {
     trainerHordeKey: "zebig",
     trainerAllianceKey: "lebowski",
     trainerNote:
-      "Del 1 al 300 aprendé en la capital (Roxxik u Muello Saltarín). Outland lo enseñan Zebig en Thrallmar y Lebowski en Bastión del Honor. A 350 elegís gnómica o goblin.",
+      "Del 1 al 300 aprendé en la capital ({n:roxxik} o {n:springspindle}). Terrallende lo enseñan {n:zebig} en Thrallmar y {n:lebowski} en Bastión del Honor. A 350 elegís gnómica o goblin.",
     tomtom: "/way #1944 54.8 38.5 Zebig\n/way #1944 55.7 65.5 Lebowski",
     tomtomNote:
       "Copiá el macro, pegalo en el chat y usá /ttpaste con TomTom para marcar a Zebig (Horda) y a Lebowski (Alianza).",
@@ -252,7 +252,7 @@ export const TBC_SUBIDA_GUIDES: Record<TbcCatalogId, TbcSubidaSpec> = {
       {
         from: 300,
         to: 375,
-        intro: "Aprendé Ingeniería de Outland con {n:zebig} o {n:lebowski}.",
+        intro: "Aprendé Ingeniería de Terrallende con {n:zebig} o {n:lebowski}.",
         steps: [
           {
             text: "Carcasas y tornillos de {i:felIronBar}. Del 350 al tope, adamantita, {i:moteOfEarth} y la receta del robot de reparación si la farmeás en Filospada.",
@@ -276,12 +276,12 @@ export const TBC_SUBIDA_GUIDES: Record<TbcCatalogId, TbcSubidaSpec> = {
     trainerHordeKey: "barim",
     trainerAllianceKey: "brumman",
     trainerNote:
-      "Del 1 al 300 aprendé en la capital. Outland lo enseñan Barim Pezuña Partida en Thrallmar y Brumman en Bastión del Honor.",
+      "Del 1 al 300 aprendé en la capital. Terrallende lo enseñan Barim Pezuña Partida en Thrallmar y Brumman en Bastión del Honor.",
     tomtom: "/way #1944 56.2 38.6 Barim\n/way #1944 54.1 64.0 Brumman",
     tomtomNote:
       "Copiá el macro, pegalo en el chat y usá /ttpaste con TomTom para marcar a Barim (Horda) y a Brumman (Alianza).",
     shoppingNote:
-      "Lote estimado para 1-375. El pellejo nudoso (Outland) es el cuello de botella: si Desuello está bajo, compralo. Hilo y tintes los vende cualquier suministros.",
+      "Lote estimado para 1-375. El pellejo nudoso (Terrallende) es el cuello de botella: si Desuello está bajo, compralo. Hilo y tintes los vende cualquier suministros.",
     shopping: [
       { materialKey: "ruinedScraps", quantity: 57 },
       { materialKey: "lightLeather", quantity: 380 },
@@ -335,7 +335,7 @@ export const TBC_SUBIDA_GUIDES: Record<TbcCatalogId, TbcSubidaSpec> = {
       {
         from: 300,
         to: 375,
-        intro: "Aprendé Peletería de Outland con {n:barim} o {n:brumman}.",
+        intro: "Aprendé Peletería de Terrallende con {n:barim} o {n:brumman}.",
         steps: [
           {
             text: "Refuerzos de {i:knothideLeather} hasta ~350. Después {i:felHide} y {i:heavyClefthoof} en las recetas naranjas que desbloquees.",
@@ -359,12 +359,12 @@ export const TBC_SUBIDA_GUIDES: Record<TbcCatalogId, TbcSubidaSpec> = {
     trainerHordeKey: "dalinna",
     trainerAllianceKey: "hama",
     trainerNote:
-      "Del 1 al 300 aprendé en la capital. Outland lo enseñan Dalinna en Thrallmar y Hama en Bastión del Honor.",
+      "Del 1 al 300 aprendé en la capital. Terrallende lo enseñan Dalinna en Thrallmar y Hama en Bastión del Honor.",
     tomtom: "/way #1944 56.6 37.1 Dalinna\n/way #1944 54.6 63.6 Hama",
     tomtomNote:
       "Copiá el macro, pegalo en el chat y usá /ttpaste con TomTom para marcar a Dalinna (Horda) y a Hama (Alianza).",
     shoppingNote:
-      "Lote estimado de paños + hilo. El tejido abisal se farmea de humanoides de Outland. {i:coarseThread} lo vende cualquier vendedor de sastrería.",
+      "Lote estimado de paños + hilo. El tejido abisal se farmea de humanoides de Terrallende. {i:coarseThread} lo vende cualquier vendedor de sastrería.",
     shopping: [
       { materialKey: "linenCloth", quantity: 204 },
       { materialKey: "woolCloth", quantity: 135 },
@@ -420,7 +420,7 @@ export const TBC_SUBIDA_GUIDES: Record<TbcCatalogId, TbcSubidaSpec> = {
       {
         from: 300,
         to: 375,
-        intro: "Aprendé Sastrería de Outland con {n:dalinna} o {n:hama}.",
+        intro: "Aprendé Sastrería de Terrallende con {n:dalinna} o {n:hama}.",
         steps: [
           {
             text: "Madejas de {i:netherweave} y {i:imbuedNetherweave}. {i:netherwebSilk} entra en las bolsas y el conjunto imbuido del tope.",
@@ -438,13 +438,13 @@ export const TBC_SUBIDA_GUIDES: Record<TbcCatalogId, TbcSubidaSpec> = {
     nativeId: "mining-tbc",
     title: "Subida de nivel de Minería en The Burning Crusade",
     intro: [
-      "Esta guía te lleva Minería de The Burning Crusade del 1 al 375 picando de los Reinos del Este / Kalimdor a Outland. No hay lista de compras de oro: la habilidad sale de los filones y de fundir.",
+      "Esta guía te lleva Minería de The Burning Crusade del 1 al 375 picando de los Reinos del Este / Kalimdor a Terrallende. No hay lista de compras de oro: la habilidad sale de los filones y de fundir.",
       "Herrería, Ingeniería y Joyería son las parejas naturales.",
     ],
     trainerHordeKey: "krugosh",
     trainerAllianceKey: "hurnak",
     trainerNote:
-      "Aprendé en la capital para 1-300. Outland lo enseñan Krugosh en Thrallmar y Hurnak Grimmord en Bastión del Honor. Fundir mena da habilidad hasta cierto punto: no lo saltees.",
+      "Aprendé en la capital para 1-300. Terrallende lo enseñan Krugosh en Thrallmar y Hurnak Grimmord en Bastión del Honor. Fundir mena da habilidad hasta cierto punto: no lo saltees.",
     tomtom: "/way #1944 55.4 37.6 Krugosh\n/way #1944 56.7 63.8 Hurnak Grimmord",
     tomtomNote:
       "Copiá el macro, pegalo en el chat y usá /ttpaste con TomTom para marcar a Krugosh (Horda) y a Hurnak (Alianza).",
@@ -485,14 +485,14 @@ export const TBC_SUBIDA_GUIDES: Record<TbcCatalogId, TbcSubidaSpec> = {
         to: 300,
         steps: [
           {
-            text: "{i:mithrilOre}, {i:truesilverOre} y {i:thoriumOre}. La Garganta de Fuego, Cuna del Invierno e Ungoro cierran el 300.",
+            text: "{i:mithrilOre}, {i:truesilverOre} y {i:thoriumOre}. La Garganta de Fuego, Cuna del Invierno y el Cráter de Un'Goro cierran el 300.",
           },
         ],
       },
       {
         from: 300,
         to: 375,
-        intro: "Aprendé Minería de Outland con {n:krugosh} o {n:hurnak}.",
+        intro: "Aprendé Minería de Terrallende con {n:krugosh} o {n:hurnak}.",
         steps: [
           {
             text: "Picá {i:felIronOre} en la Península del Fuego Infernal y {i:adamantiteOre} en Nagrand / Filospada. La ruta de farm detallada va en Farming cuando esté lista.",
@@ -510,13 +510,13 @@ export const TBC_SUBIDA_GUIDES: Record<TbcCatalogId, TbcSubidaSpec> = {
     nativeId: "skinning-tbc",
     title: "Subida de nivel de Desuello en The Burning Crusade",
     intro: [
-      "Esta guía te lleva Desuello de The Burning Crusade del 1 al 375 desollando bestias de los Reinos del Este / Kalimdor a Outland. No hay lista de compras de oro.",
+      "Esta guía te lleva Desuello de The Burning Crusade del 1 al 375 desollando bestias de los Reinos del Este / Kalimdor a Terrallende. No hay lista de compras de oro.",
       "Peletería es la pareja natural.",
     ],
     trainerHordeKey: "moorutu",
     trainerAllianceKey: "jelena",
     trainerNote:
-      "Aprendé en la capital para 1-300. Outland lo enseñan Moorutu en Thrallmar y Jelena Estrellada en Bastión del Honor.",
+      "Aprendé en la capital para 1-300. Terrallende lo enseñan Moorutu en Thrallmar y Jelena Estrellada en Bastión del Honor.",
     tomtom: "/way #1944 56.3 38.6 Moorutu\n/way #1944 54.5 63.2 Jelena Estrellada",
     tomtomNote:
       "Copiá el macro, pegalo en el chat y usá /ttpaste con TomTom para marcar a Moorutu (Horda) y a Jelena (Alianza).",
@@ -557,14 +557,14 @@ export const TBC_SUBIDA_GUIDES: Record<TbcCatalogId, TbcSubidaSpec> = {
         to: 300,
         steps: [
           {
-            text: "Cuna del Invierno, Ungoro y Tierras de la Peste: {i:ruggedLeather}. Si un cadáver se pone verde, cambiate de zona.",
+            text: "Cuna del Invierno, Cráter de Un'Goro y Tierras de la Peste: {i:ruggedLeather}. Si un cadáver se pone verde, cambiate de zona.",
           },
         ],
       },
       {
         from: 300,
         to: 375,
-        intro: "Aprendé Desuello de Outland con {n:moorutu} o {n:jelena}.",
+        intro: "Aprendé Desuello de Terrallende con {n:moorutu} o {n:jelena}.",
         steps: [
           {
             text: "Bestias de Fuego Infernal y Nagrand sueltan {i:knothideLeather}. {i:felHide} y {i:heavyClefthoof} son extras: no hace falta farmearlos para el tope. La ruta de farm va en Farming cuando esté lista.",
@@ -589,7 +589,7 @@ export const TBC_SUBIDA_GUIDES: Record<TbcCatalogId, TbcSubidaSpec> = {
     trainerAllianceKey: "gaston",
     extraNpcs: [{ key: "theRokk", role: "Misiones diarias en Shattrath" }],
     trainerNote:
-      "Del 1 al 300 aprendé en la capital. Outland lo enseñan Baxter en Thrallmar y Gaston en Bastión del Honor. El Rokk, en Shattrath, da las diarias que empujan el tramo 350-375.",
+      "Del 1 al 300 aprendé en la capital. Terrallende lo enseñan Baxter en Thrallmar y Gaston en Bastión del Honor. El Rokk, en Shattrath, da las diarias que empujan el tramo 350-375.",
     tomtom:
       "/way #1944 56.8 37.4 Baxter\n/way #1944 54.1 63.5 Gaston\n/way #1955 61.8 15.6 El Rokk",
     tomtomNote:
@@ -651,7 +651,7 @@ export const TBC_SUBIDA_GUIDES: Record<TbcCatalogId, TbcSubidaSpec> = {
       {
         from: 300,
         to: 375,
-        intro: "Aprendé Cocina de Outland con {n:baxter} o {n:gaston}.",
+        intro: "Aprendé Cocina de Terrallende con {n:baxter} o {n:gaston}.",
         steps: [
           {
             text: "{i:buzzardMeat} y recetas de Fuego Infernal hasta ~350. Después hacé las diarias de {n:theRokk} en Shattrath: son la ruta barata al 375.",
@@ -674,9 +674,9 @@ export const TBC_SUBIDA_GUIDES: Record<TbcCatalogId, TbcSubidaSpec> = {
     ],
     trainerHordeKey: "lumak",
     trainerAllianceKey: "arnold",
-    extraNpcs: [{ key: "juno", role: "Marisma de Zangar (Outland)" }],
+    extraNpcs: [{ key: "juno", role: "Marisma de Zangar (Terrallende)" }],
     trainerNote:
-      "Aprendé en la capital para 1-300. En Outland, Juno Dufrain (Cenarion Refuge, Marisma de Zangar) enseña a ambas facciones.",
+      "Aprendé en la capital para 1-300. En Terrallende, Juno Dufrain (Refugio Cenarion, Marisma de Zangar) enseña a ambas facciones.",
     tomtom: "/way #1946 78.0 66.1 Juno Dufrain",
     tomtomNote:
       "Copiá el macro, pegalo en el chat y usá /ttpaste con TomTom para marcar a Juno. Lumak está en el valle de Orgrimmar; Arnold, en el Canal de los Enanos de Ventormenta.",
@@ -717,14 +717,14 @@ export const TBC_SUBIDA_GUIDES: Record<TbcCatalogId, TbcSubidaSpec> = {
         to: 300,
         steps: [
           {
-            text: "Azshara, Costa de la Vorágine o las costas de Tanaris. El 300 es tiempo, no oro.",
+            text: "Azshara, Tanaris o las Tierras del Interior. El 300 es tiempo, no oro.",
           },
         ],
       },
       {
         from: 300,
         to: 375,
-        intro: "Aprendé Pesca de Outland con {n:juno}.",
+        intro: "Aprendé Pesca de Terrallende con {n:juno}.",
         steps: [
           {
             text: "Marisma de Zangar (lagos de Cenarion) y después la costa de Nagrand / Filospada. El tramo final es tiempo. La ruta de farm de pescado caro va en Farming cuando esté lista.",
@@ -748,7 +748,7 @@ export const TBC_SUBIDA_GUIDES: Record<TbcCatalogId, TbcSubidaSpec> = {
     trainerHordeKey: "kalaen",
     trainerAllianceKey: "tatiana",
     trainerNote:
-      "Horda y Alianza aprenden Joyería en Outland (Kalaen en Thrallmar, Tatiana en Bastión del Honor) o en Lunargenta / El Exodar. No hay entrenador clásico de 1-300 aparte: Joyería es profesión de The Burning Crusade.",
+      "Horda y Alianza aprenden Joyería en Terrallende (Kalaen en Thrallmar, Tatiana en Bastión del Honor) o en Lunargenta / El Exodar. No hay entrenador clásico de 1-300 aparte: Joyería es profesión de The Burning Crusade.",
     tomtom: "/way #1944 56.8 37.7 Kalaen\n/way #1944 54.6 63.6 Tatiana",
     tomtomNote:
       "Copiá el macro, pegalo en el chat y usá /ttpaste con TomTom para marcar a Kalaen (Horda) y a Tatiana (Alianza).",
@@ -813,7 +813,7 @@ export const TBC_SUBIDA_GUIDES: Record<TbcCatalogId, TbcSubidaSpec> = {
         to: 375,
         steps: [
           {
-            text: "Tallá gemas de Outland (prospectá {i:felIronOre} y {i:adamantiteOre}). {i:felIronBar} y {i:adamantiteBar} entran en monturas y anillos del tramo alto.",
+            text: "Tallá gemas de Terrallende (prospectá {i:felIronOre} y {i:adamantiteOre}). {i:felIronBar} y {i:adamantiteBar} entran en monturas y anillos del tramo alto.",
           },
         ],
       },

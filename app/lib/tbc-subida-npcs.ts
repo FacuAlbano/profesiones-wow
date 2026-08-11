@@ -6,7 +6,7 @@
 import type { NpcEntry } from "~/lib/guide-types";
 
 export const TBC_SUBIDA_NPCS: Record<string, NpcEntry> = {
-  roxok: { name: "Rohok", npcId: 16583, location: "en Thrallmar" },
+  rohok: { name: "Rohok", npcId: 16583, location: "en Thrallmar" },
   humphry: { name: "Humphry", npcId: 16823, location: "en Bastión del Honor" },
   saru: { name: "Saru Furiacerada", npcId: 3355, location: "en Orgrimmar" },
   bengus: { name: "Bengus Forjahonda", npcId: 4258, location: "en Forjaz" },

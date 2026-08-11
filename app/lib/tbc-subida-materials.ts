@@ -72,7 +72,7 @@ export const TBC_SUBIDA_MATERIALS: Record<string, MaterialEntry> = {
   refreshingSpringWater: { name: "Agua de manantial refrescante", itemId: 159, icon: "inv_drink_07" },
   coyoteMeat: { name: "Carne de coyote", itemId: 2673, icon: "inv_misc_food_14" },
   rawLongjaw: { name: "Pargo de lodo boquilargo crudo", itemId: 6289, icon: "inv_misc_fish_32" },
-  buzzardMeat: { name: "Carne de murciélago", itemId: 27669, icon: "inv_misc_food_16" },
+  buzzardMeat: { name: "Carne de águila ratonera", itemId: 27669, icon: "inv_misc_food_16" },
   brightBaubles: { name: "Adornos brillantes", itemId: 6532, icon: "inv_misc_gem_variety_02" },
   felIronBar: { name: "Barra de hierro vil", itemId: 23445, icon: "inv_ingot_feliron" },
   adamantiteBar: { name: "Barra de adamantita", itemId: 23446, icon: "inv_ingot_10" },
