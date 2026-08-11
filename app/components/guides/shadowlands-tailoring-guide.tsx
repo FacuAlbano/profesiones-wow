@@ -1,6 +1,6 @@
 import { Card, CardContent } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
-import { wowheadItemUrl, wowheadSpellUrl, wowheadNpcUrl } from "~/lib/wowhead";
+import { WowheadEntityLink } from "~/components/wowhead-entity";
 
 /** Secciones para el índice de la guía */
 export const SHADOWLANDS_TAILORING_INDEX = [
@@ -15,50 +15,27 @@ export const SHADOWLANDS_TAILORING_INDEX = [
   { id: "otros", label: "Otros objetos" },
 ];
 
-function ItemLink({
-  itemId,
-  name,
-  game = "shadowlands" as const,
-}: {
-  itemId: number;
-  name: string;
-  game?: "shadowlands";
-}) {
+function ItemLink({ itemId, name }: { itemId: number; name: string }) {
   return (
-    <a
-      href={wowheadItemUrl(itemId, game)}
-      rel="nofollow"
-      target="_blank"
-      className="no-icon link-faction"
-    >
+    <WowheadEntityLink entity={{ tipo: "objeto", id: itemId, juego: "shadowlands" }}>
       {name}
-    </a>
+    </WowheadEntityLink>
   );
 }
 
 function SpellLink({ spellId, name }: { spellId: number; name: string }) {
   return (
-    <a
-      href={wowheadSpellUrl(spellId, "shadowlands")}
-      rel="nofollow"
-      target="_blank"
-      className="no-icon link-faction"
-    >
+    <WowheadEntityLink entity={{ tipo: "receta", id: spellId, juego: "shadowlands" }}>
       {name}
-    </a>
+    </WowheadEntityLink>
   );
 }
 
 function NpcLink({ npcId, name }: { npcId: number; name: string }) {
   return (
-    <a
-      href={wowheadNpcUrl(npcId, "shadowlands")}
-      rel="nofollow"
-      target="_blank"
-      className="no-icon link-faction"
-    >
+    <WowheadEntityLink entity={{ tipo: "npc", id: npcId, juego: "shadowlands" }}>
       {name}
-    </a>
+    </WowheadEntityLink>
   );
 }
 
@@ -147,7 +124,10 @@ export function ShadowlandsTailoringGuide() {
         </h3>
         <p className="mt-1 text-sm text-muted-foreground">
           Al llegar a 100 en Sastrería de Shadowlands, el Runero te ofrecerá la misión{" "}
-          <a href="https://es.wowhead.com/shadowlands/quest=62799" target="_blank" rel="nofollow" className="no-icon link-faction">Los recipientes del hilo</a>.
+          <WowheadEntityLink entity={{ tipo: "mision", id: 62799, juego: "shadowlands" }}>
+            Los recipientes del hilo
+          </WowheadEntityLink>
+          .
           Consulta la guía de fabricación de equipo legendario en Shadowlands para desbloquear al Runero.
         </p>
         <h3 className="mt-4 font-semibold text-foreground text-base">

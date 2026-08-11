@@ -1,9 +1,21 @@
 import { Link } from "react-router";
 import { Card, CardContent } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
-import { WowheadItem } from "~/components/wowhead-item";
-import { WowheadNpc } from "~/components/wowhead-npc";
+import type { ComponentProps } from "react";
+import { WowheadItem as WowheadItemBase } from "~/components/wowhead-item";
+import { WowheadNpc as WowheadNpcBase } from "~/components/wowhead-npc";
+import { ALCHEMY_TBC_MATERIALS } from "~/lib/alchemy-tbc-materials";
 import { HERBALISM_TBC_NPCS } from "~/lib/herbalism-tbc-npcs";
+
+function WowheadItem(
+  props: Omit<ComponentProps<typeof WowheadItemBase>, "materials" | "game">,
+) {
+  return <WowheadItemBase materials={ALCHEMY_TBC_MATERIALS} game="tbc" {...props} />;
+}
+
+function WowheadNpc(props: Omit<ComponentProps<typeof WowheadNpcBase>, "npcs" | "game">) {
+  return <WowheadNpcBase npcs={HERBALISM_TBC_NPCS} game="tbc" {...props} />;
+}
 
 /** Secciones para el índice de la guía Herboristería TBC */
 export const HERBALISM_TBC_INDEX = [
@@ -54,28 +66,28 @@ export function HerbalismTBCGuide() {
               </h3>
               <p className="mt-2 text-sm font-medium text-card-foreground">Alianza:</p>
               <ul className="mt-0.5 list-inside list-disc text-sm text-muted-foreground">
-                <li><WowheadNpc npcKey="reynaStonebranch" npcs={HERBALISM_TBC_NPCS} /></li>
-                <li><WowheadNpc npcKey="tannysa" npcs={HERBALISM_TBC_NPCS} /></li>
-                <li><WowheadNpc npcKey="firodrenMooncaller" npcs={HERBALISM_TBC_NPCS} /></li>
-                <li><WowheadNpc npcKey="herbalistPomeroy" npcs={HERBALISM_TBC_NPCS} /></li>
-                <li><WowheadNpc npcKey="malorneBladeleaf" npcs={HERBALISM_TBC_NPCS} /></li>
-                <li><WowheadNpc npcKey="kaliHealtouch" npcs={HERBALISM_TBC_NPCS} /></li>
-                <li><WowheadNpc npcKey="cylaniaRootstalker" npcs={HERBALISM_TBC_NPCS} /></li>
-                <li><WowheadNpc npcKey="telurinonMoonshadow" npcs={HERBALISM_TBC_NPCS} /></li>
-                <li><WowheadNpc npcKey="brantJasperbloom" npcs={HERBALISM_TBC_NPCS} /></li>
-                <li><WowheadNpc npcKey="almaJainrose" npcs={HERBALISM_TBC_NPCS} /></li>
-                <li><WowheadNpc npcKey="cemmorhan" npcs={HERBALISM_TBC_NPCS} /></li>
+                <li><WowheadNpc npcKey="reynaStonebranch" /></li>
+                <li><WowheadNpc npcKey="tannysa" /></li>
+                <li><WowheadNpc npcKey="firodrenMooncaller" /></li>
+                <li><WowheadNpc npcKey="herbalistPomeroy" /></li>
+                <li><WowheadNpc npcKey="malorneBladeleaf" /></li>
+                <li><WowheadNpc npcKey="kaliHealtouch" /></li>
+                <li><WowheadNpc npcKey="cylaniaRootstalker" /></li>
+                <li><WowheadNpc npcKey="telurinonMoonshadow" /></li>
+                <li><WowheadNpc npcKey="brantJasperbloom" /></li>
+                <li><WowheadNpc npcKey="almaJainrose" /></li>
+                <li><WowheadNpc npcKey="cemmorhan" /></li>
               </ul>
               <p className="mt-2 text-sm font-medium text-card-foreground">Horda:</p>
               <ul className="mt-0.5 list-inside list-disc text-sm text-muted-foreground">
-                <li><WowheadNpc npcKey="jandi" npcs={HERBALISM_TBC_NPCS} /></li>
-                <li><WowheadNpc npcKey="marthaAlliestar" npcs={HERBALISM_TBC_NPCS} /></li>
-                <li><WowheadNpc npcKey="kominWinterhoof" npcs={HERBALISM_TBC_NPCS} /></li>
-                <li><WowheadNpc npcKey="faruza" npcs={HERBALISM_TBC_NPCS} /></li>
-                <li><WowheadNpc npcKey="mishiki" npcs={HERBALISM_TBC_NPCS} /></li>
-                <li><WowheadNpc npcKey="angrun" npcs={HERBALISM_TBC_NPCS} /></li>
-                <li><WowheadNpc npcKey="aranaeVenomblood" npcs={HERBALISM_TBC_NPCS} /></li>
-                <li><WowheadNpc npcKey="botanistNathera" npcs={HERBALISM_TBC_NPCS} /></li>
+                <li><WowheadNpc npcKey="jandi" /></li>
+                <li><WowheadNpc npcKey="marthaAlliestar" /></li>
+                <li><WowheadNpc npcKey="kominWinterhoof" /></li>
+                <li><WowheadNpc npcKey="faruza" /></li>
+                <li><WowheadNpc npcKey="mishiki" /></li>
+                <li><WowheadNpc npcKey="angrun" /></li>
+                <li><WowheadNpc npcKey="aranaeVenomblood" /></li>
+                <li><WowheadNpc npcKey="botanistNathera" /></li>
               </ul>
             </CardContent>
           </Card>
@@ -88,8 +100,8 @@ export function HerbalismTBCGuide() {
                 Puedes aprender la nueva Herboristería TBC con los instructores maestros en la Península del Fuego Infernal. (Requiere nivel 50 y Herboristería 275.)
               </p>
               <ul className="mt-2 space-y-1 text-sm text-card-foreground">
-                <li><strong>Horda:</strong> <WowheadNpc npcKey="ruakStronghorn" npcs={HERBALISM_TBC_NPCS} /> — en Thrallmar, en la torre grande colina arriba. /way 52.2, 36.3</li>
-                <li><strong>Alianza:</strong> <WowheadNpc npcKey="rorelien" npcs={HERBALISM_TBC_NPCS} /> — en Bastión del Honor, primera planta de la torre de magos. /way 53.6, 65.8</li>
+                <li><strong>Horda:</strong> <WowheadNpc npcKey="ruakStronghorn" /> — en Thrallmar, en la torre grande colina arriba. /way 52.2, 36.3</li>
+                <li><strong>Alianza:</strong> <WowheadNpc npcKey="rorelien" /> — en Bastión del Honor, primera planta de la torre de magos. /way 53.6, 65.8</li>
               </ul>
             </CardContent>
           </Card>
@@ -172,8 +184,8 @@ export function HerbalismTBCGuide() {
             Aprende la nueva Herboristería TBC con los instructores maestros en la Península del Fuego Infernal (nivel 50 y Herboristería 275).
           </p>
           <ul className="mt-1 list-inside list-disc text-sm text-muted-foreground">
-            <li><strong>Horda:</strong> <WowheadNpc npcKey="ruakStronghorn" npcs={HERBALISM_TBC_NPCS} /></li>
-            <li><strong>Alianza:</strong> <WowheadNpc npcKey="rorelien" npcs={HERBALISM_TBC_NPCS} /></li>
+            <li><strong>Horda:</strong> <WowheadNpc npcKey="ruakStronghorn" /></li>
+            <li><strong>Alianza:</strong> <WowheadNpc npcKey="rorelien" /></li>
           </ul>
 
           <h4 className="guide-division mt-4 font-semibold text-base">300 - 315</h4>

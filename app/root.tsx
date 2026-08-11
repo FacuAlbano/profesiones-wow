@@ -64,6 +64,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
         />
         <Meta />
         <Links />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `const whTooltips = {colorLinks: true, iconizeLinks: false, renameLinks: false};`,
+          }}
+        />
+        <script src="https://wow.zamimg.com/widgets/power.js" async />
       </head>
       <body>
         {children}
