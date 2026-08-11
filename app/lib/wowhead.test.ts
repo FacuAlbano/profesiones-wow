@@ -26,6 +26,14 @@ describe("wowheadEntity", () => {
     });
   });
 
+  it("usa prefijo the-war-within para The War Within", () => {
+    expect(wowheadEntity({ tipo: "objeto", id: 210796, juego: "the-war-within" })).toEqual({
+      href: "https://es.wowhead.com/the-war-within/item=210796",
+      dataWowhead: "item=210796&domain=es",
+      wowheadKind: "item",
+    });
+  });
+
   it("usa host ES y sin prefijo de juego para Midnight", () => {
     expect(wowheadEntity({ tipo: "objeto", id: 210221, juego: "midnight" })).toEqual({
       href: "https://es.wowhead.com/item=210221",
