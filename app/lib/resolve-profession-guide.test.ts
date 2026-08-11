@@ -13,15 +13,24 @@ describe("resolveProfessionGuide", () => {
     });
   });
 
-  it("resuelve Alquimia Midnight como contenido provisional", () => {
+  it("resuelve Alquimia Midnight como Subida de nivel nativa", () => {
     expect(
       resolveProfessionGuide("midnight", "alchemy"),
     ).toMatchObject({
-      kind: "provisional",
+      kind: "nativa",
       tipo: "subida-de-nivel",
       path: "/expansion/midnight/profesion/alchemy",
-      mirrorUrl: "/guides-mirror/midnight/alchemy-guide/index.html",
-      aviso: true,
+      nativeId: "alchemy-midnight",
+    });
+  });
+
+  it("deja Recetas y conocimiento de Alquimia Midnight como vacío", () => {
+    expect(
+      resolveProfessionGuide("midnight", "alchemy", "recetas-y-conocimiento"),
+    ).toMatchObject({
+      kind: "vacio",
+      tipo: "recetas-y-conocimiento",
+      path: "/expansion/midnight/profesion/alchemy/recetas-y-conocimiento",
     });
   });
 
@@ -63,6 +72,15 @@ describe("resolveProfessionGuide", () => {
       kind: "vacio",
       tipo: "recetas-y-conocimiento",
       path: "/expansion/the-burning-crusade/profesion/alchemy/recetas-y-conocimiento",
+    });
+  });
+
+  it("resuelve Farming de Alquimia Midnight como vacío", () => {
+    expect(
+      resolveProfessionGuide("midnight", "alchemy", "farming"),
+    ).toMatchObject({
+      kind: "vacio",
+      tipo: "farming",
     });
   });
 
