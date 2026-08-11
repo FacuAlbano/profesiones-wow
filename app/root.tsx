@@ -30,7 +30,7 @@ export const links = () => [
 
 const DEFAULT_TITLE = "Profesiones WoW - Guías en español | eldonqu";
 const DEFAULT_DESCRIPTION =
-  "Guías de profesiones de World of Warcraft en español. La Guerra Interior y más expansiones.";
+  "Guías de profesiones de World of Warcraft en español. Midnight, The War Within y más expansiones.";
 
 export function meta() {
   return [

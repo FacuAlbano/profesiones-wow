@@ -38,7 +38,7 @@ const GUIA_SECTIONS = [
     ],
   },
   {
-    title: "Clásico / WotLK / Cataclysm",
+    title: "Classic / WotLK / Cataclysm",
     description: "Nivelado y tablas por expansión clásica.",
     links: [
       { label: "Cataclysm — nivelado y tablas", to: "/guia/cataclysm/alchemy-leveling-guide-cataclysm-classic/index.html" },

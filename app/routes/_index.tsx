@@ -13,7 +13,7 @@ export function meta({}: Route.MetaArgs) {
     {
       name: "description",
       content:
-        "Guías de profesiones de World of Warcraft en español. La Guerra Interior y más.",
+        "Guías de profesiones de World of Warcraft en español. Midnight, The War Within y más.",
     },
   ];
 }

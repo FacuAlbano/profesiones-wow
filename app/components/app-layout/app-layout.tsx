@@ -14,9 +14,9 @@ interface AppLayoutProps {
 }
 
 const NAV_ITEMS = [
-  { path: "/expansion/midnight", label: "Medianoche" },
-  { path: "/expansion/the-war-within", label: "La Guerra Interior" },
-  { path: "/expansion/classic", label: "Clásico" },
+  { path: "/expansion/midnight", label: "Midnight" },
+  { path: "/expansion/the-war-within", label: "The War Within" },
+  { path: "/expansion/classic", label: "Classic" },
   { path: "/expansion/the-burning-crusade", label: "TBC" },
   { path: "/expansion/mists-of-pandaria", label: "MoP" },
   { path: "/guia", label: "Guías" },
