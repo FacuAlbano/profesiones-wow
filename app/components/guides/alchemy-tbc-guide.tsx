@@ -1,11 +1,17 @@
 import type { ComponentProps } from "react";
 import { Link } from "react-router";
+import { TomTomMacro } from "~/components/guides/tomtom-macro";
 import { Card, CardContent } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
+import { WowheadEntityLink } from "~/components/wowhead-entity";
 import { WowheadItem as WowheadItemBase } from "~/components/wowhead-item";
 import { WowheadNpc as WowheadNpcBase } from "~/components/wowhead-npc";
 import { ALCHEMY_TBC_MATERIALS } from "~/lib/alchemy-tbc-materials";
 import { ALCHEMY_TBC_NPCS } from "~/lib/alchemy-tbc-npcs";
+
+const TBC_TRAINER_TOMTOM = `/way #1955 45.4 19.6 Lorokeem
+/way #1944 52.3 36.5 Boticario Antonivich
+/way #1944 53.6 65.8 Alquimista Gribble`;
 
 function WowheadItem(
   props: Omit<ComponentProps<typeof WowheadItemBase>, "materials" | "game">,
@@ -17,26 +23,41 @@ function WowheadNpc(props: Omit<ComponentProps<typeof WowheadNpcBase>, "npcs" | 
   return <WowheadNpcBase npcs={ALCHEMY_TBC_NPCS} game="tbc" {...props} />;
 }
 
-/** Secciones para el índice de la guía (igual que wow-professions: Table of Contents) */
+function RacialLink({ spellId, name }: { spellId: number; name: string }) {
+  return (
+    <WowheadEntityLink entity={{ tipo: "habilidad", id: spellId, juego: "tbc" }}>
+      {name}
+    </WowheadEntityLink>
+  );
+}
+
 export const ALCHEMY_TBC_INDEX = [
+  { id: "intro", label: "Introducción" },
+  { id: "instructores", label: "Entrenador y vendedor" },
   { id: "lista-compras", label: "Lista de compras" },
-  { id: "instructores", label: "Instructores de alquimia" },
   { id: "1-140", label: "1-140" },
   { id: "140-210", label: "140-210" },
   { id: "210-300", label: "210-300" },
   { id: "300-375", label: "300-375" },
+  { id: "waypoints", label: "TomTom y pin" },
+  { id: "raciales", label: "Raciales" },
+  { id: "cruces", label: "Otras guías" },
 ];
 
 export function AlchemyTBCGuide() {
   return (
-    <div className="space-y-8">
-      {/* Título principal (H1 equivalente) */}
+    <div className="space-y-8 animate-in fade-in duration-300">
       <section id="intro" className="scroll-mt-24">
         <h2 className="guide-division font-heading text-xl font-semibold sm:text-2xl">
-          Guía de nivelado Alquimia TBC Classic 1-375
+          Subida de nivel de Alquimia en The Burning Crusade
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
-          Esta guía de Alquimia para TBC Classic te muestra la forma más rápida de subir la profesión del 1 al 375 en Burning Crusade Classic. Recomendamos subir Alquimia y Herboristería a la vez para ahorrar mucho oro si puedes farmear las hierbas necesarias. Echa un vistazo a la guía de Herboristería TBC Classic si quieres subir Herboristería.
+          Esta guía te lleva Alquimia de The Burning Crusade del 1 al 375 por la ruta más
+          barata. Varias recetas se ponen amarillas o verdes, así que llevá un poco de más.
+        </p>
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
+          Alquimia va de la mano con Herboristería: si farmeás las hierbas vos, te ahorrás
+          mucho oro. Si no tenés Herboristería, comprá el lote de la lista de compras de una.
         </p>
       </section>
 
@@ -48,7 +69,9 @@ export function AlchemyTBCGuide() {
           Lista de compras
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          En la guía se usan muchas recetas amarillas, así que no ganarás puntos en cada elaboración. Añadí 10-20 hierbas de más en la mayoría, pero si tienes mala suerte puede que necesites alguna más.
+          En la guía se usan muchas recetas amarillas, así que no vas a ganar punto en cada
+          elaboración. Añadí 10-20 hierbas de más en la mayoría. No hay precios de oro acá
+          porque cambian todo el tiempo.
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Card className="card-faction border border-border">
@@ -104,44 +127,43 @@ export function AlchemyTBCGuide() {
       {/* Instructores - igual que Alchemy Trainers */}
       <section id="instructores" className="scroll-mt-24">
         <h2 className="guide-division font-heading text-xl font-semibold sm:text-2xl">
-          Instructores de alquimia
+          Entrenador y vendedor
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Puedes aprender Alquimia con cualquiera de los NPC indicados. También puedes preguntar a un guardia en cualquier ciudad por el instructor de Alquimia y se marcará con una bandera roja en el mapa.
+          En The Burning Crusade podés aprender Alquimia con cualquiera de estos NPC. También
+          podés preguntarle a un guardia en cualquier ciudad por el instructor y te lo marca
+          en el mapa.
+        </p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Oficial, Experto y Artesano se aprenden en cualquier ciudad. A 300, las dos
+          facciones también pueden ir con <WowheadNpc npcKey="lorokeem" />.
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Card className="card-faction border border-border">
             <CardContent className="p-4">
-              <h3 className="font-semibold text-foreground text-sm uppercase tracking-wider">Instructores clásicos (1-300)</h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                En Burning Crusade Classic puedes aprender Oficial, Experto y Artesano de Alquimia en cualquier ciudad. Ya no hace falta visitar instructores distintos.
-              </p>
-              <p className="mt-2 text-sm font-medium text-card-foreground">Horda:</p>
-              <ul className="mt-0.5 list-inside list-disc text-sm text-muted-foreground">
-                <li><WowheadNpc npcKey="camberon" /></li>
-                <li><WowheadNpc npcKey="benaWinterhoof" /></li>
-                <li><WowheadNpc npcKey="herbertHalsey" /></li>
-                <li><WowheadNpc npcKey="yelmak" /></li>
-              </ul>
-              <p className="mt-2 text-sm font-medium text-card-foreground">Alianza:</p>
-              <ul className="mt-0.5 list-inside list-disc text-sm text-muted-foreground">
-                <li><WowheadNpc npcKey="lucc" /></li>
-                <li><WowheadNpc npcKey="ainethil" /></li>
-                <li><WowheadNpc npcKey="lilyssiaNightbreeze" /></li>
-                <li><WowheadNpc npcKey="tallyBerryfizz" /></li>
+              <h3 className="font-semibold text-foreground text-sm uppercase tracking-wider">
+                Horda
+              </h3>
+              <ul className="mt-2 space-y-1 text-sm text-card-foreground">
+                <li>1-300: <WowheadNpc npcKey="yelmak" /></li>
+                <li>1-300: <WowheadNpc npcKey="benaWinterhoof" /></li>
+                <li>1-300: <WowheadNpc npcKey="herbertHalsey" /></li>
+                <li>1-300: <WowheadNpc npcKey="camberon" /></li>
+                <li>300-375: <WowheadNpc npcKey="apothecaryAntonivich" /></li>
               </ul>
             </CardContent>
           </Card>
           <Card className="card-faction border border-border">
             <CardContent className="p-4">
-              <h3 className="font-semibold text-foreground text-sm uppercase tracking-wider">Instructores TBC (300-375)</h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Puedes aprender la nueva Alquimia TBC con los instructores Maestros en Terrallende.
-              </p>
+              <h3 className="font-semibold text-foreground text-sm uppercase tracking-wider">
+                Alianza
+              </h3>
               <ul className="mt-2 space-y-1 text-sm text-card-foreground">
-                <li><strong>Ambas facciones:</strong> <WowheadNpc npcKey="lorokeem" /></li>
-                <li><strong>Horda:</strong> <WowheadNpc npcKey="apothecaryAntonivich" /></li>
-                <li><strong>Alianza:</strong> <WowheadNpc npcKey="alchemistGribble" /></li>
+                <li>1-300: <WowheadNpc npcKey="tallyBerryfizz" /></li>
+                <li>1-300: <WowheadNpc npcKey="lilyssiaNightbreeze" /></li>
+                <li>1-300: <WowheadNpc npcKey="ainethil" /></li>
+                <li>1-300: <WowheadNpc npcKey="lucc" /></li>
+                <li>300-375: <WowheadNpc npcKey="alchemistGribble" /></li>
               </ul>
             </CardContent>
           </Card>
@@ -150,14 +172,12 @@ export function AlchemyTBCGuide() {
 
       <Separator className="separator-faction" />
 
-      {/* Nivelado Alquimia TBC - Leveling TBC Alchemy */}
-      <section id="nivelado" className="scroll-mt-24">
+      <section id="1-140" className="scroll-mt-24">
         <h2 className="guide-division font-heading text-xl font-semibold sm:text-2xl">
-          Nivelado Alquimia TBC
+          1-140
         </h2>
 
-        {/* 1-60 */}
-        <div id="1-140" className="scroll-mt-24 mt-4">
+        <div className="mt-4">
           <p className="font-medium text-card-foreground">1 - 60</p>
           <p className="mt-1 text-sm text-muted-foreground">
             65x Poción de sanación menor — 65 <WowheadItem materialKey="peacebloom" />, 65 <WowheadItem materialKey="silverleaf" />, 65 <WowheadItem materialKey="emptyVial" />. Las necesitarás después, así que guárdalas todas.
@@ -225,10 +245,10 @@ export function AlchemyTBCGuide() {
       {/* Burning Crusade Classic (300-375) */}
       <section id="300-375" className="scroll-mt-24">
         <h2 className="guide-division font-heading text-xl font-semibold sm:text-2xl">
-          Burning Crusade Classic (300-375)
+          300-375
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Puedes aprender la nueva Alquimia TBC con los instructores Maestros en Terrallende.
+          Aprendé Alquimia de The Burning Crusade con los maestros de Terrallende.
         </p>
         <ul className="mt-1 list-inside list-disc text-sm text-muted-foreground">
           <li>Ambas facciones: <WowheadNpc npcKey="lorokeem" /></li>
@@ -271,16 +291,15 @@ export function AlchemyTBCGuide() {
             Al llegar a 325 de Alquimia y nivel 68, puedes iniciar una misión para aprender una de las tres especializaciones: Poción, Elixir o Transmutación.
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Para más información sobre cómo elegir especialización, consulta la guía:
+            Para elegir especialización, andá a{" "}
+            <Link
+              to="/expansion/the-burning-crusade/profesion/alchemy/especializaciones"
+              className="link-faction"
+            >
+              Especializaciones
+            </Link>
+            .
           </p>
-          <a
-            href="https://www.wow-professions.com/tbc/alchemy-specializations-tbc-classic"
-            rel="nofollow noopener noreferrer"
-            target="_blank"
-            className="no-icon link-faction text-sm"
-          >
-            Ver guía de especializaciones en inglés
-          </a>
         </div>
 
         {/* 330 - 335 */}
@@ -318,17 +337,83 @@ export function AlchemyTBCGuide() {
           </p>
         </div>
 
-        {/* Congratulations */}
         <p className="mt-8 text-sm text-muted-foreground">
-          ¡Enhorabuena por llegar a 375! Si crees que hay partes que se pueden mejorar o encuentras erratas, errores o cantidades de materiales incorrectas, envíanos feedback.
+          Listo: 375. Si ves cantidades raras o un tramo que se puede abaratar, avisá.
         </p>
+      </section>
 
-        {/* Volver arriba */}
-        <p className="mt-4">
-          <Link to="#intro" className="no-icon link-faction text-sm">
-            ↑ Volver arriba
-          </Link>
+      <Separator className="separator-faction" />
+
+      <section id="waypoints" className="scroll-mt-24">
+        <h2 className="guide-division font-heading text-xl font-semibold sm:text-2xl">
+          TomTom y pin
+        </h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Copiá el macro, pegalo en el chat y usá <code className="text-foreground">/ttpaste</code>{" "}
+          con TomTom para marcar a los maestros de Terrallende.
         </p>
+        <div className="mt-4">
+          <TomTomMacro macro={TBC_TRAINER_TOMTOM} />
+        </div>
+      </section>
+
+      <Separator className="separator-faction" />
+
+      <section id="raciales" className="scroll-mt-24">
+        <h2 className="guide-division font-heading text-xl font-semibold sm:text-2xl">
+          Raciales
+        </h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Los goblin tienen +5 de Alquimia con{" "}
+          <RacialLink spellId={69045} name="Es cuestión de química" />. Esa habilidad extra
+          deja las recetas naranjas más tiempo y te puede ahorrar elaboraciones.
+        </p>
+      </section>
+
+      <Separator className="separator-faction" />
+
+      <section id="cruces" className="scroll-mt-24">
+        <h2 className="guide-division font-heading text-xl font-semibold sm:text-2xl">
+          Otras guías
+        </h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          La Subida de nivel es la ruta 1→tope. Estos otros tipos todavía están vacíos o como
+          contenido provisional:
+        </p>
+        <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-card-foreground">
+          <li>
+            <Link
+              to="/expansion/the-burning-crusade/profesion/alchemy/recetas-y-conocimiento"
+              className="link-faction"
+            >
+              Recetas y conocimiento
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/expansion/the-burning-crusade/profesion/alchemy/especializaciones"
+              className="link-faction"
+            >
+              Especializaciones
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/expansion/the-burning-crusade/profesion/alchemy/farming"
+              className="link-faction"
+            >
+              Farming
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/expansion/the-burning-crusade/profesion/herbalism"
+              className="link-faction"
+            >
+              Herboristería en The Burning Crusade
+            </Link>
+          </li>
+        </ul>
       </section>
     </div>
   );

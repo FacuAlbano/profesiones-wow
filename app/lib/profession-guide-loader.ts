@@ -6,6 +6,7 @@ import {
   type ExpansionSlug,
   type ProfessionSlug,
 } from "~/lib/constants";
+import { classicHubRedirectPath } from "~/lib/classic-hub";
 import { parseGuideTipo, resolveProfessionGuide } from "~/lib/resolve-profession-guide";
 
 export function loadProfessionGuidePage(params: {
@@ -13,6 +14,14 @@ export function loadProfessionGuidePage(params: {
   profSlug: string;
   tipo?: string;
 }) {
+  const classicRedirect = classicHubRedirectPath(
+    params.slug,
+    params.profSlug,
+    params.tipo,
+  );
+  if (classicRedirect) {
+    throw redirect(classicRedirect);
+  }
   if (!EXPANSION_SLUGS.includes(params.slug as ExpansionSlug)) {
     throw new Response("Expansión no encontrada", { status: 404 });
   }
