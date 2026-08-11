@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="Midnight Enchanting specialization builds for Enchantment, Insight of Destruction, Shatter, and Magical Innovations. Step-by-step Knowledge Point allocation for selling enchants, Concentration crafting, and disenchanting." name="description"/>
+<meta content="Midnight Enchanting Specialization Guide &amp; Best Builds" property="og:title"/>
+<meta content="Midnight Enchanting specialization builds for Enchantment, Insight of Destruction, Shatter, and Magical Innovations. Step-by-step Knowledge Point allocation for selling enchants, Concentration crafting, and disenchanting." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/midnight/enchanting-specialization-guide-and-builds" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>Midnight Enchanting Specialization Guide &amp; Best Builds</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=QBFAsWqun7Ha6ESElGKuOHedQvsgqVXqDxtsg7PJ5oQ-1771996645.7998717-1.0.1.1-RhHOgh1rJMVJ.zpkY1BJFcFQT70j9QfJyjmp5ivKJXo" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--3">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#knowledge">Getting Knowledge Points</a></li>
+<li><a href="#timeline">Timeline &amp; Unlock Pace</a></li>
+<li><a href="#specs">Specialization Overview</a></li>
+<li><a href="#cheatsheet">Enchanting Slot Cheat Sheet</a></li>
+<li><a href="#builds">Builds &amp; Talent Trees</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">Midnight Enchanting Specialization Guide &amp; Best Builds</h1>
+<article>
+<p>This guide covers the four Enchanting specialization trees in Midnight: Enchantment, Insight of Destruction, Shatter, and Magical Innovations. I made builds for selling enchants, crafting with Concentration, and maximizing your disenchanting results.</p>
+<h2 class="line-header" id="knowledge">Getting Knowledge Points</h2>
+<p>This guide focuses purely on <b>builds</b> and where to put your points once you have them. If you need help finding points or need a leveling path, check out these guides:</p>
+<p class="text-align-center">
+<a class="gblock" href="../../midnight/enchanting-guide/index.html">
+        Recipes &amp; Knowledge Points
+    </a> <a class="gblock" href="../../guides/wow-enchanting-leveling-guide/index.html">
+        Leveling Guide (1 - 100)
+    </a>
+</p>
+<h2 class="line-header" id="timeline">Timeline &amp; Unlock Pace</h2>
+<p>You can get around 60-70 Knowledge Points on your first day from first crafts and one-time treasures, plus a few more if you have enough renown to buy books. After that, you'll earn about 17 points per week from weekly quests, treasure drops, disenchanting drops, and treatises.</p>
+<p>I wrote this guide based on that first 60-70 point mark, with suggestions for what to do as you gain more points over time.</p>
+<h2 class="line-header" id="specs">Specialization Overview</h2>
+<div class="table-container">
+<table class="tbl-desc">
+<thead>
+<tr>
+<th>Specialization</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><b>Elevating Equipment</b></td>
+<td>All enchants for gear and profession tools, organized by faction style (Thalassian, Amani, Haranir). Each style has sub-specs per slot group.</td>
+</tr>
+<tr>
+<td><b>Transitories, Tonics, and Tools</b></td>
+<td>Mana Oils, Combat Wands, Enchanting Rods, and Temporary Illusions.</td>
+</tr>
+<tr>
+<td><b>Disenchanting Delegate</b></td>
+<td>Better materials from disenchanting gear (Uncommon, Rare, and Epic).</td>
+</tr>
+<tr>
+<td><b>Spellbound Shatterer</b></td>
+<td>Crafting stat boosts: Multicraft, Ingenuity, Resourcefulness, and Concentration cost reduction.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 class="line-header" id="cheatsheet">Enchanting Slot Cheat Sheet</h2>
+<p>Enchants in Midnight are organized into themed categories that correspond to specialization skill bonuses:</p>
+<ul>
+<li>Amani Augments</li>
+<li>Haranir Heightening</li>
+<li>Thalassian Talents</li>
+</ul>
+<p>Pay attention to which category an enchant belongs to when planning your specializations. Each category has its own skill bonus node in the specialization tree, so investing in the right branch directly increases the quality of the enchants you craft in that category.</p>
+<p class="text-align-center"><img alt="midnight enchanting specialization slot cheat sheet" class="lightbox guide-img" height="882" src="../../images/midnight/enc-spec-helper.jpg" width="1138"/></p>
+<div class="tab-container">
+<div class="tabs">
+<button class="tab-button active" data-tab="tab-weapon">Weapon</button>
+<button class="tab-button" data-tab="tab-boots">Boots</button>
+<button class="tab-button" data-tab="tab-chest">Chest</button>
+<button class="tab-button" data-tab="tab-helm">Helm</button>
+<button class="tab-button" data-tab="tab-shoulder">Shoulders</button>
+<button class="tab-button" data-tab="tab-ring">Rings</button>
+<button class="tab-button" data-tab="tab-tool">Tools</button>
+</div>
+<div class="tab-content active" id="tab-weapon">
+<h3>Weapon Enchants</h3>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Recipe</th>
+<th>Effect</th>
+<th>Type</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236067" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Weapon - Berserker's Rage</a></td>
+<td>Proc: Haste buff</td>
+<td>Amani</td>
+<td>Trainer (20)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236066" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Weapon - Jan'alai's Precision</a></td>
+<td>Proc: Crit buff</td>
+<td>Amani</td>
+<td>Trainer (55)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236097" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Weapon - Arcane Mastery</a></td>
+<td>Proc: Mastery buff</td>
+<td>Thalassian</td>
+<td>Trainer (40)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236095" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Weapon - Acuity of the Ren'dorei</a></td>
+<td>Proc: Primary Stat buff</td>
+<td>Thalassian</td>
+<td>Vendor: Void Researcher Anomander (Voidstorm)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236065" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Weapon - Strength of Halazzi</a></td>
+<td>Proc: Bleed damage</td>
+<td>Amani</td>
+<td>Vendor: <a href="../../midnight/npc/magovu/index.html">Magovu</a> (Zul'Aman)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236094" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Weapon - Flames of the Sin'dorei</a></td>
+<td>Ignite + AoE on kill</td>
+<td>Thalassian</td>
+<td>Drop: Degentrius (Magisters' Terrace)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236080" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Weapon - Worldsoul Aegis</a></td>
+<td>Shield on damage taken (tank)</td>
+<td>Haranir</td>
+<td>Trainer (55)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236081" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Weapon - Worldsoul Tenacity</a></td>
+<td>Proc: Versatility buff</td>
+<td>Haranir</td>
+<td>Vendor: Naynar (Harandar)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236079" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Weapon - Worldsoul Cradle</a></td>
+<td>Heal absorb shield (healer)</td>
+<td>Haranir</td>
+<td>Drop: Chimaerus (The Dreamrift)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="tab-content" id="tab-boots">
+<h3>Boot Enchants</h3>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Recipe</th>
+<th>Effect</th>
+<th>Type</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236057" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Boots - Lynx's Dexterity</a></td>
+<td>+Avoidance, +Stamina</td>
+<td>Amani</td>
+<td>Spec: Elevating Equipment</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236072" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Boots - Shaladrassil's Roots</a></td>
+<td>+Leech, +Stamina</td>
+<td>Haranir</td>
+<td>Drop: Heavy Trunk (Delves)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236085" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Boots - Farstrider's Hunt</a></td>
+<td>+Speed, +Stamina</td>
+<td>Thalassian</td>
+<td>Vendor: Construct V'anore (Silvermoon City)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="tab-content" id="tab-chest">
+<h3>Chest Enchants</h3>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Recipe</th>
+<th>Effect</th>
+<th>Type</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236068" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Chest - Mark of the Rootwarden</a></td>
+<td>+Agility, +Speed</td>
+<td>Haranir</td>
+<td>Vendor: Naynar (Harandar)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236082" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Chest - Mark of the Magister</a></td>
+<td>+Intellect, +Mana%</td>
+<td>Thalassian</td>
+<td>Drop: Degentrius (Magisters' Terrace)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236054" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Chest - Mark of Nalorakk</a></td>
+<td>+Strength, +Stamina</td>
+<td>Amani</td>
+<td>Treasure: Den of Nalorakk</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236069" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Chest - Mark of the Worldsoul</a></td>
+<td>+Primary Stat</td>
+<td>Haranir</td>
+<td>Spec: Elevating Equipment</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="tab-content" id="tab-helm">
+<h3>Helm Enchants</h3>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Recipe</th>
+<th>Effect</th>
+<th>Type</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236083" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Helm - Rune of Avoidance</a></td>
+<td>+Avoidance</td>
+<td>Thalassian</td>
+<td>Trainer (15)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236084" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Helm - Empowered Rune of Avoidance</a></td>
+<td>+Avoidance, +Speed burst on kill</td>
+<td>Thalassian</td>
+<td>Drop: Heavy Trunk (Delves)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236055" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Helm - Hex of Leeching</a></td>
+<td>+Leech</td>
+<td>Amani</td>
+<td>Trainer (35)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236056" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Helm - Empowered Hex of Leeching</a></td>
+<td>+Leech, +Heal on kill</td>
+<td>Amani</td>
+<td>Drop: Heavy Trunk (Delves)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236070" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Helm - Blessing of Speed</a></td>
+<td>+Speed</td>
+<td>Haranir</td>
+<td>Trainer (50)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236071" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Helm - Empowered Blessing of Speed</a></td>
+<td>+Speed, +Vigor on kill</td>
+<td>Haranir</td>
+<td>Spec: Elevating Equipment</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="tab-content" id="tab-shoulder">
+<h3>Shoulder Enchants</h3>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Recipe</th>
+<th>Effect</th>
+<th>Type</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236075" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Shoulders - Nature's Grace</a></td>
+<td>+Avoidance</td>
+<td>Haranir</td>
+<td>Trainer (10)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236076" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Shoulders - Amirdrassil's Grace</a></td>
+<td>+Avoidance (higher)</td>
+<td>Haranir</td>
+<td>Drop: Heavy Trunk (Delves)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236090" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Shoulders - Thalassian Recovery</a></td>
+<td>+Leech</td>
+<td>Thalassian</td>
+<td>Trainer (50)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236091" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Shoulders - Silvermoon's Mending</a></td>
+<td>+Leech (higher)</td>
+<td>Thalassian</td>
+<td>Spec: Elevating Equipment</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236061" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Shoulders - Flight of the Eagle</a></td>
+<td>+Speed</td>
+<td>Amani</td>
+<td>Trainer (30)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236062" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Shoulders - Akil'zon's Swiftness</a></td>
+<td>+Speed (higher)</td>
+<td>Amani</td>
+<td>Drop: Heavy Trunk (Delves)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="tab-content" id="tab-ring">
+<h3>Ring Enchants</h3>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Recipe</th>
+<th>Effect</th>
+<th>Type</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236073" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Ring - Nature's Wrath</a></td>
+<td>+Crit</td>
+<td>Haranir</td>
+<td>Trainer (25)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236074" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Ring - Nature's Fury</a></td>
+<td>+Crit (higher)</td>
+<td>Haranir</td>
+<td>Drop: Heavy Trunk (Delves)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236059" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Ring - Eyes of the Eagle</a></td>
+<td>+Crit Effectiveness%</td>
+<td>Amani</td>
+<td>Drop: Zul'Aman Treasures</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236086" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Ring - Thalassian Haste</a></td>
+<td>+Haste</td>
+<td>Thalassian</td>
+<td>Trainer (1)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236088" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Ring - Silvermoon's Alacrity</a></td>
+<td>+Haste (higher)</td>
+<td>Thalassian</td>
+<td>Spec: Elevating Equipment</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236058" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Ring - Amani Mastery</a></td>
+<td>+Mastery</td>
+<td>Amani</td>
+<td>Trainer (45)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236060" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Ring - Zul'jin's Mastery</a></td>
+<td>+Mastery (higher)</td>
+<td>Amani</td>
+<td>Spec: Elevating Equipment</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236087" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Ring - Thalassian Versatility</a></td>
+<td>+Vers</td>
+<td>Thalassian</td>
+<td>Trainer (5)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236089" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Ring - Silvermoon's Tenacity</a></td>
+<td>+Vers (higher)</td>
+<td>Thalassian</td>
+<td>Vendor: <a href="../../midnight/npc/caeris-fairdawn/index.html">Caeris Fairdawn</a> (Eversong Woods)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="tab-content" id="tab-tool">
+<h3>Tool Enchants</h3>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Recipe</th>
+<th>Effect</th>
+<th>Type</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236063" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Tool - Amani Perception</a></td>
+<td>+Perception</td>
+<td>Amani</td>
+<td>Vendor: <a href="../../midnight/npc/magovu/index.html">Magovu</a> (Zul'Aman)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236064" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Tool - Amani Resourcefulness</a></td>
+<td>+Resourcefulness</td>
+<td>Amani</td>
+<td>Spec: Elevating Equipment</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236077" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Tool - Haranir Finesse</a></td>
+<td>+Finesse</td>
+<td>Haranir</td>
+<td>Spec: Elevating Equipment</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236078" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Tool - Haranir Multicrafting</a></td>
+<td>+Multicrafting</td>
+<td>Haranir</td>
+<td>Vendor: Naynar (Harandar)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236093" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Tool - Ren'dorei Ingenuity</a></td>
+<td>+Ingenuity</td>
+<td>Thalassian</td>
+<td>Vendor: Void Researcher Anomander (Voidstorm)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1236092" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Tool - Sin'dorei Deftness</a></td>
+<td>+Deftness</td>
+<td>Thalassian</td>
+<td>Spec: Elevating Equipment</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<h2 class="line-header" id="builds">Builds &amp; Talent Trees</h2>
+<h3>Which Build Should You Choose?</h3>
+<p>I made 3 builds, each for a different playstyle:</p>
+<ul class="minimal-list">
+<li><b>Concentration Build:</b> This is a pretty basic build for those who just want a simple lazy gold making setup. You craft one enchant every few days using Concentration, then sell it.</li>
+<li><b>Selling Enchants:</b> This build focuses on selling enchants in large quantities on the Auction House.</li>
+<li><b>Disenchanting Build:</b> Focuses on getting higher quality materials from breaking down gear.</li>
+</ul>
+<p>Click on the tabs below to see the detailed guides. I will explain exactly where to spend your points step-by-step.</p>
+<div class="tab-container build-tabs">
+<div class="tabs">
+<div class="tab-button active" data-tab="rec">
+<span class="tab-title">Concentration Build</span>
+</div>
+<div class="tab-button" data-tab="sell">
+<span class="tab-title">Selling Enchants</span>
+</div>
+<div class="tab-button" data-tab="orders">
+<span class="tab-title">Disenchanting</span>
+</div>
+</div>
+<!-- 1. ENCHANT SCROLLS BUILD -->
+<div class="tab-content active" id="rec">
+<h3>Concentration Build</h3>
+<p>This build is for players who don't want to babysit the Auction House. The idea is simple: wait for your Concentration to fill up, craft one high-quality enchant, and sell it. You only need to log in every few days to do this, so it's basically free gold for minimal effort.</p>
+<h3 class="line-header">Profession Gear</h3><p>When starting out, the green profession tools and accessories are fine as a starting point, but make sure to grab a tool with <b>Ingenuity</b> on it.</p><p><b>Enchants don't benefit from Multicraft!</b></p><h3 class="line-header">0-50 points</h3><ol class="step-list">
+<li>Put 20 points into Spellbound Shatterer. The Concentration bonuses max out at 20, so you don't need more here.</li>
+<li>Put 30 points into Infinite Ingenuity.</li></ol><p>This is your basic setup. You'll get the most out of your Concentration this way, with extra Ingenuity procs to reduce your Concentration costs.</p><p class="text-align-center"><img alt="Enchanting Concentration build Infinite Ingenuity spec tree" class="lightbox guide-img" height="882" src="../../images/midnight/enc-spec-1-conc.jpg" width="1138"/></p>
+<!-- Phase 2 -->
+<h3 class="line-header">Getting Recipes</h3><p>Now you need to get recipes to actually use your Concentration on. <b>Check the cheat sheet above</b> for which enchants are in which tree and pick the ones you want to focus on. It's hard to say which ones will be the most profitable until a few days have passed after the Midnight launch, but it's probably best to focus on <b>Weapon/Ring/Chest</b> or <b>Helm/Shoulder/Boots</b> first since those are more popular than <b>Profession Tool</b> enchants.</p><p><b>You don't necessarily need to spend Knowledge Points to unlock recipes</b> in the Elevating Equipment tree. There are a lot of recipes from vendors and the Auction House.</p><p>But, if you want to unlock recipes in the specialization tree, here is an example of how to spend your points:</p><p>This is how you would unlock <a class="rare" href="https://www.wowhead.com/spell=1236071" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Helm - Empowered Blessing of Speed</a>.</p><p class="text-align-center"><img alt="Enchanting Concentration build recipe unlock path" class="lightbox guide-img" height="882" src="../../images/midnight/enc-spec-1-conc-3.jpg" width="1138"/></p><h3 class="line-header">Getting Resourcefulness</h3><p>Once you have one or multiple recipes unlocked, you can start focusing on getting Resourcefulness to save on materials and increase your profit margin.</p><p class="text-align-center"><img alt="Enchanting Concentration build Resourcefulness path" class="lightbox guide-img" height="882" src="../../images/midnight/enc-spec-1-conc-2.jpg" width="1138"/></p></div>
+<div class="tab-content" id="sell">
+<h3>Selling Enchants Build</h3>
+<p>This build is for players who want to craft and sell enchants in bulk on the Auction House. Instead of relying on Concentration for one big craft every few days, you invest heavily into one enchant category so you can mass-produce Silver or Gold quality enchants without it.</p><h3 class="line-header">Pick Your Focus</h3><p>First, pick which enchant category you want to focus on. Check the cheat sheet above to see which enchants belong to which tree. <b>Weapon/Ring/Chest</b> or <b>Helm/Shoulder/Boots</b> are usually the best picks because more players need those. Profession Tool enchants sell too, but the market is smaller.</p><p>Not sure which one to pick? Check Wowhead and IcyVeins BiS lists and see which enchants show up the most.</p><h3 class="line-header">0-50 Points</h3><ol class="step-list">
+<li>Put 30 points into the Elevating Equipment root node.</li>
+<li>Put 20 points into the sub-spec you want to focus on.</li>
+</ol><div class="alert-box notice">
+<p>In this <b>example</b>, I'm focusing on Thalassian enchants. Just replicate the same steps for the other sub-specs if you want to focus on those instead.</p>
+</div><p class="text-align-center"><img alt="Enchanting selling enchants build Elevating Equipment tree" class="lightbox guide-img" height="882" src="../../images/midnight/enc-spec-3-1.jpg" width="1138"/></p><h3 class="line-header">Next Steps</h3><p>After your first 50 points, you have two paths depending on what's selling.</p><h4>Option A: Stay Silver, Get Resourcefulness</h4><p>If Silver quality enchants are already profitable, stop investing in Elevating Equipment for now. Put your next points into Spellbound Shatterer to unlock Resourcefulness. This saves you materials on every craft, which adds up fast when you're mass-producing.</p><p>Remember, the Spellbound Shatterer buff is not passive. You need to use <a class="white" href="https://www.wowhead.com/spell=1235731" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_spellboundshatterer.jpg"/>Shatter Essence</a> before crafting enchants to activate it.</p><p class="text-align-center"><img alt="Enchanting selling enchants Silver Quality Resourcefulness path" class="lightbox guide-img" height="882" src="../../images/midnight/enc-spec-1-2.jpg" width="1138"/></p><h4>Option B: Push for Gold Quality</h4><p>If you want to craft Gold quality enchants without Concentration, you need to finish the final sub-specialization in your chosen branch and get 3 blue-quality profession gear pieces. This takes more points upfront but lets you sell at a premium.</p><p class="text-align-center"><img alt="Enchanting selling enchants Gold Quality specialization path" class="lightbox guide-img" height="882" src="../../images/midnight/enc-spec-3-2.jpg" width="1138"/></p></div>
+<!-- 3. DISENCHANTING -->
+<div class="tab-content" id="orders">
+<h3>Disenchanting Build</h3>
+<p>If you want to make gold without actually crafting enchants, this is the build to go for. Disenchanting lets you break down gear into raw materials and sell them. Early in the expansion, these materials go for crazy prices because everyone needs enchants but nobody has the mats yet. Even weeks later, there's steady demand.</p><h3 class="line-header">Skill &amp; Gear</h3><p>Disenchanting ignores all your crafting stats. Resourcefulness, multicraft, ingenuity. None of it matters here. The only stat that affects your results is raw <b>profession skill</b>. More skill means a higher chance of getting rank 2 materials instead of rank 1. Since rare and epic tools both give <b>+18 skill</b>, don't bother with an epic tool for this build. A rare rod plus both rare accessories gives you <b>+40 skill</b> and that's all you need.</p><h3 class="line-header">Where to Spend Points</h3><ol class="step-list">
+<li>Put 30 points into <b>Disenchanting Delegate</b> to unlock all three sub-specializations.</li>
+<li>Pick the sub-spec that matches what you plan to disenchant most (see below).</li>
+</ol><h4>Sub-Specs (30 each)</h4><ul class="minimal-list">
+<li><b>Dust Deliverer</b> - For uncommon (green) gear</li>
+<li><b>Shard Supplier</b> - For rare (blue) gear</li>
+<li><b>Crystal Collector</b> - For epic (purple) gear</li>
+</ul><p>That's <b>60</b> points to get rolling with one sub-spec. I recommend working toward all three over time. You never know which material will sell best on any given week. In The War Within, dust was king early on but shard prices overtook it later. Having all three unlocked means you can always pivot to whatever is most profitable. The full tree costs <b>120</b> points, but enchanters earn knowledge fast thanks to all the Gleeful Glamour first-craft bonuses.</p><p class="text-align-center"><img alt="Enchanting Disenchanting build specialization tree" class="lightbox guide-img" height="882" src="../../images/midnight/enc-spec-2.jpg" width="1138"/></p><h3 class="line-header">Where to Get Items</h3><p>Don't buy gear off the AH to disenchant. It's almost never worth it. Instead, craft cheap items on an alt with Tailoring or Leatherworking and mail them over. For dust, green profession accessories are dirt cheap to make. For shards, basic blue BOE armor works well. </p></div>
+</div>
+<!-- End Wrapper -->
+</article>
+</main>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="This MoP Classic Leatherworking leveling guide will show you the fastest and cheapest way to level Leatherworking up from 1 to 600 in MoP Classic." name="description"/>
+<meta content="MoP Classic Leatherworking Leveling Guide 1-600" property="og:title"/>
+<meta content="This MoP Classic Leatherworking leveling guide will show you the fastest and cheapest way to level Leatherworking up from 1 to 600 in MoP Classic." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/mop/leatherworking-leveling-guide-mop-classic" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>MoP Classic Leatherworking Leveling Guide 1-600</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=siGFO4skJsbZDtUhYsKyejWYvn5kRmgN.PEEmLH7U3E-1771996780.1257646-1.0.1.1-LWxLGq7MYM.nNeB2ZQxnX8PUjLn.RoFAjtODOvSsE4o" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--4">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#shopping-list">Shopping List</a></li>
+<li><a href="#leatherworking-trainers">Leatherworking Trainers</a></li>
+<li><a href="#Apprentice">1-55</a></li>
+<li><a href="#Journeyman">55-135</a></li>
+<li><a href="#Expert">135-205</a></li>
+<li><a href="#Artisan">205-300</a></li>
+<li><a href="#master">300-350</a></li>
+<li><a href="#grand-master">350-435</a></li>
+<li><a href="#435">435-500</a></li>
+<li><a href="#mop-classic-leatherworking">500-600</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">MoP Classic Leatherworking Leveling Guide 1-600</h1>
+<article>
+<p><a name="top"></a><img align="left" height="64" src="../../images/icons/professions/leatherworking.png" style="margin-right: 8px;" width="64"><a name="top"></a>This MoP Classic Leatherworking leveling guide will show you the fastest and cheapest way to level Leatherworking up from 1 to 600 in Mists of Pandaria Classic.</img></p>
+<h2 class="gtitle" id="shopping-list">Shopping List</h2>
+<p>This is the list of the approximate materials required to level MoP Classic Leatherworking up to 600.</p>
+<h4>Classic</h4>
+<ul>
+<li>57x <a class="white" href="https://www.wowhead.com/mop-classic/item=2934" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_pelt_bear_ruin_05.jpg">Ruined Leather Scraps</img></a></li>
+<li>300x <a class="white" href="https://www.wowhead.com/mop-classic/item=2318" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_03.jpg">Light Leather</img></a></li>
+<li>15x <a class="white" href="https://www.wowhead.com/mop-classic/item=4232" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_pelt_boar_ruin_02.jpg"/>Medium Hide</a> - If one hide costs more than around 15 Medium Leather, just buy an extra 205x <a class="white" href="https://www.wowhead.com/mop-classic/item=2319" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_05.jpg"/>Medium Leather</a> instead.</li>
+<li>110x <a class="white" href="https://www.wowhead.com/mop-classic/item=2319" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_05.jpg">Medium Leather</img></a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/mop-classic/item=4235" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_pelt_wolf_ruin_03.jpg">Heavy Hide</img></a></li>
+<li>195x <a class="white" href="https://www.wowhead.com/mop-classic/item=4234" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_07.jpg">Heavy Leather</img></a></li>
+<li>410x <a class="white" href="https://www.wowhead.com/mop-classic/item=4304" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_08.jpg">Thick Leather</img></a></li>
+<li>426x <a class="white" href="https://www.wowhead.com/mop-classic/item=8170" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_02.jpg">Rugged Leather</img></a></li>
+</ul>
+<h4>TBC</h4>
+<ul>
+<li>280x <a class="white" href="https://www.wowhead.com/mop-classic/item=21887" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_10.jpg">Knothide Leather</img></a></li>
+<li>32x <a class="white" href="https://www.wowhead.com/mop-classic/item=25700" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_monsterscales_04.jpg">Fel Scales</img></a> or another 110x <a class="white" href="https://www.wowhead.com/mop-classic/item=21887" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_10.jpg">Knothide Leather</img></a>. Check both and buy the cheaper one.</li>
+</ul>
+<h4>WotLK</h4>
+<ul>
+<li>276x <a class="white" href="https://www.wowhead.com/mop-classic/item=33568" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_15.jpg"/>Borean Leather</a></li>
+</ul>
+<h4>Cataclysm</h4>
+<ul>
+<li>485x <a class="white" href="https://www.wowhead.com/mop-classic/item=52976" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/item_savageleather.jpg"/>Savage Leather</a></li>
+<li>2x <a class="white" href="https://www.wowhead.com/mop-classic/item=52325" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_volatilefire.jpg"/>Volatile Fire</a></li>
+<li>2x <a class="white" href="https://www.wowhead.com/mop-classic/item=52328" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_volatileair.jpg"/>Volatile Air</a></li>
+<li>2x <a class="white" href="https://www.wowhead.com/mop-classic/item=52326" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_volatilewater.jpg"/>Volatile Water</a></li>
+<li>26x <a class="white" href="https://www.wowhead.com/mop-classic/item=52327" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_volatileearth.jpg"/>Volatile Earth</a></li>
+</ul>
+<h4>MoP Classic</h4>
+<ul>
+<li>100x <a class="white" href="https://www.wowhead.com/mop-classic/item=72162" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_18.jpg"/>Sha-Touched Leather</a></li>
+<li>350x <a class="white" href="https://www.wowhead.com/mop-classic/item=72120" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tradeskill_skinning_shaleatherscraps.jpg"/>Mist-Touched Leather</a></li>
+<li>1x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76061" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_spiritofharmony_2.jpg"/>Spirit of Harmony</a></li>
+</ul>
+<h2 class="gtitle" id="leatherworking-trainers">Leatherworking trainers</h2>
+<p>You can learn Leatherworking from any of these NPCs below.</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>Horde</th>
+<th>Alliance</th>
+<th>Both Factions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Orgrimmar: <a href="https://www.wowhead.com/wotlk/npc=3365" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Karolek</a></td>
+<td>Stormwind City: <a href="https://tbc.wowhead.com/wotlk/npc=5564" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Simon Tanner</a></td>
+<td rowspan="4" style="vertical-align: top;">Dalaran: <a href="https://www.wowhead.com/mop-classic/npc=28700" rel="nofollow noopener noreferrer" target="_blank">Diane Cannings</a></td>
+</tr>
+<tr>
+<td>Undercity: <a href="https://www.wowhead.com/wotlk/npc=4588" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Arthur Moore</a></td>
+<td>Ironforge: <a href="https://www.wowhead.com/wotlk/npc=5127" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Fimble Finespindle</a></td>
+</tr>
+<tr>
+<td>Thunder Bluff: <a href="https://www.wowhead.com/wotlk/npc=3007" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Una</a></td>
+<td>Darnassus: <a href="https://www.wowhead.com/wotlk/npc=4212" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Telonis</a></td>
+</tr>
+<tr>
+<td>Silvermoon City: <a href="https://www.wowhead.com/wotlk/npc=16688" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Lynalis</a></td>
+<td>The Exodar: <a href="https://www.wowhead.com/wotlk/npc=16728" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Akham</a></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3>Recommended Trainer</h3>
+<p>I recommend learning Leatherworking from <a href="https://www.wowhead.com/mop-classic/npc=28700" rel="nofollow noopener noreferrer" target="_blank">Diane Cannings</a> in Dalaran. The nearby supply vendor doesn’t sell Cataclysm recipes, so you won’t have to click through extra pages to reach the vendor materials.</p>
+<p>The Auction House NPC <a href="https://www.wowhead.com/mop-classic/npc=35607" rel="nofollow noopener noreferrer" target="_blank">Reginald Arcfire</a> and the mailbox are also close by, so you can grab materials from the Auction House without running around too much.</p>
+<p>If you have access to the Vale of Eternal Blossoms, just use the portal to Dalaran in the Shrine of Seven Stars or Shrine of Two Moons.</p>
+<h2 class="gtitle" id="Apprentice">Leveling Cataclysm Classic Leatherworking</h2>
+<h3 class="gdskill">1 - 55</h3>
+<div class="alert-box notice"><b>NOTE:</b> You can buy the <b>threads, dyes, and salt</b> from Leatherworking Supply vendors near your trainer. Don't buy them from the Auction House, they are more expensive there.</div>
+<ul class="gd">
+<li><b>1-20</b><br/>
+		19x <a class="white" href="https://www.wowhead.com/mop-classic/spell=2881" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_03.jpg">Light Leather</img></a> - 57 Ruined Leather Scraps
+<p>Make the next recipe if you don't have Ruined Leather Scraps.</p>
+</li></ul>
+<ul class="gd">
+<li><b>20-45 or 1-45</b><br/>
+		30x <a class="white" href="https://www.wowhead.com/mop-classic/spell=2152" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_armorkit_17.jpg"/>Light Armor Kit</a> - 30 Light Leather</li>
+</ul>
+<ul class="gd">
+<li><b>45-55</b><br/>
+		15x <a class="white" href="https://www.wowhead.com/mop-classic/spell=9058" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helmet_48.jpg"/>Handstitched Leather Cloak</a> - 30 Light Leather, 15 Coarse Thread</li>
+</ul>
+<h2 class="gtitle" id="Journeyman">Journeyman Leatherworking</h2>
+<p>Visit your trainer and learn Journeyman Leatherworking. (Requires level 10)</p>
+<ul class="gd">
+<li><b>55-100</b><br/>
+<p>50x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=3756" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_gauntlets_05.jpg"/>Embossed Leather Gloves</a> - 150 Light Leather, 100 Coarse Thread</p>
+</li>
+</ul>
+<ul class="gd">
+<li><b>100-115</b><br/>
+<p>15x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=3763" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_belt_04.jpg">Fine Leather Belt</img></a> - 90x Light Leather, 30x Coarse Thread</p>
+<p><b>Keep all of these!</b> Don't sell or disenchant them. You'll need them later at 135.</p> </li>
+</ul>
+<ul class="gd">
+<li><b>115-122</b><br/>
+<p>15x <a class="white" href="https://www.wowhead.com/mop-classic/spell=3817" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_pelt_bear_02.jpg"/>Cured Medium Hide</a> - 15x Medium Hide, 15x Salt</p>
+<p><b>Keep these too!</b> Make a few more from the previous recipe up to 120 if you couldn't get any Medium Hide.</p> </li>
+</ul>
+<ul class="gd">
+<li><b>122-135</b><br/>
+<p>15x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=2167" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_boots_05.jpg"/>Dark Leather Boots</a> - 60 Medium Leather, 30 Fine Thread, 15 Gray Dye</p>
+</li>
+</ul>
+<h2 class="gtitle" id="Expert">Expert Leatherworking</h2>
+<p>Visit your trainer and learn Expert Leatherworking. (Requires level 20)</p>
+<h3 class="gdskill">135 - 155</h3>
+<ul class="gd">
+<li><b>135-150</b><br>
+<p>15x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=3766" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_belt_03.jpg"/>Dark Leather Belt</a> - 15x Fine Leather Belt, 15x Cured Medium Hide, 30x Fine Thread, 15x Gray Dye</p>
+<p>Make this if you couldn't get Medium Hides:</p><p>17x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=7135" rel="nofollow" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_pants_09.jpg"/>Dark Leather Pants</a> - 204x Medium Leather, 17x Gray Dye, 17x Fine Thread</p>
+</br></li></ul>
+<ul class="gd">
+<li><b>150-155</b><br>
+<p>7x <a class="white" href="https://www.wowhead.com/mop-classic/spell=20649" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_07.jpg">Heavy Leather</img></a> - 35 Medium Leather</p>
+<p>You can also make:</p><p>7x <a class="white" href="https://www.wowhead.com/mop-classic/spell=23190" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_throwingball_01.jpg"/>Heavy Leather Ball</a> - 14 Heavy Leather, 7 Fine Thread</p><p><a class="white" href="https://www.wowhead.com/mop-classic/item=18731" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Pattern: Heavy Leather Ball</a> is sold by <a href="https://www.wowhead.com/mop-classic/npc=5128" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" height="15" src="../../images/icons/alliance.png" width="15"/>Bombus Finespindle</a> in Ironforge and by <a href="https://www.wowhead.com/mop-classic/npc=3366" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" height="15" src="../../images/icons/horde.png" width="15"/>Tamar</a> in Orgrimmar.</p>
+</br></li></ul>
+<h3 class="gdskill">155 - 200</h3>
+<p>If you have no Heavy Hides, follow the "Leveling with Heavy Leather" route. If you get some, you can mix both routes. For example, if you get around 5 Heavy Hides, make 5x Cured Heavy hides, swap to the other route, then you you can stop making Dusky Bracers at 195 and switch to Guardian Gloves.</p>
+<p>To decide which path is cheaper, compare the price of 20x <a class="white" href="https://www.wowhead.com/mop-classic/item=4235" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_pelt_wolf_ruin_03.jpg">Heavy Hide</img></a> to the combined price of around 320x <a class="white" href="https://www.wowhead.com/mop-classic/item=4234" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_07.jpg">Heavy Leather</img></a> and 10x <a class="zold" href="https://www.wowhead.com/mop-classic/item=1206" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_emerald_02.jpg"/>Moss Agate</a>.</p>
+<div class="tab-container">
+<div class="tabs">
+<button class="tab-button active" data-tab="tab1-155-200">Cured Heavy Hide</button>
+<button class="tab-button" data-tab="tab2-155-200">Leveling with Heavy Leather</button>
+</div>
+<div class="tab-content active" id="tab1-155-200">
+<ul class="gd">
+<li><b>155-165</b><br/>
+		  20x <a class="white" href="https://www.wowhead.com/mop-classic/spell=3818" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_pelt_wolf_02.jpg"/>Cured Heavy Hide</a> - 20 Heavy Hide, 60 Salt
+<p>You will need the Cured Heavy Hides later.</p><p><a class="white" href="https://www.wowhead.com/mop-classic/item=4289" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_dust_02.jpg"/>Salt</a> is sold by the Leatherworking or Trade supply vendor near your trainer.</p>
+</li>
+</ul><ul class="gd">
+<li><b>165-180</b><br/>
+15x <a class="white" href="https://www.wowhead.com/mop-classic/spell=3780" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_armorkit_16.jpg"/>Heavy Armor Kit</a> - 75 Heavy Leather, 15 Fine Thread</li>
+</ul><ul class="gd">
+<li><b>180-190</b><br/>
+10x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=7151" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_shoulder_08.jpg"/>Barbaric Shoulders</a> - 80 Heavy Leather, 10 Cured Heavy Hide, 20 Fine Thread</li>
+</ul><ul class="gd">
+<li><b>190-200</b><br/>
+10x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=7156" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_gauntlets_05.jpg"/>Guardian Gloves</a> - 40 Heavy Leather, 10 Cured Heavy Hide, 10 Silken Thread</li>
+</ul>
+</div><div class="tab-content" id="tab2-155-200">
+<ul class="gd">
+<li><b>155-180</b><br/>
+25x <a class="white" href="https://www.wowhead.com/mop-classic/spell=3780" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_armorkit_16.jpg"/>Heavy Armor Kit</a> - 175 Heavy Leather</li>
+</ul><ul class="gd">
+<li><b>180-190</b><br/>
+10x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=7149" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_pants_12.jpg"/>Barbaric Leggings</a> - 100x Heavy Leather, 20x Fine Thread, 10x Moss Agate<p><a class="white" href="https://www.wowhead.com/mop-classic/item=5973" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Pattern: Barbaric Leggings</a> is <a href="https://www.wowhead.com/mop-classic/item=5973/pattern-barbaric-leggings#sold-by" rel="nofollow noopener noreferrer" target="_blank">sold by these NPCs</a>.</p><p>If 1x <a class="zold" href="https://www.wowhead.com/mop-classic/item=1206" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_emerald_02.jpg"/>Moss Agate</a> is a lot more expensive than 6x <a class="white" href="https://www.wowhead.com/mop-classic/item=4234" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_07.jpg"/>Heavy Leather</a>, you can swap to the next recipe at 185.</p>
+</li>
+</ul><ul class="gd">
+<li><b>185-200</b><br/>
+15x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=9201" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_bracer_07.jpg"/>Dusky Bracers</a> - 240x Heavy Leather, 15x Black Dye, 30x Silken Thread<p><a class="white" href="https://www.wowhead.com/mop-classic/item=2325" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_63.jpg"/>Black Dye</a> is sold by the Leatherworking supply vendor near your trainer.</p>
+</li>
+</ul>
+</div> </div>
+<h2 class="gtitle" id="Artisan">Artisan Leatherworking</h2>
+<p>Visit your trainer and learn Artisan Leatherworking. (Requires level 35)</p>
+<h3 class="gdskill">200 - 300</h3>
+<ul class="gd">
+<li><b>200-205</b><br>
+		5x <a class="white" href="https://www.wowhead.com/mop-classic/spell=10487" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_armorkit_07.jpg">Thick Armor Kit</img></a> - 25 Thick Leather, 5 Silken Thread</br></li>
+</ul>
+<ul class="gd">
+<li><b>205-235</b><br>
+	35x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=10507" rel="nofollow" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_belt_24.jpg"/>Nightscape Headband</a> - 175x Thick Leather, 70x Silken Thread
+<p>These require a bit more Silken Thread than the Thick Armor Kits, but you can vendor or Disenchant the Headbands for much more, making them cheaper overall.</p>
+</br></li></ul>
+<ul class="gd">
+<li><b>235-250</b><br>
+		15x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=10548" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_pants_11.jpg"/>Nightscape Pants</a> - 210 Thick Leather, 60 Silken Thread</br></li>
+</ul>
+<ul class="gd">
+<li><b>250-265</b><br>
+		18x <a class="white" href="https://www.wowhead.com/mop-classic/spell=19058" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_armorkit_09.jpg"/>Rugged Armor Kit</a> - 90x Rugged Leather</br></li>
+</ul>
+<ul class="gd">
+<li><b>265-290</b><br>
+		27x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=19052" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_bracer_07.jpg"/>Wicked Leather Bracers</a> - 216x Rugged Leather, 27x Black Dye, 27x Rune Thread</br></li>
+</ul>
+<ul class="gd">
+<li><b>290 - 300</b><br>
+		10x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=19071" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_bandage_13.jpg"/>Wicked Leather Headband</a> - 120 Rugged Leather, 10 Black Dye, 10 Rune Thread</br></li>
+</ul>
+<h2 class="gtitle" id="master">Master Leatherworking (300-350)</h2>
+<p>Visit your trainer and learn Master Leatherworking. (Requires level 50)</p>
+<h3 class="gdskill">300 - 325</h3>
+<p>Before making the armor kits, turn all your <a class="white" href="https://www.wowhead.com/mop-classic/item=25649" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_09.jpg">Knothide Leather Scraps</img></a> into <a class="white" href="https://www.wowhead.com/mop-classic/spell=32454" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_10.jpg">Knothide Leather</img></a> if you farmed the leathers.</p>
+<p>30x <a class="white" href="https://www.wowhead.com/mop-classic/item=25650" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_armorkit_24.jpg">Knothide Armor Kit</img></a> - 120 Knothide Leather</p>
+<p>The recipe will be yellow, so you might have to make a few more.</p>
+<h3 class="gdskill">325 - 335</h3>
+<p>54x <a class="white" href="https://www.wowhead.com/mop-classic/spell=32455" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_11.jpg">Heavy Knothide Leather</img></a> - 270 Knothide Leather</p>
+<p>You only have to make 32 if you bought <a class="white" href="https://www.wowhead.com/mop-classic/item=25700" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_monsterscales_04.jpg">Fel Scales</img></a>.</p>
+<h3 class="gdskill">335 - 350</h3>
+<p>Craft one of these depending on whether you bought any Fel Scales or not:</p>
+<p><b>Fel Scales:</b> 16x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=32469" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_boots_chain_01.jpg"/>Scaled Draenic Boots</a> - 32x Heavy Knothide Leather, 32x Fel Scales, 48x Rune Thread<br/>
+<b>Knothide Leather:</b> 18x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=32473" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_chest_leather_07.jpg"/>Thick Draenic Vest</a> - 54x Heavy Knothide Leather, 54x Rune Thread
+</p>
+<p>They will be yellow for the last few points, so you might have to make a few more to reach 350.</p>
+<h2 class="gtitle" id="grand-master">Grand Master Leatherworking</h2>
+<p>Visit your trainer and learn Grand Master Leatherworking. (Requires level 65)</p>
+<h3 class="gdskill">350 - 435</h3>
+<p>Transform all your <a class="white" href="https://www.wowhead.com/mop-classic/item=33567" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_16.jpg">Borean Leather Scraps</img></a> into <a class="white" href="https://www.wowhead.com/mop-classic/spell=64661" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_15.jpg">Borean Leather</img></a> if you are a Skinner. Do not right-click the Leather Scraps, there is a recipe that you can learn from your trainer that gives you skill-ups; use that. It's basically free skill points.</p>
+<ul class="gd">
+<li><b>350-380</b><br>
+		32x <a class="white" href="https://www.wowhead.com/mop-classic/spell=50962" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_armorkit_28.jpg"/>Borean Armor Kit</a> - 128x Borean Leather</br></li>
+</ul>
+<ul class="gd">
+<li><b>380-386</b><br>
+		6x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=50948" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_boots_04.jpg">Arctic Boots</img></a> - 48 Borean Leather</br></li>
+</ul>
+<ul class="gd">
+<li><b>386-390</b><br>
+		4x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=50947" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_gauntlets_05.jpg">Arctic Gloves</img></a> - 40 Borean Leather</br></li>
+</ul>
+<ul class="gd">
+<li><b>390-398</b><br/>
+		10x <a class="white" href="https://www.wowhead.com/mop-classic/spell=50936" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_19.jpg"/>Heavy Borean Leather</a> - 60x Borean Leather</li>
+</ul>
+<ul class="gd">
+<li><b>398-400</b><br/>
+<p>2x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=50963" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_armorkit_30.jpg"/>Heavy Borean Armor Kit</a> - 8x Heavy Borean Leather</p>
+<p>Make a few more <a class="white" href="https://www.wowhead.com/mop-classic/spell=50936" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_19.jpg"/>Heavy Borean Leather</a> if you did not reach 400 with the Heavy Borean Armor Kits.</p> </li>
+</ul>
+<ul class="gd">
+<li><b>400-435</b><br/>
+<p>40x <a class="white" href="https://www.wowhead.com/mop-classic/spell=57683" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_leatherworking.jpg"/>Fur Lining - Agility</a> - 40x Eternium Thread</p>
+<p>
+You can buy the <a class="white" href="https://www.wowhead.com/mop-classic/item=38426" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_thread_01.jpg"/>Eternium Thread</a> from the Leatherworking Supply vendor near your trainer.</p><p>Macro to make this easier:</p><pre><code>/run DoTradeSkill(TradeSkillFrame.selectedSkill)
+/use 9
+/script StaticPopup1Button1:Click()
+</code></pre>
+<p>This macro casts the selected enchant and automatically applies it to your bracers, then confirms the prompt without any extra clicks. <b>You must select the right recipe in your profession window.</b></p></li>
+</ul>
+<h2 class="gtitle" id="435">Cataclysm Leatherworking (435-500)</h2>
+<p>Visit your trainer and learn the Cataclysm Leatherworking skill. (Requires level 75)</p>
+<h3 class="gdskill">435 - 500</h3>
+<ul class="gd">
+<li><b>435-450</b><br>
+		15x <a class="white" href="https://www.wowhead.com/mop-classic/spell=78379" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_armorkit_28.jpg">Savage Armor Kit</img></a> - 75 Savage Leather
+<p>If you farmed your own leather and have a lot of <a class="white" href="https://www.wowhead.com/mop-classic/item=52977" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_17.jpg"/>Savage Leather Scraps</a>, use the <a class="white" href="https://www.wowhead.com/mop-classic/spell=84950" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/item_savageleather.jpg"/>Savage Leather</a> spell in your Leatherworking spellbook.</p>
+</br></li></ul>
+<ul class="gd">
+<li><b>450-460</b><br>
+		10x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=78410" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_boots_leather_cataclysm_b_01.jpg">Tsunami Boots</img></a> - 70 Savage Leather, 10 Eternium Thread		
+	</br></li>
+</ul>
+<ul class="gd">
+<li><b>460-471</b><br>
+		11x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=78380" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_cape_07.jpg">Savage Cloak</img></a> - 77 Savage Leather, 11 Eternium Thread		
+	</br></li>
+</ul>
+<ul class="gd">
+<li><b>471-476</b><br>
+		5x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=78407" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_boots_leather_cataclysm_b_01.jpg">Darkbrand Boots</img></a> - 50 Savage Leather, 5 Eternium Thread</br></li>
+</ul>
+<ul class="gd">
+<li><b>476-480</b><br/>
+		4x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=78411" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_shoulder_leather_cataclysm_b_01.jpg">Darkbrand Shoulders</img></a> - 48 Savage Leather, 4 Eternium Thread
+<p>You could also make <a class="rare" href="https://www.wowhead.com/mop-classic/spell=78419" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_armorkit_26.jpg">Scorched Leg Armor</img></a> up to 485.</p>
+</li></ul>
+<ul class="gd">
+<li><b>480-485</b><br/>
+		5x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=78428" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_chest_leather_cataclysm_b_01.jpg">Darkbrand Chestguard</img></a> - 60 Savage Leather, 5 Eternium Thread
+<p>You could also make <a class="rare" href="https://www.wowhead.com/mop-classic/spell=78420" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_armorkit_29.jpg">Twilight Leg Armor</img></a> up to 490 or any other orange item that requires 12 Savage Leather.</p>
+</li></ul>
+<ul class="gd">
+<li><b>485-490</b><br/>
+		21x <a class="white" href="https://www.wowhead.com/mop-classic/spell=78436" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/item_savageleatherhide.jpg">Heavy Savage Leather</img></a> - 105 Savage Leather</li>
+</ul>
+<ul class="gd">
+<li><b>490-496</b><br/>
+		2x <a class="rare" href="https://www.wowhead.com/mop-classic/spell=78433" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_pants_leather_cataclysm_b_01.jpg">Darkbrand Leggings</img></a> - 8 Heavy Savage Leather, 24 Volatile Earth</li>
+</ul>
+<ul class="gd">
+<li><b>496-499</b><br/>
+		1x <a class="rare" href="https://www.wowhead.com/mop-classic/spell=78438" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_cape_cataclysm_melee_c_01.jpg">Cloak of Beasts</img></a> - 8 Heavy Savage Leather, 2 Volatile Earth, 2 Volatile Air, 2 Volatile Water, 2 Volatile Fire</li>
+</ul>
+<ul class="gd">
+<li><b>499-500</b><br/>
+1x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=78424" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helmet_leather_cataclysm_b_01.jpg"/>Darkbrand Helm</a> - 5x Heavy Savage Leather
+</li>
+</ul>
+<h2 class="gtitle" id="mop-classic-leatherworking">MoP Classic Leatherworking (500-600)</h2>
+<p>Visit your trainer to learn the new MoP Classic Leatherworking skill. <b>You don't have to go to Pandaria to learn the MoP Leatherworking skill and recipes</b>. You can learn it from any of the trainers in the old capital cities.</p>
+<h3 class="gdskill">500 - 576</h3>
+<ul>
+<li><b>500-530</b><br/>
+        20x <a class="white" href="https://www.wowhead.com/mop-classic/spell=124627" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tradeskill_skinning_shaleatherscraps.jpg"/>Mist-Touched Leather</a> - 100x Sha-Touched Leather       
+        
+</li>
+</ul>
+<ul class="gd">
+<li><b>530-536</b><br/>
+        3x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=124577" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_boots_leather_panda_b_02_brown.jpg"/>Misthide Boots</a> - 24 Mist-Touched Leather
+    </li>
+</ul>
+<ul class="gd">
+<li><b>536-540</b><br/>
+        2x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=124578" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_belt_leather_panda_b_02_brown.jpg"/>Misthide Belt</a> - 16 Mist-Touched Leather
+    </li>
+</ul>
+<ul class="gd">
+<li><b>540-550</b><br/>
+        5x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=124572" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_shoulder_leather_panda_b_02_brown.jpg"/>Misthide Shoulders</a> - 40 Mist-Touched Leather
+    </li>
+</ul>
+<ul class="gd">
+<li><b>550 - 560</b><br/>
+        5x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=124574" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_glove_leather_panda_b_02_brown.jpg"/>Misthide Gloves</a> - 40 Mist-Touched Leather
+    </li>
+</ul>
+<ul class="gd">
+<li><b>560 - 576</b><br/>
+        8x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=124573" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_chest_leather_panda_b_02_brown.jpg"/>Misthide Chestguard</a> - 80 Mist-Touched Leather
+    </li>
+</ul>
+<h3>Darkmoon Faire Free +5 Profession Skill</h3>
+<p>Check your Calendar in-game to see if the Darkmoon Faire is open. The event is available every two weeks. It starts on Sunday and lasts for a week.</p>
+<p>During the event, you can complete quests for each profession and gain <b>+5 skill points</b> for each. <a href="../../cataclysm/darkmoon-faire-profession-quests-cataclysm-classic/index.html">Click here</a> to read more about the quests.</p>
+<h3 class="gdskill">576 - 600</h3>
+<p>The Leatherworking recipes are sold by vendors in Vale of Eternal Blossoms. You can enter the zone after completing the quest <a href="https://www.wowhead.com/mop-classic/quest=31395" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" height="15" src="../../images/icons/quest_start.gif" width="15"/><img align="absmiddle" height="15" src="../../images/icons/horde.png" width="15"/>A Celestial Experience</a> / <a href="https://www.wowhead.com/mop-classic/quest=31394" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" height="15" src="../../images/icons/quest_start.gif" width="15"/><img align="absmiddle" height="15" src="../../images/icons/alliance.png" width="15"/>A Celestial Experience</a> (requires level 87).</p>
+<p>After completing the quest, you can find <a href="https://www.wowhead.com/mop-classic/npc=64054" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" height="15" src="../../images/icons/horde.png" width="15"/>Krogo Darkhide</a> in the Shrine of Two Moons and <a href="https://www.wowhead.com/mop-classic/npc=64094" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" height="15" src="../../images/icons/alliance.png" width="15"/>Tanner Pang</a> in the Shrine of Seven Stars.</p>
+<p>Each recipe costs 1x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76061" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_spiritofharmony_2.jpg"/>Spirit of Harmony</a>, and you only need to buy one. You can get a Spirit of Harmony by combining 10x <a class="white" href="https://www.wowhead.com/mop-classic/item=89112" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_spiritofharmony_1.jpg"/>Mote of Harmony</a>, which drop from almost any mob in Pandaria, including dungeon mobs.</p>
+<p>Pick any recipe from the <a href="https://www.wowhead.com/mop-classic/spell=124607" rel="nofollow noopener noreferrer">Contender's Armor</a> set. It doesn't matter which one you choose. If a recipe needs more leather, it will give more skill points. You'll need around 150x <a class="white" href="https://www.wowhead.com/mop-classic/item=72120" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tradeskill_skinning_shaleatherscraps.jpg"/>Mist-Touched Leather</a> or <a class="white" href="https://www.wowhead.com/mop-classic/item=79101" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tradeskill_skinning_prismaticscale.jpg"/>Prismatic Scale</a>.</p>
+<p><br/>
+Congratulations on reaching 600! If you spot any typos, wrong material counts, or have suggestions to improve the guide, feel free to <a href="../../contact/index.html" rel="nofollow noopener noreferrer">send feedback</a>.</p>
+<p>Now that you've maxed out Leatherworking, check out the full overview of MoP Classic Leatherworking. It includes profession perks, trainer recipes, reputation gear, and epic item crafts:</p>
+<p class="text-align-center"><a class="gblock" href="../../mop/leatherworking-overview-mop-classic/index.html">MoP Classic Leatherworking Overview</a></p>
+<p class="text-align-center"><a href="#top">(Return to Top)</a></p>
+</article>
+</main>
+<aside class="left-sidebar-menu sidebar-sticky">
+<nav>
+<h4>Quick Links</h4>
+<ul>
+<li><a href="../../mop/alchemy-leveling-guide-mop-classic/index.html">Alchemy</a></li>
+<li><a href="../../mop/blacksmithing-leveling-guide-mop-classic/index.html">Blacksmithing</a></li>
+<li><a href="../../mop/enchanting-leveling-guide-mop-classic/index.html">Enchanting</a></li>
+<li><a href="../../mop/engineering-leveling-guide-mop-classic/index.html">Engineering</a></li>
+<li><a href="../../mop/inscription-leveling-guide-mop-classic/index.html">Inscription</a></li>
+<li><a href="../../mop/jewelcrafting-leveling-guide-mop-classic/index.html">Jewelcrafting</a></li>
+<li><a href="../../mop/leatherworking-leveling-guide-mop-classic/index.html">Leatherworking</a></li>
+<li><a href="../../mop/tailoring-leveling-guide-mop-classic/index.html">Tailoring</a></li>
+<li><a href="../../mop/herbalism-leveling-guide-mop-classic/index.html">Herbalism</a></li>
+<li><a href="../../mop/mining-leveling-guide-mop-classic/index.html">Mining</a></li>
+<li><a href="../../mop/skinning-leveling-guide-mop-classic/index.html">Skinning</a></li>
+<li><a href="../../mop/first-aid-leveling-guide-mop-classic/index.html">First Aid</a></li>
+<li><a href="../../mop/cooking-leveling-guide-mop-classic/index.html">Cooking</a></li>
+<li><a href="../../mop/fishing-leveling-guide-and-overview/index.html">Fishing</a></li>
+<li><a href="../../mop/archaeology-guide-and-overview-mop-classic/index.html">Archaeology </a></li>
+</ul>
+</nav>
+</aside>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

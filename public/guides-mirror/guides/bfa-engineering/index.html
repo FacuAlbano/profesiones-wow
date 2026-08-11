@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="This guide provides an overview of the additions and changes to Engineering in World of Warcraft Battle for Azeroth." name="description"/>
+<meta content="Battle for Azeroth Engineering Guide" property="og:title"/>
+<meta content="This guide provides an overview of the additions and changes to Engineering in World of Warcraft Battle for Azeroth." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/guides/bfa-engineering" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>Battle for Azeroth Engineering Guide</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=Uug88u3uVRXpdbV5jHHNeW97QLqXpK29xJcn24n92Ww-1771997409.1081314-1.0.1.1-cja9FTgMXubPPMRFHj01tH..5taUmEysl3Kfzst2v9o" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--3">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#learning-bfa-engineering">Learning BfA Engineering</a></li>
+<li><a href="#leveling-bfa-engineering">Leveling Engineering</a></li>
+<li><a href="#recipes">Acquiring Recipes</a></li>
+<li><a href="#crafting-materials">Crafting Materials</a></li>
+<li><a href="#engineering-perks">Engineering Perks</a></li>
+<li><a href="#misc">Miscellaneous Items</a></li>
+<li><a href="#mount">Mount</a></li>
+<li><a href="#devices">Devices</a></li>
+<li><a href="#enchants">Ranged weapon enchants</a></li>
+<li><a href="#bombs">Bombs</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">Battle for Azeroth Engineering Guide</h1>
+<article>
+<p><img align="right" alt="BfA Engineering" heighe="161" src="../../images/general/bfa-engineering.jpg" style="margin-left: 10px; border: 4px solid #eee;" width="300"/>This guide provides an overview of the additions and changes to Engineering in World of Warcraft Battle for Azeroth.</p>
+<div class="old-toc">
+<h3>Table of contents</h3>
+<ul>
+<li><a href="#learning-bfa-engineering">Learning BfA Engineering</a></li>
+<li><a href="#leveling-bfa-engineering">Leveling Engineering</a></li>
+<li><a href="#recipes">Acquiring Recipes</a></li>
+<li><a href="#crafting-materials">Crafting Materials</a></li>
+<li><a href="#engineering-perks">Engineering Perks</a></li>
+<li><a href="#misc">Miscellaneous Items</a></li>
+<li><a href="#mount">Mount</a></li>
+<li><a href="#devices">Devices</a></li>
+<li><a href="#enchants">Ranged weapon enchants</a></li>
+<li><a href="#bombs">Bombs</a></li>
+</ul>
+</div>
+<h2 class="gtitle">New in Patch 8.3</h2>
+<h3>Void Focus</h3>
+<p>The Void Focus is a new crafting station that is used to craft the new raid gear.</p>
+<p>Check out my guide on <a href="../../guides/void-focus-how-to-unlock/index.html">How to Unlock the Void Focus</a>. (It works exactly the same as the Abyssal Focus worked in patch 8.2.)</p>
+<h3>Goggles and Weapons</h3>
+<p>There are two new ilvl 400 weapons:</p>
+<ul>
+<li><a class="epic" href="https://ptr.wowhead.com/item=170313" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_mace_1h_enprofession_c_01.jpg"/>Uncanny Combatant's Discombobulator</a></li>
+<li><a class="epic" href="https://ptr.wowhead.com/item=170314" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_firearm_2h_warfrontsalliance_c_01.jpg"/>Uncanny Combatant's Stormsteel Destroyer</a></li>
+</ul>
+<p>There are also a new set of engineering goggles, at ilvl 440, 455, and 470. You can get the recipes for the goggles from Faceless, K'thir, Aqir, and Cultists mobs that worship N'Zoth (random drop). You can find these mobs at the new Vale of Eternal Blossom Assauls, Uldum Assaults and inside Lesser Visions. (Not available on week 1 of patch 8.3)</p>
+<p>You will discover the recipe for the ilvl 455 goggles by crafting the ilvl 440 ones. And you need to craft the ilvl 455 goggles to discover the ilvl 470 goggle recipes.</p>
+<h2 class="gtitle">New in Patch 8.2</h2>
+<ul>
+<li>New set of goggles, at ilvl 415, 430, and 445.</li>
+<li><a class="epic" href="https://ptr.wowhead.com/spell=294784" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_mace_1h_enprofession_c_01.jpg"/>Notorious Combatant's Discombobulator</a> - ilvl 370 1H Mace</li>
+<li><a class="epic" href="https://ptr.wowhead.com/spell=294787" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_firearm_2h_warfrontsalliance_c_01.jpg"/>Notorious Combatant's Stormsteel Destroyer</a> - ilvl 370 Gun</li>
+<li><a class="rare" href="https://ptr.wowhead.com/spell=299106" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_trinket_80_kultiras02a.jpg"/>Wormhole Generator: Zandalar</a></li>
+<li><a class="rare" href="https://ptr.wowhead.com/spell=299105" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_trinket_80_kultiras02b.jpg"/>Wormhole Generator: Kul Tiras</a></li>
+<li><a class="epic" href="https://ptr.wowhead.com/spell=298930" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_gizmo_goblingtonkcontroller.jpg"/>Blingtron 7000</a></li>
+<li>The <a class="epic" href="https://ptr.wowhead.com/item=164740" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_engineering_815_uberspanner.jpg"/>Ub3r-Spanner</a> gets 3 new modules: <a class="white" href="https://ptr.wowhead.com/spell=298256" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_robotpet.jpg"/>Ub3r-Module: Scrap Cannon</a>, <a class="white" href="https://ptr.wowhead.com/spell=298189" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enggizmos_08.jpg"/>Ub3r-Module: Ub3r-Coil</a>, <a class="white" href="https://ptr.wowhead.com/spell=298255" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_gizmo_rocketbootextreme.jpg"/>Ub3r-Module: P.O.G.O.</a></li>
+</ul>
+<h2 class="gtitle" id="learning-bfa-engineering">Learning BfA Engineering</h2>
+<p>The new BfA Engineering skill is named differently for the two factions, but the name is the only difference between them.</p>
+<p><a class="white" href="https://www.wowhead.com/spell=264492" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_engineering.jpg"/>Kul Tiran Engineering</a> is the Alliance version and <a class="white" href="https://www.wowhead.com/spell=265807" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_engineering.jpg"/>Zandalari Engineering</a> is the Horde version.</p>
+<p>Engineering Trainers:</p>
+<ul>
+<li><b>Horde:</b> You can find <a href="../../images/general/bfa-engineering-trainer-horde.jpg">Shuga Blastcaps</a> in Dazar'alor at the Terrace of Crafters.</li>
+<li><b>Alliance:</b> <a href="../../images/general/bfa-engineering-trainer-alliance.jpg">Layla Evenkeel</a> is located in Boralus at the Tradewinds Market.</li>
+</ul>
+<p>You can walk up to a guard in Dazar'alor or Boralus then ask where the Engineering trainer is located. This will place a red marker on your map at the trainer's location.</p>
+<h2 class="gtitle" id="leveling-bfa-engineering">Leveling Engineering</h2>
+<p>Professions skills are split between expansions now, you'll have a separate skill bar for each expansion. This means you can level the new Battle for Azeroth skill tier without putting any point into any of the previous expansions tiers, you don't have to level Engineering with older materials to be able to craft the new BfA items. The new Battle for Azeroth Engineering has a maximum of 175 skill points. You can read more about this in my <a href="../../guides/battle-for-azeroth-professions-overview/index.html">BfA Profession overview</a>.</p>
+<p>Every BfA recipe will require different Engineering skill levels, so it's very different from what we had in Legion where you could craft most high-level items with Engineering skill 1. You will have to level your BfA Engineering skill up if you want to craft high-level items.</p>
+<p>Check out my <a href="../../guides/zandalari-kul-tiran-bfa-engineering-leveling-guide/index.html">BfA Engineering leveling guide 1-175</a>, if you are looking for a more in-depth leveling guide with exact numbers and reagents needed.</p>
+<h2 class="gtitle" id="recipes">Acquiring Recipes</h2>
+<p>Most recipes still have ranks just like in Legion, but there are no profession quests for crafting profession in BfA, you will learn most rank 1 and rank 2 recipes from your trainer. They are gated by profession skill, so you have to level your Alchemy up to get every recipe.</p>
+<ul>
+<li><b>Rank 1:</b> Allows you to craft the item.</li>
+<li><b>Rank 2:</b> Reduces the materials required to craft an item.</li>
+<li><b>Rank 3:</b> Greatly reduces the materials required to craft an item.</li>
+</ul>
+<h3 class="gd3">Reputation Vendors</h3>
+<p>You can buy most Rank 3 recipes from vendors, but none of them require Exalted reputation, only Revered, so it's pretty easy to get them. (A few rank 3 recipes come from World Quests)</p>
+<p><b>Horde:</b></p>
+<ul>
+<li>Zandalari Empire - <a href="https://www.wowhead.com/npc=131287" rel="nofollow" target="_blank">Natal'hakata</a> in Zuldazar.</li>
+<li>Voldunai recipes - <a href="https://www.wowhead.com/npc=135804" rel="nofollow" target="_blank">Hoarder Jena</a> in Vol'dun.</li>
+<li>Talanji's Expedition - <a href="https://www.wowhead.com/npc=135459" rel="nofollow" target="_blank">Provisioner Lija</a> in Nazmir.</li>
+<li>The Honorbound - <a href="https://www.wowhead.com/npc=135447" rel="nofollow" target="_blank">Ransa Greyfeather</a> in Zuldazar.</li>
+</ul>
+<p><b>Alliance:</b></p>
+<ul>
+<li>Storm's Wake - <a href="https://www.wowhead.com/npc=135800/sister-lilyana" rel="nofollow=">Sister Lilyana</a> in Stormsong Valley.</li>
+<li>Order of Embers - <a href="https://www.wowhead.com/npc=135815" rel="nofollow" target="_blank">Quartermaster Alcorn</a> in Drustvar.</li>
+<li>Proudmoore Admiralty - <a href="https://www.wowhead.com/npc=135808" rel="nofollow" target="_blank">Provisioner Fray</a> in Tiragarde Sound.</li>
+<li>7th Legion - <a href="https://www.wowhead.com/npc=135446" rel="nofollow" target="_blank">Vindicator Jaelaana</a> in Tiragarde Sound.</li>
+</ul>
+<p><b>Neutral:</b></p>
+<ul>
+<li>Tortollan Seekers - <a href="https://www.wowhead.com/npc=134345" rel="nofollow" target="_blank">Collector Kojo</a> at Scaletrader Post in Zuldazar, or by <a href="https://www.wowhead.com/npc=135793" rel="nofollow" target="_blank">Collector Kojo</a> at Seeker's Vista in Stormsong Valley.</li>
+</ul>
+<h2 class="gtitle" id="crafting-materials">Crafting Materials</h2>
+<p>There are 3 new ores: <a class="white" href="https://www.wowhead.com/item=152512" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_monalite.jpg"/>Monelite Ore</a>, <a class="white" href="https://www.wowhead.com/item=152579" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_stormsilver.jpg"/>Storm Silver Ore</a> and <a class="zold" href="https://www.wowhead.com/item=152513" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_platinum.jpg"/>Platinum Ore</a></p>
+<p>There are also 5 soulbound crafting materials:</p>
+<p><a class="rare" href="https://bfa.wowhead.com/item=152668" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_expulsom.jpg"/>Expulsom</a> is obtained primarily from scrapping armors and weapons using the Scrap-o-Matic 1000 (Alliance), or the Shred-Master Mk1 (Horde). These tools work like disenchanting, you can break down any gear obtained that is from the Battle for Azeroth expansion, including dungeon/raid drops, quest rewards, world drops and crafted gear. You can read about this in more detail if you visit my <a href="../../farming/how-to-get-expulsom/index.html">Expulsom Farming Guide</a>.</p>
+<p><a class="rare" href="https://www.wowhead.com/item=165948" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tradeskillitem_sorcererswater.jpg"/>Tidalcore</a> is a guaranteed drop from the last boss in a Mythic dungeons and from the chest at the end of any level Mythic Plus Dungeon. They can also drop from the last boss of a heroic dungeon, however, this is not a guaranteed drop.</p>
+<p><a class="epic" href="https://www.wowhead.com/item=165703" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tradeskill_81_breath_of_bwonsamdi_raid.jpg"/>Breath of Bwonsamdi</a> drops from bosses in the new raid Battle for Dazar'alor and is used for crafting epic 400 and 415 item Alchemy trinkets. (1 from each LFR wing, 1 from a Normal boss, 10 from a Heroic boss, 20 from a Mythic boss)</p>
+<p><a class="epic" href="https://bfa.wowhead.com/item=162461" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_malkorok_blightofyshaarj_red.jpg"/>Sanguicell</a> drops from raid bosses in Uldir. (1 from each LFR wing, 1 from a Normal boss, 10 from a Heroic boss, 20 from a Mythic boss)</p>
+<p><a class="rare" href="https://bfa.wowhead.com/item=162460" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tradeskillitem_lessersorcererswater.jpg"/>Hydrocore</a> used to drop in Mythic dungeons, but it no longers drops since path 8.1, and you can only get it by using Transmutes.</p>
+<h2 class="gtitle" id="engineering-perks">Engineering Perks</h2>
+<h3 class="gd3">Belt Attachments</h3>
+<p>Each belt attachment requires a skill level of 85 to learn.</p>
+<ul>
+<li><a class="white" href="https://www.wowhead.com/spell=255936" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_engineering.jpg"/>Belt Enchant: Holographic Horror Projector</a> - Permanently attaches a specialized device to your belt, allowing you to fear an enemy within melee range for 5 sec.</li>
+<li><a class="white" href="https://www.wowhead.com/spell=269123" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_engineering.jpg"/>Belt Enchant: Miniaturized Plasma Shield</a> - Permanently attaches a specialized device to your belt, which when used creates an absorb shield around the player for 10 sec.</li>
+<li><a class="white" href="https://www.wowhead.com/spell=255940" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_engineering.jpg"/>Belt Enchant: Personal Space Amplifier</a> - Permanently attaches a specialized device to your belt, allowing you to knock back your current target. Shares a cooldown with potions.</li>
+</ul>
+<h3 class="gd3">Engineering Goggles</h3>
+<p>New set of item level 385 leather, cloth, mail, and plate googles. All of them are upgradeable 2 times (ilvl 400 and ilvl 415).You will need to craft the lower ilvl goggles to get the recipe for the higher ilvl goggle.</p>
+<p>There is a new goggle recipe for every armor type, this is just an example below:</p>
+<ul>
+<li>ilvl 385 - <a class="epic" href="https://www.wowhead.com/spell=286870" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_goggles_draenortradeskill_d_01.jpg"/>Surging Orthogonal Optics</a> - Requires Engineering 130.</li>
+<li>ilvl 400 - <a class="epic" href="https://www.wowhead.com/spell=286871" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_goggles_draenortradeskill_d_01.jpg"/>SP1-R1-73D Orthogonal Optics</a> - Discovered from crafting <a class="epic" href="https://www.wowhead.com/spell=286870" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_goggles_draenortradeskill_d_01.jpg"/>Surging Orthogonal Optics</a></li>
+<li>ilvl 415 - <a class="epic" href="https://www.wowhead.com/spell=286872" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_goggles_draenortradeskill_d_01.jpg"/>Charged SP1-R1-73D Orthogonal Optics</a> - Discovered from crafting <a class="epic" href="https://www.wowhead.com/spell=286871" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_goggles_draenortradeskill_d_01.jpg"/>SP1-R1-73D Orthogonal Optics</a></li>
+</ul>
+<h3 class="gd3">Tools of the Trade</h3>
+<p>If you level your character to level 120 and your Battle for Azeroth Enchanting to 150, then you can unlock a special questline to craft <a class="epic" href="https://ptr.wowhead.com/spell=282975" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_wrench_01.jpg"/>The Ub3r-Spanner</a>.</p>
+<p>This item allows you to make special modules to summon different constructs to fight for you every 15 minutes. These are separate recipes, but they are really cheap to make. When you craft one, you will get a buff, and then if you use the <a class="epic" href="https://ptr.wowhead.com/spell=282975" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_wrench_01.jpg"/>The Ub3r-Spanner</a>, it will summon that construct. (you will get a random one if you don't have any buff up)</p>
+<ul>
+<li><a href="https://www.wowhead.com/npc=144986" rel="nofollow" target="_blank">Ub3r-Improved Target Dummy</a> - target dummy which also draws aggro from you</li>
+<li><a href="https://www.wowhead.com/npc=144992" rel="nofollow" target="_blank">Ub3r S3ntry Mk. X8.0</a> - mechanical dog that attacks your target</li>
+<li><a href="https://www.wowhead.com/npc=144960" rel="nofollow" target="_blank">Short-Fused Bomb Bot</a> - bomb bots that explode on your target</li>
+</ul>
+<p>The questline will take you through the process of creating your tool and give you some backstory on where the recipe comes from. Most of the quests are really straightforward and easy so I'll skip explaining each quests. Just follow your quest log and check the markers on your map.</p>
+<p>To get started on your profession quest line, speak with your profession trainer <a href="../../images/general/bfa-engineering-trainer-horde.jpg">Shuga Blastcaps</a> (Horde) in Dazar'alor or <a href="../../images/general/bfa-engineering-trainer-alliance.jpg">Layla Evenkeel</a> (Alliance) in Boralus. You can walk up to a guard in Dazar'alor or Boralus then ask where your profession trainer is located. This will place a red marker on your map at the trainer's location.</p>
+<p>After you complete the quest chain, you will get the <a class="epic" href="https://ptr.wowhead.com/spell=282975" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_wrench_01.jpg"/>The Ub3r-Spanner</a> recipe. To craft this item, you need:</p>
+<ul>
+<li>10 x <a class="rare" href="https://ptr.wowhead.com/item=152668" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_expulsom.jpg"/>Expulsom</a></li>
+<li>10 x <a class="zold" href="https://ptr.wowhead.com/item=152513" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_platinum.jpg"/>Platinum Ore</a></li>
+<li>15 x <a class="white" href="https://ptr.wowhead.com/item=152579" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_stormsilver.jpg"/>Storm Silver Ore</a></li>
+<li>50 x <a class="white" href="https://ptr.wowhead.com/item=163569" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_delicatecopperwire.jpg"/>Insulated Wiring</a></li>
+<li>2 x <a class="rare" href="https://ptr.wowhead.com/item=168152" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_gizmo2.jpg"/>Miniaturized Power Core</a> - Drops from <a href="https://www.wowhead.com/npc=139328" rel="nofollow" target="_blank">Sabertron</a> in Tiragarde Sound, and from <a href="https://www.wowhead.com/npc=139205" rel="nofollow" target="_blank">P4-N73R4</a> in Stormsong Valley.</li>
+<li>1 x <a class="rare" href="https://ptr.wowhead.com/item=168154" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_gizmo_hardenedadamantitetube.jpg"/>Static Induction Matrix</a> - Drops from Galvazzt in Temple of Sethraliss dungeon. (any difficulty)</li>
+<li>1 x <a class="rare" href="https://ptr.wowhead.com/item=168153" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_gizmo_mithrilcasing_02.jpg"/>Coin Return Flipper</a> - Drops from Coin-Operated Crowd Pummeler in MOTHERLODE!! dungeon. (any difficulty)</li>
+</ul>
+<h2 class="gtitle" id="misc">Miscellaneous recipes</h2>
+<ul>
+<li><a class="zold" href="https://www.wowhead.com/spell=278411" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enggizmos_14.jpg"/>Makeshift Azerite Detector</a> - follower equipment that gives your champions a chance to bring back Azerite from successful missions.</li>
+<li><a class="zold" href="https://www.wowhead.com/spell=278413" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enggizmos_20.jpg"/>Monelite Fish Finder</a> - follower equipment that gives your champions a chance to bring back fish from successful missions.</li>
+<li><a class="rare" href="https://www.wowhead.com/spell=287279" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tradeskillitem_lessersorcererswater.jpg"/>Aqueous Thermo-Degradation</a> - Convert <a class="rare" href="https://www.wowhead.com/item=165948" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tradeskillitem_sorcererswater.jpg"/>Tidalcore</a> into <a class="rare" href="https://www.wowhead.com/item=162460" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tradeskillitem_lessersorcererswater.jpg"/>Hydrocore</a>.</li>
+<li><a class="epic" href="https://www.wowhead.com/spell=286647" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_malkorok_blightofyshaarj_red.jpg"/>Sanguinated Thermo-Degradation</a> - Convert <a class="epic" href="https://www.wowhead.com/item=165703" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tradeskill_81_breath_of_bwonsamdi_raid.jpg"/>Breath of Bwonsamdi</a> into <a class="epic" href="https://www.wowhead.com/item=162461" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_malkorok_blightofyshaarj_red.jpg"/>Sanguicell</a>.</li>
+<li><a class="white" href="https://www.wowhead.com/spell=283914" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_unstabletemporaltimeshifter.jpg"/>Unstable Temporal Time Shifter</a> - Reverses the flow of time on a target that recently died, restoring them to life with 60% health and 20% mana. Castable in combat. Chance to backfire, fast forwarding the flow of time on a target resulting in a loss of vitality. (10 Min Cooldown)</li>
+<li><a class="zold" href="https://www.wowhead.com/spell=286478" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_mechanicalspider.jpg"/>Mechantula</a> - New pet <a class="zold" href="https://www.wowhead.com/item=165849" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_mechanicalspider.jpg"/>Mechantula</a>.</li>
+</ul>
+<h2 class="gtitle" id="mount">Mount</h2>
+<p><a class="epic" href="https://www.wowhead.com/item=161134" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/achievement_dungeon_mogulrazdunk.jpg"/>Mecha-Mogul Mk2</a> is a new mount crafted by Engineers. It's not souldbound which means it can be sold via the Auction House. The recipe is dropped by <a href="https://www.wowhead.com/npc=131227" rel="nofollow" target="_blank">Mogul Razdunk</a> in the The MOTHERLODE!! dungeon.</p>
+<h2 class="gtitle" id="devices">Devices</h2>
+<ul>
+<li><a class="white" href="https://bfa.wowhead.com/spell=256154" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_deployableattirerearranger.jpg"/>Deployable Attire Rearranger</a> - portable transmog device.</li>
+<li><a class="white" href="https://bfa.wowhead.com/spell=256080" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_interdimensionalcompanionrepository.jpg"/>Interdimensional Companion Repository</a> - portable stable for hunters.</li>
+<li><a class="white" href="https://bfa.wowhead.com/spell=256070" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_electroshockmountmotivator.jpg"/>Electroshock Mount Motivator</a> - Increases mounted movement speed by 10% for 10 sec. Stacks up to 5 times. Increased motivation may cause your mount to become disoriented.</li>
+<li><a class="white" href="https://bfa.wowhead.com/item=158380" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_magicalintrusiondampener.jpg"/>Magical Intrusion Dampener</a> - Makes you immune to Leap of Faith, threat redirecting abilities, and some gadgets like the Swapblaster. Persists through death. Lasts 12 hrs.</li>
+<li><a class="white" href="https://bfa.wowhead.com/spell=256073" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_xa1000surfaceskimmer.jpg"/>XA-1000 Surface Skimmer</a> - Deploy a boat which will immediately start moving across the water for 25 sec. Does not work on land. (30 Sec Cooldown)</li>
+<li><a class="white" href="https://www.wowhead.com/spell=283914" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_unstabletemporaltimeshifter.jpg"/>Unstable Temporal Time Shifter</a> - Reverses the flow of time on a target that recently died, restoring them to life with 60% health and 20% mana. Castable in combat. Chance to backfire, fast forwarding the flow of time on a target resulting in a loss of vitality. (10 Min Cooldown)</li>
+</ul>
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<td class="tdtitle" rowspan="2">
+<p><strong>Recipe</strong></p>
+</td><td class="tdtitle" colspan="2">
+<p><strong>Engineering skill</strong></p></td><td class="tdtitle" rowspan="2">
+<p><strong>Rank 3</strong></p></td></tr>
+<tr>
+<th>
+Rank 1
+</th>
+<th>
+Rank 2
+</th>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=256154" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_deployableattirerearranger.jpg"/>Deployable Attire Rearranger</a>
+</td><td>25
+</td><td>50
+</td><td>Zandalari Empire / Storm's Wake - Revered
+</td></tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=256070" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_electroshockmountmotivator.jpg"/>Electroshock Mount Motivator</a>
+</td><td>25
+</td><td>50
+</td><td>World Quest
+</td></tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=256080" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_interdimensionalcompanionrepository.jpg"/>Interdimensional Companion Repository</a>
+</td><td>25
+</td><td>50
+</td><td>Zandalari Empire / Storm's Wake - Revered
+</td></tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=280732" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_magicalintrusiondampener.jpg"/>Magical Intrusion Dampener</a>
+</td><td>25
+</td><td>50
+</td><td>85
+</td></tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=256073" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_xa1000surfaceskimmer.jpg"/>XA-1000 Surface Skimmer</a>
+</td><td>25
+</td><td>50
+</td><td>World Quest
+</td></tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=283914" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_unstabletemporaltimeshifter.jpg"/>Unstable Temporal Time Shifter</a>
+</td><td>85
+</td><td> 
+</td><td><b>Rank 2</b> requires Exalted with Zandalari Empire / Proudmoore Admiralty.<br/>
+<b>Rank 3</b> is dropped by High Tinker Mekkatorque in the Battle of Dazar'alor raid.
+</td></tr>
+</tbody></table>
+</div>
+<h2 class="gtitle" id="enchants">Ranged weapon enchants</h2>
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<td class="tdtitle" rowspan="2">
+<p><strong>Recipe</strong></p>
+</td><td class="tdtitle" colspan="2">
+<p><strong>Engineering skill</strong></p></td><td class="tdtitle" rowspan="2">
+<p><strong>Rank 3</strong></p></td></tr>
+<tr>
+<th>
+Rank 1
+</th>
+<th>
+Rank 2
+</th>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=265100" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_frostlacedammunition.jpg"/>Frost-Laced Ammunition</a>
+</td><td>35
+</td><td>85
+</td><td>Voldunai / Order of Embers - Revered
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=265097" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_incendiaryammunition.jpg"/>Incendiary Ammunition</a>
+</td><td>35
+</td><td>85
+</td><td>World Quest
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=264964" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_monalitescopeofalacrity.jpg"/>Monelite Scope of Alacrity</a>
+</td><td>35
+</td><td>85
+</td><td>The Honorbound / 7th Legion - Revered
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=264960" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_crowsnestscope.jpg"/>Crow's Nest Scope</a>
+</td><td>35
+</td><td>85
+</td><td>World Quest
+</td></tr>
+</tbody></table>
+</div>
+<h2 class="gtitle" id="bombs">Bombs</h2>
+<ul>
+<li><a class="white" href="https://bfa.wowhead.com/item=153487" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_bombpolymorph.jpg"/>Organic Discombobulation Grenade</a> - Polymorph- (1 Min Cooldown)</li>
+<li><a class="white" href="https://bfa.wowhead.com/item=153490" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_bombfire.jpg"/>F.R.I.E.D.</a> - AoE fire damage. (1 Min Cooldown)</li>
+<li><a class="white" href="https://bfa.wowhead.com/item=153494" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_bombpoison.jpg"/>Thermo-Accelerated Plague Spreader</a> - AoE poison damage. (1 Min Cooldown)</li>
+</ul>
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<td class="tdtitle" rowspan="2">
+<p><strong>Recipe</strong></p>
+</td><td class="tdtitle" colspan="2">
+<p><strong>Engineering skill</strong></p></td><td class="tdtitle" rowspan="2">
+<p><strong>Rank 3</strong></p></td></tr>
+<tr>
+<th>
+Rank 1
+</th>
+<th>
+Rank 2
+</th>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=255392" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_bombfire.jpg"/>F.R.I.E.D.</a>
+</td><td>1
+</td><td>35
+</td><td>World Quest
+</td></tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=255407" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_bombpolymorph.jpg"/>Organic Discombobulation Grenade</a>
+</td><td>1
+</td><td>35
+</td><td>Zandalari Empire / Storm's Wake - Revered
+</td></tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=255395" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_eng_bombpoison.jpg"/>Thermo-Accelerated Plague Spreader</a>
+</td><td>1
+</td><td>35
+</td><td>World Quest
+</td></tr>
+</tbody></table>
+</div>
+<h2 class="gtitle" id="weapons">Weapons</h2>
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<td class="tdtitle" rowspan="2">
+<p><strong>Recipe</strong></p>
+</td><td class="tdtitle" colspan="2">
+<p><strong>Engineering skill</strong></p></td><td class="tdtitle" rowspan="2">
+<p><strong>Rank 3</strong></p></td></tr>
+<tr>
+<th>
+Rank 1
+</th>
+<th>
+Rank 2
+</th>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=253122" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_mace_1h_enprofession_c_01.jpg"/>Magnetic Discombobulator</a>
+</td><td>1
+</td><td>-
+</td><td>-
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=253150" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_mace_1h_enprofession_c_01.jpg"/>Precision Attitude Adjuster</a>
+</td><td>100
+</td><td>125
+</td><td>The Honorbound / 7th Legion - Revered
+</td></tr>
+<tr>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=255457" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_firearm_2h_rifle_kultirasquest_b_01.jpg"/>Finely-Tuned Stormsteel Destroyer</a>
+</td><td>100
+</td><td>125
+</td><td>The Honorbound / 7th Legion - Revered
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=269724" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_mace_1h_enprofession_c_01.jpg"/>Honorable Combatant's Discombobulator</a>
+</td><td>100
+</td><td>-
+</td><td>Rank 2 and 3 sold by <a href="https://www.wowhead.com/npc=142552" rel="nofollow" target="_blank">Ozgrom Ragefang (Horde)</a> / <a href="https://www.wowhead.com/npc=142564" rel="nofollow" target="_blank">Leedan Gustaf (Alliance)</a>
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=269727" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_firearm_2h_warfrontshorde_c_01.jpg"/>Honorable Combatant's Stormsteel Destroyer</a>
+</td><td>100
+</td><td>-
+</td><td>Rank 2 and 3 sold by <a href="https://www.wowhead.com/npc=142552" rel="nofollow" target="_blank">Ozgrom Ragefang (Horde)</a> / <a href="https://www.wowhead.com/npc=142564" rel="nofollow" target="_blank">Leedan Gustaf (Alliance)</a>
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=282806" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_mace_1h_enprofession_c_01.jpg"/>Sinister Combatant's Discombobulator</a>
+</td><td>100
+</td><td>-
+</td><td>Rank 2 and 3 sold by <a href="https://www.wowhead.com/npc=142552" rel="nofollow" target="_blank">Ozgrom Ragefang (Horde)</a> / <a href="https://www.wowhead.com/npc=142564" rel="nofollow" target="_blank">Leedan Gustaf (Alliance)</a>
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=282809" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_firearm_2h_warfrontshorde_c_01.jpg"/>Sinister Combatant's Stormsteel Destroyer</a>
+</td><td>100
+</td><td>-
+</td><td>Rank 2 and 3 sold by <a href="https://www.wowhead.com/npc=142552" rel="nofollow" target="_blank">Ozgrom Ragefang (Horde)</a> / <a href="https://www.wowhead.com/npc=142564" rel="nofollow" target="_blank">Leedan Gustaf (Alliance)</a>
+</td></tr>
+</tbody></table>
+</div>
+</article>
+</main>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

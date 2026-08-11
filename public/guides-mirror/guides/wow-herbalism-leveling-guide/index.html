@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="Midnight Herbalism leveling guide with farming routes, skill ranges, infused herbs, overloading, profession equipment, and consumables." name="description"/>
+<meta content="Midnight Herbalism Guide: Leveling, Farming Routes &amp; Tips" property="og:title"/>
+<meta content="Midnight Herbalism leveling guide with farming routes, skill ranges, infused herbs, overloading, profession equipment, and consumables." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/guides/wow-herbalism-leveling-guide" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>Midnight Herbalism Guide: Leveling, Farming Routes &amp; Tips</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=0uwGaGSZH3S.zPxS3bjaUQI9hFqfi.4Lhwsi60kw_zE-1771996643.7100298-1.0.1.1-flrzcrOm7Mgto1kGg8xHPykvBYDRdzJpMQlU6xvpA1w" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--4">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#changes">What Changed in Midnight</a></li>
+<li><a href="#trainer">Herbalism Trainer</a></li>
+<li><a href="#equipment">Profession Equipment</a></li>
+<li><a href="#consumables">Consumables</a></li>
+<li><a href="#overloading">Infused Herbs &amp; Overloading</a></li>
+<li><a href="#routes">Herbalism Farming Routes</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">Midnight Herbalism Guide: Leveling, Farming Routes &amp; Tips</h1>
+<article>
+<p><img align="left" height="64" src="../../images/icons/professions/herbalism.png" style="margin-right: 8px;" width="64"/>This Midnight Herbalism guide covers everything you need to level from 1 to 100 and farm herbs efficiently. You'll find the best farming routes for every zone, skill ranges, how infused herbs and overloading work, which profession equipment and consumables to use, and how Deftness, Finesse, and Perception affect your gathering.</p>
+<h2 class="line-header">Specializations &amp; Knowledge Points</h2>
+<p>This guide only focuses on leveling and farming. I have a separate guide that covers all Knowledge Point sources, treasure locations with maps, and specialization builds:</p>
+<p class="text-align-center">
+<a class="gblock" href="../../midnight/herbalism-specialization-guide-and-builds/index.html">        
+        Specialization Builds &amp; Knowledge Guide
+    </a>
+</p>
+<div class="alert-box notice">Looking for the War Within version? <a href="../../the-war-within/khaz-algar-herbalism-leveling-guide/index.html">TWW Herbalism Leveling Guide</a></div>
+<h2 class="line-header" id="changes">What Changed in Midnight</h2>
+<p>If you gathered herbs in The War Within, here's what's different in Midnight.</p>
+<ul class="guide-list">
+<li><b>Two Qualities Only</b> - Herbs now only have two quality levels (Silver and Gold) instead of three. Bronze quality is gone entirely.</li>
+<li><b>Artisan Herbalist's Moxie</b> - The shared <a class="rare" href="https://www.wowhead.com/item=210814" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color3.jpg"/>Artisan's Acuity</a> currency from The War Within has been replaced by a profession-specific currency, <a class="white" href="https://www.wowhead.com/currency=3260" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color2.jpg"/>Artisan Herbalist's Moxie</a>. You can now only spend it on Herbalism-related items.</li>
+<li><b>Epic Profession Tools</b> - New Epic-quality gathering tools are available with more secondary stats than Rare tools, but they give the same skill bonus.</li>
+</ul>
+<h2 class="line-header" id="trainer">Herbalism Trainer</h2>
+<p>You can learn Midnight Herbalism from Botanist Nathera in Silvermoon City.</p>
+<div class="npc-media">
+<div class="media-card">
+<div class="media-header">
+<span class="media-title">Silvermoon City</span>
+<div class="waypoint-actions">
+<button class="btn-waypoint" data-clipboard-text="/way #2393 48.2 51.5 Botanist Nathera">TomTom</button>
+<button class="btn-waypoint" data-clipboard-text="/run local m=2393;local x=0.48200000000000004;local y=0.515;C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(m,x,y));C_SuperTrack.SetSuperTrackedUserWaypoint(true)">In-Game Pin</button>
+</div>
+</div>
+<div class="media-content">
+<div class="map-embed" data-coords="48.2, 51.5" data-map-img="/images/maps/normal/silvermoon-city.jpg" data-title="Botanist Nathera" data-zone="2393" data-zone-name="Silvermoon City">
+<div class="map-zone">Silvermoon City</div>
+<div class="map-image" style="background-image: url('/images/maps/normal/silvermoon-city.jpg');">
+<div class="map-pin" style="left: 48.2%; top: 51.5%;"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="media-card">
+<div class="media-header">
+<span class="media-title">Botanist Nathera</span>
+</div>
+<div class="media-content">
+<img alt="Botanist Nathera" class="lightbox" height="668" onerror="this.closest('.media-card').style.display='none'" src="../../images/npc/midnight/243355.jpg" width="1002"/>
+</div>
+</div>
+</div>
+<h2 class="line-header" id="equipment">Profession Equipment</h2>
+<p>Herbalism profession equipment now includes an Epic tier. There's no primary skill difference between Blue and Epic pieces. The only difference is the secondary stat amount.</p>
+<p>You have three equipment slots: Hat, Satchel, and Sickle. The Hat is an accessory from Tailoring, the Satchel is an accessory from Leatherworking, and the Sickle is a tool from Blacksmithing.</p>
+<p><a class="white" href="https://www.wowhead.com/item=251665" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_tailoring_tailoringspecializations_fiberarts.jpg"/>Silverleaf Thread</a> is sold by vendors, so if you are submitting Crafting Orders, you can buy them from the Leatherworking supply vendor near your trainer.</p>
+<div class="table-container wrap">
+<table class="tbl-minimal">
+<thead>
+<tr>
+<th>Tool/Accessory</th>
+<th>Crafted By</th>
+<th>Materials Needed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1228972" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_armor_herbalism_b_01.jpg"/>Bright Linen Herbalism Hat</a></td>
+<td>Tailoring</td>
+<td>3x <a class="white" href="https://www.wowhead.com/item=251665" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_tailoring_tailoringspecializations_fiberarts.jpg"/>Silverleaf Thread</a>, 2x <a class="zold" href="https://www.wowhead.com/item=239702" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_tailoring_commonclothbolt_arcane.jpg"/>Imbued Bright Linen Bolt</a>, 2x <a class="zold" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1228966" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_armor_herbalism_b_01.jpg"/>Elegant Artisan's Herbalism Hat</a></td>
+<td>Tailoring</td>
+<td>5x <a class="rare" href="https://www.wowhead.com/item=236951" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofwildmadic_lightgreen.jpg"/>Mote of Wild Magic</a>, 8x <a class="rare" href="https://www.wowhead.com/item=239198" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_tailoring_rareclothbolt_purple.jpg"/>Arcanoweave Bolt</a>, 3x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=1279128" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_armor_herbalism_b_01.jpg"/>Thalassian Herbalist's Cowl</a></td>
+<td>Tailoring</td>
+<td>5x <a class="rare" href="https://www.wowhead.com/item=236951" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofwildmadic_lightgreen.jpg"/>Mote of Wild Magic</a>, 1x <a class="epic" href="https://www.wowhead.com/item=245345" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_nature_wispsplodegreen.jpg"/>Fused Vitality</a>, 8x <a class="rare" href="https://www.wowhead.com/item=239198" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_tailoring_rareclothbolt_purple.jpg"/>Arcanoweave Bolt</a>, 3x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1237557" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cape_special_herbalism_b_01.jpg"/>Eversong Botanist's Satchel</a></td>
+<td>Leatherworking</td>
+<td>10x <a class="white" href="https://www.wowhead.com/item=251665" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_tailoring_tailoringspecializations_fiberarts.jpg"/>Silverleaf Thread</a>, 10x <a class="white" href="https://www.wowhead.com/item=2447" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_flower_02.jpg"/>Peacebloom</a>, 20x <a class="white" href="https://www.wowhead.com/item=238511" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_thalassianleather_brown.jpg"/>Void-Tempered Leather</a>, 20x <a class="white" href="https://www.wowhead.com/item=238513" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_thalassianscale_violet.jpg"/>Void-Tempered Scales</a></td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1237558" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cape_special_herbalism_b_01.jpg"/>Sin'dorei Herbalist's Backpack</a></td>
+<td>Leatherworking</td>
+<td>20x <a class="white" href="https://www.wowhead.com/item=251665" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_tailoring_tailoringspecializations_fiberarts.jpg"/>Silverleaf Thread</a>, 10x <a class="rare" href="https://www.wowhead.com/item=236949" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofpurelight_gold.jpg"/>Mote of Light</a>, 4x <a class="rare" href="https://www.wowhead.com/item=236780" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_herbalism_blacklotus_void.jpg"/>Nocturnal Lotus</a>, 1x <a class="rare" href="https://www.wowhead.com/item=244631" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_leatherworking_combo_hide_purple.jpg"/>Scalewoven Hide</a></td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=1237559" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cape_special_herbalism_b_01.jpg"/>Thalassian Herbtender's Cradle</a></td>
+<td>Leatherworking</td>
+<td>40x <a class="rare" href="https://www.wowhead.com/item=236951" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofwildmadic_lightgreen.jpg"/>Mote of Wild Magic</a>, 1x <a class="epic" href="https://www.wowhead.com/item=245345" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_nature_wispsplodegreen.jpg"/>Fused Vitality</a>, 8x <a class="rare" href="https://www.wowhead.com/item=236780" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_herbalism_blacklotus_void.jpg"/>Nocturnal Lotus</a>, 1x <a class="rare" href="https://www.wowhead.com/item=244633" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_leatherworking_combo_hide_magical_lightbloom.jpg"/>Infused Scalewoven Hide</a></td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1229610" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_knife_1h_herbalismbloodelf_b_01.jpg"/>Thalassian Sickle</a></td>
+<td>Blacksmithing</td>
+<td>3x <a class="white" href="https://www.wowhead.com/item=243060" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_blacksmithing_craftedoptional_blacksmithdye_fire.jpg"/>Luminant Flux</a>, 6x <a class="zold" href="https://www.wowhead.com/item=238197" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_blacksmithing_blacksmithingalloys_thoriuminfused.jpg"/>Refulgent Copper Ingot</a></td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1229602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_knife_1h_herbalismbloodelf_b_01.jpg"/>Sun-Blessed Sickle</a></td>
+<td>Blacksmithing</td>
+<td>1x <a class="epic" href="https://www.wowhead.com/item=238528" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_animalparts_claws.jpg"/>Majestic Claw</a>, 2x <a class="rare" href="https://www.wowhead.com/item=237366" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_mining_dazzlingthorium-.jpg"/>Dazzling Thorium</a>, 5x <a class="zold" href="https://www.wowhead.com/item=238204" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_blacksmithing_blacksmithingalloys_dazzling.jpg"/>Sterling Alloy</a></td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=1264651" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_knife_1h_herbalismbloodelf_b_01.jpg"/>Sunforged Sickle</a></td>
+<td>Blacksmithing</td>
+<td>2x <a class="epic" href="https://www.wowhead.com/item=238528" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_animalparts_claws.jpg"/>Majestic Claw</a>, 2x <a class="rare" href="https://www.wowhead.com/item=237366" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_mining_dazzlingthorium-.jpg"/>Dazzling Thorium</a>, 1x <a class="epic" href="https://www.wowhead.com/item=245345" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_nature_wispsplodegreen.jpg"/>Fused Vitality</a>, 5x <a class="zold" href="https://www.wowhead.com/item=238204" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_blacksmithing_blacksmithingalloys_dazzling.jpg"/>Sterling Alloy</a></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3>Customizing Profession Tool stats</h3>
+<p>Accessory stats are fixed, so just get the highest quality you can. Profession tool stats can be customized with missives. For green gear, it's usually best to just buy one with the correct stats, but for blue and epic you need to put the right missive in the optional reagent slot when crafting or submitting a crafting order. <b>Don't forget to enchant your Tool too.</b></p>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Stat</th>
+<th>Missive</th>
+<th>Enchant</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Deftness</td>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230043" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_repcontracts_80_warscroll_fortitude_uprez_color5.jpg"/>Thalassian Missive of Deftness</a></td>
+<td><a class="white" href="https://www.wowhead.com/spell=1236092" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Tool - Sin'dorei Deftness</a></td>
+</tr>
+<tr>
+<td>Finesse</td>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230045" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_repcontracts_80_warscroll_fortitude_uprez_color2.jpg"/>Thalassian Missive of Finesse</a></td>
+<td><a class="white" href="https://www.wowhead.com/spell=1236077" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Tool - Haranir Finesse</a></td>
+</tr>
+<tr>
+<td>Perception</td>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230044" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_repcontracts_80_warscroll_fortitude_uprez_color3.jpg"/>Thalassian Missive of Perception</a></td>
+<td><a class="white" href="https://www.wowhead.com/spell=1236063" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_enchanting.jpg"/>Enchant Tool - Amani Perception</a></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3>Finesse, Deftness or Perception for Herbalism?</h3>
+<p>The three secondary stats work the same as before. Deftness increases gathering speed, Finesse gives you extra materials from each node, and Perception gives you a chance to find extra <a class="rare" href="https://www.wowhead.com/item=236780" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_herbalism_blacklotus_void.jpg"/>Nocturnal Lotus</a> when one drops. It doesn't increase the base drop chance, just the bonus amount when one does drop.</p>
+<p>For tools, get one with <b>Finesse</b> or <b>Deftness</b>. I don't think Perception is worth it unless Nocturnal Lotus is selling for crazy prices.</p>
+<p>In some Midnight zones it's really hard to avoid mobs while gathering, so I'd recommend <b>getting enough Deftness to gather without fighting.</b></p>
+<p>With the consumables listed below you can hit a comfortable Deftness level and just stack Finesse after that. If mobs are still interrupting you, get a Deftness tool with Deftness enchant too.</p>
+<h2 class="line-header" id="consumables">Consumables</h2>
+<p>Using <a class="zold" href="https://www.wowhead.com/item=242301" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_cooking_tea_orange.jpg"/>Azeroot Tea</a> and <a class="white" href="https://www.wowhead.com/item=124671" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_flaskofvolatility.jpg"/>Darkmoon Firewater</a> makes gathering feel much smoother. <b>I'd say they're mandatory for effective farming</b> until you have more Deftness from gear or specialization.</p>
+<div class="table-container">
+<table class="tbl-data">
+<thead>
+<tr>
+<th>Consumable</th>
+<th>Effect</th>
+<th>Duration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1230873" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_alchemy_flask_haranirpotion_purple.jpg"/>Haranir Phial of Perception</a></td>
+<td>+38 Perception (+3.8%), +11 Deftness (+3.6%)</td>
+<td>30min</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=1230870" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_alchemy_flask_haranirpotion_blue.jpg"/>Haranir Phial of Finesse</a></td>
+<td>+38 Finesse (+3.8%), +11 Deftness (+3.6%)</td>
+<td>30min</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/item=242298" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_cooking_tea_green.jpg"/>Argentleaf Tea</a></td>
+<td>+50 Finesse (+5.0%)</td><td>1 hour</td></tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/item=242299" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_cooking_tea_purple.jpg"/>Sanguithorn Tea</a></td>
+<td>+50 Perception (+5.0%)</td><td>1 hour</td></tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/item=242301" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_cooking_tea_orange.jpg"/>Azeroot Tea</a></td>
+<td>+50 Deftness (+16.6%)</td>
+<td>1 hour</td></tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/item=124671" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_flaskofvolatility.jpg"/>Darkmoon Firewater</a></td>
+<td>+15% Deftness</td><td>1 hour</td></tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/item=237372" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_blacksmithing_modifiedcraftingreagent_green.jpg"/>Refulgent Razorstone</a></td>
+<td>+43 Finesse (+4.3%) for gathering tools</td>
+<td>2 hours</td>
+</tr>
+</tbody></table>
+</div>
+<h2 class="line-header" id="overloading">Infused Herbs &amp; Overloading</h2>
+<p>While gathering, you'll come across infused versions of regular herbs. They have a glowing visual effect and drop extra materials (motes), but they also hit you with a negative effect when you pick them.</p>
+<h3>How to get the Overloading spell</h3>
+<p>Once you gather an Infused Herb for the first time, you learn the <a class="white" href="https://www.wowhead.com/spell=1223014" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_elementalcombinedfoozles_water.jpg"/>Overload Infused Herb</a> ability. You can use it near an infused herb to trigger a bonus effect. The cooldown is <b>12 hours</b>, but it's reduced by <b>30 minutes</b> every time you gather a Midnight herb. That means roughly <b>24 herbs</b> to fully reset the cooldown.</p>
+<p>This usually gets added to your action bar automatically, but if you don't see it, you can find it in your <b>spellbook under the General tab</b>. It's not in the profession spellbook. It's in the normal one.</p>
+<h3>List of infused herbs by zone</h3>
+<p>There are a few <b>Lightfused</b> in certain parts of <b>Harandar</b>, and there are a few <b>Voidbound</b> in <b>Eversong Woods</b> and <b>Zul'Aman</b>, but the vast majority are in the zones listed below.</p>
+<div class="table-container">
+<table class="tbl-data">
+<thead>
+<tr>
+<th>Herb Type</th>
+<th>Zone</th>
+<th>Mote</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><b>Lightfused</b></td>
+<td>Eversong Woods </td>
+<td><a class="rare" href="https://www.wowhead.com/item=236949" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofpurelight_gold.jpg"/>Mote of Light</a></td>
+</tr>
+<tr>
+<td><b>Wild</b></td>
+<td>Zul'Aman</td>
+<td><a class="rare" href="https://www.wowhead.com/item=236951" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofwildmadic_lightgreen.jpg"/>Mote of Wild Magic</a></td>
+</tr>
+<tr>
+<td><b>Primal</b></td>
+<td>Harandar</td>
+<td><a class="rare" href="https://www.wowhead.com/item=236950" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofprimalenergy_darkorange.jpg"/>Mote of Primal Energy</a></td>
+</tr>
+<tr>
+<td><b>Voidbound</b></td>
+<td>Voidstorm</td>
+<td><a class="rare" href="https://www.wowhead.com/item=236952" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofpurevoid_blue.jpg"/>Mote of Pure Void</a></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3>Overloading</h3>
+<p>Using <a class="white" href="https://www.wowhead.com/spell=1223014" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_elementalcombinedfoozles_water.jpg"/>Overload Infused Herb</a> on an infused herb gives you a bonus effect depending on the type.</p>
+<div class="table-container">
+<table class="tbl-data">
+<thead>
+<tr>
+<th>Herb Type</th>
+<th>Normal Gather</th>
+<th>Overload</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><b>Lightfused</b></td>
+<td>Light circles appear on the ground. Stand in them to get extra motes.</td>
+<td>Even more light circles spawn on the ground. It's pretty hard to catch all of them, so you'll probably miss a few.</td>
+</tr>
+<tr>
+<td><b>Wild</b></td>
+<td>Four herb creatures spawn. Kill them and use Herbalism on their corpses to get extra motes.</td>
+<td>An elite creature spawns. Killing it gives you a 150 Perception buff for 5 minutes. <b>No extra motes.</b> The elite is pretty tough if you have bad gear.</td>
+</tr>
+<tr>
+<td><b>Primal</b></td>
+<td>Nothing extra outside the normal gather. You get a minor slow and DoT.</td>
+<td>You channel 50% of your HP to get extra motes. <b>Don't interrupt the channel!</b> It seems that mobs won't interrupt you, but <b>the HP drain can actually kill you</b>, so make sure you're above 50%.</td>
+</tr>
+<tr>
+<td><b>Voidbound</b></td>
+<td>Nothing extra. A void zone pulls you in, but nothing really happens. Just walk out.</td>
+<td>A portal appears along with 4 purple orbs. <b>Run into the orbs quickly or they disappear.</b> You get motes and ores for each one. The portal just teleports you to random places. It's just not worth using in its current form.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="line-header" id="routes">Herbalism Farming Routes</h2>
+<p>I'd recommend starting in Eversong Woods since it has the most straightforward terrain and lower mob density. Once you're comfortable, move to the other zones for variety and to trigger first-gather Knowledge bonuses from new herb types.</p>
+<p><b>Don't follow these routes strictly</b>, just use them as a general guideline and feel free to explore the zones. The routes are designed to hit the main herb nodes in each zone, but there are also herbs that spawn outside of the routes, so it's good to explore and find your own paths too.</p>
+<h3>Skill Ranges</h3>
+<p>Normal herbs give skill points early on, but they stop being useful around the halfway mark. After that, you need infused herbs to keep gaining skill.</p>
+<ul class="ls">
+<li><p><b>1 - 30:</b> Pretty much everything gives skill points. You'll reach 30 fast just by picking whatever you find. Tranquility Bloom stops giving skill at 30, but the rest carry you further.</p></li>
+<li><p><b>30 - 60:</b> The other four base herbs (Sanguithorn, Azeroot, Argentleaf, Mana Lily) go yellow at 30 and grey at 60. Lush and Infused variants also give skill here.</p></li>
+<li><p><b>60 - 100:</b> All base herbs are grey. Only Lush and Infused variants give skill now (yellow at 60, grey at 100). They spawn randomly in place of normal herbs, so just keep gathering and you'll find them.</p></li>
+</ul>
+<div class="tab-container">
+<div class="tabs">
+<div class="tab-button active" data-tab="route-eversong">
+<span class="tab-title">Eversong Woods</span>
+</div>
+<div class="tab-button" data-tab="route-zulaman">
+<span class="tab-title">Zul'Aman</span>
+</div>
+<div class="tab-button" data-tab="route-harandar">
+<span class="tab-title">Harandar</span>
+</div>
+<div class="tab-button" data-tab="route-voidstorm">
+<span class="tab-title">Voidstorm</span>
+</div>
+</div>
+<div class="tab-content active" id="route-eversong">
+<p>One of the easiest to follow routes, it's basically a loop around the whole zone, with a short detour through the middle on each side to catch the nodes there.</p>
+<img alt="Eversong Woods double gather Route" class="maps" height="1066" src="../../images/midnight/mining-herbalism-farming-route-eversong-woods.jpg" width="1600"/>
+</div>
+<div class="tab-content" id="route-zulaman">
+<p>Gathering in Zul'Aman is <b>not recommended if you want to level your character with gathering only</b>, or you will have to get some gear upgrades along the way. Infused Wild herbs and Ores summon mobs that can be tough to kill if you don't have good gear.</p>
+<p>This is the route I use for farming for both herbalism and mining, so it's good for double gatherers. Maisara Deers have some elite mobs so sometimes you won't be able to kill the summoned infused mobs there. <b>High deftness is recommended</b> to avoid fighting mobs.</p>
+<p><b>Overloading tip:</b> I don't recommend using your Overload cooldown on Wild deposits here, as the spawned elite doesn't drop extra motes and the Perception buff is not that great. Save it for the occasional Voidbound deposits you find along the route instead.</p>
+<img alt="Zul'Aman double gather Route" class="maps" height="1066" src="../../images/midnight/mining-herbalism-farming-route-zul-aman.jpg" width="1600"/>
+</div>
+<div class="tab-content" id="route-harandar">
+<p>Harandar is <b>probably the most annoying zone that I ever farmed in</b>. There are a lot of herbs on top of mushrooms and roots that are just annoying to get to. You have to move a lot vertically up and down, also mobs almost everywhere.</p>
+<p>I try to generally make routes that avoid all or most mobs, but it was pretty hard in Harandar, so these routes do have a lot of mobs in them. <b>High deftness is recommended</b> to avoid fighting mobs. </p>
+<h4>Herbalism Route</h4>
+<p>I've come up with this farming route that avoids some of the more annoying places and still hits a good amount of herbs. </p>
+<img alt="Harandar Herbalism Route" class="maps" height="1066" loading="lazy" src="../../images/midnight/herbalism-farming-route-harandar.jpg" width="1600"/>
+<h4>Double Gathering Route</h4>
+<p>Now, you can use the first route if you also have mining it's still decent, but this one hits more ores. There are a lot of vertical up and down movements, so <b>this route is not for everyone</b>, but it's pretty good if you want to maximize your gathering in Harandar. If you find this annoying just stick to the first one and maybe add some parts from this route that you don't find that annoying.</p>
+<p>If you are double gathering, you could probably just fly in random direction in the zone and still get decent amount of herbs and ores, but if you want a more structured route, this is the one I used.</p>
+<img alt="Harandar double gather Route" class="maps" height="1066" loading="lazy" src="../../images/midnight/mining-herbalism-farming-route-harandar-1.jpg" width="1600"/>
+</div>
+<div class="tab-content" id="route-voidstorm">
+<p>This zone probably has the highest mob density around nodes, so sometimes even with high deftness you have to try multiple times to get a herb. (just spam right click)</p><p>The zone is pretty rough to make a route for since the layout is all over the place. What I found works best is flying around the edge of the map and staying near the middle, since those areas seem to have much lower mob density. <b>High deftness is recommended</b> to avoid fighting mobs.</p><p>Don't follow these lines exactly, it's just basically the direction where you should be heading but then you can just zig-zag and fly around. But, also if you just go in a straight line around the edge of the map you will probably get a good amount of herbs too, since the nodes are pretty dense in this zone, so it's not really about following a specific route.</p> <img alt="Voidstorm double gather Route" class="maps" height="1066" loading="lazy" src="../../images/midnight/mining-herbalism-farming-route-voidstorm.jpg" width="1600"/>
+</div>
+</div>
+</div></article>
+</main>
+<aside class="left-sidebar-menu sidebar-sticky">
+<nav>
+<h4>Quick Links</h4>
+<ul>
+<li><a href="../../guides/wow-alchemy-leveling-guide/index.html">Alchemy</a></li>
+<li><a href="../../guides/wow-blacksmithing-leveling-guide/index.html">Blacksmithing</a></li>
+<li><a href="../../guides/wow-enchanting-leveling-guide/index.html">Enchanting</a></li>
+<li><a href="../../guides/wow-inscription-leveling-guide/index.html">Inscription</a></li>
+<li><a href="../../guides/wow-jewelcrafting-leveling-guide/index.html">Jewelcrafting</a></li>
+<li><a href="../../guides/wow-leatherworking-leveling-guide/index.html">Leatherworking</a></li>
+<li><a href="../../guides/wow-tailoring-leveling-guide/index.html">Tailoring</a></li>
+<li><a href="../../guides/wow-herbalism-leveling-guide/index.html">Herbalism</a></li>
+<li><a href="../../guides/wow-mining-leveling-guide/index.html">Mining</a></li>
+<li><a href="../../guides/wow-skinning-leveling-guide/index.html">Skinning</a></li>
+<li><a href="../../guides/wow-cooking-leveling-guide/index.html">Cooking</a></li>
+</ul>
+</nav>
+</aside>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

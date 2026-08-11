@@ -74,7 +74,7 @@ export function TBCContent({ expansionSlug }: TBCContentProps) {
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
         Guías de nivelado de profesiones para TBC Classic y reinos del Aniversario, del 1 al 375.
         Cada guía te muestra cómo subir usando los materiales más baratos y las mejores rutas.
-        También encontrarás guías de farming de materiales de Terrallende.
+        También encontrarás guías de recolección de materiales de Terrallende.
       </p>
       <Separator className="separator-faction my-6 sm:my-8" />
 
@@ -144,10 +144,10 @@ export function TBCContent({ expansionSlug }: TBCContentProps) {
 
       <Separator className="separator-faction my-8" />
 
-      {/* Guías de farming */}
+      {/* Guías de recolección */}
       <section className="mb-10">
         <h2 className="title-underline-faction font-heading mb-4 text-lg font-semibold text-foreground sm:text-xl">
-          Guías de farming
+          Guías de recolección
         </h2>
         <div className="grid gap-6 sm:grid-cols-3">
           <Card className="card-faction border border-border">

@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="This MoP Classic Jewelcrafting leveling guide will show you the fastest way how to level your Jewelcrafting skill up from 1 to 600 as inexpensively as possible in Mists of Pandaria Classic." name="description"/>
+<meta content="MoP Classic Jewelcrafting Leveling Guide 1-600" property="og:title"/>
+<meta content="This MoP Classic Jewelcrafting leveling guide will show you the fastest way how to level your Jewelcrafting skill up from 1 to 600 as inexpensively as possible in Mists of Pandaria Classic." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/mop/jewelcrafting-leveling-guide-mop-classic" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>MoP Classic Jewelcrafting Leveling Guide 1-600</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=5xR1CxHz9cn6MmJehD2BTncrhJUZlUudTjk0twkIIcA-1771996812.6962473-1.0.1.1-L4jxS_NcDtFmXS09PigKjl6ScpDywfj45ZGBSxXHQMY" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--4">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#shopping-list">Shopping List</a></li>
+<li><a href="#jewelcrafting-trainers">Jewelcrafting trainers</a></li>
+<li><a href="#Apprentice">1-50</a></li>
+<li><a href="#Journeyman">50-125</a></li>
+<li><a href="#Expert">125-225</a></li>
+<li><a href="#Artisan">225-300</a></li>
+<li><a href="#master">300-350</a></li>
+<li><a href="#grand-master">350-425</a></li>
+<li><a href="#425">425-500</a></li>
+<li><a href="#500">500-600</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">MoP Classic Jewelcrafting Leveling Guide 1-600</h1>
+<article>
+<p><a name="top"><img align="left" height="64" src="../../images/icons/professions/jewelcrafting.png" style="margin-right: 8px;" width="64"/></a>This MoP Classic Jewelcrafting leveling guide will show you the fastest way how to level your Jewelcrafting skill up from 1 to 600 as inexpensively as possible in Mists of Pandaria Classic.</p>
+<h2 class="gtitle" id="shopping-list">Shopping List</h2>
+<p>This is the list of the approximate materials required to level Jewelcrafting up to 600.</p>
+<h3>Prospecting</h3>
+<p>At Jewelcrafting 20, you can learn <a class="white" href="https://www.wowhead.com/mop-classic/spell=31252" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_bloodgem_01.jpg"/>Prospecting</a> from your trainer. It lets you turn 5 ores into gems. If some gems are too expensive, try prospecting instead. For ore yield info, check my separate guide:</p>
+<p class="text-align-center"><a class="gblock" href="../../mop/prospecting-table-mop-classic/index.html"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_bloodgem_01.jpg"/>Prospecting Table for MoP Classic</a></p>
+<h3>Classic</h3>
+<ul>
+<li>110x <a class="white" href="https://www.wowhead.com/mop-classic/item=2840" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_02.jpg"/>Copper Bar</a></li>
+<li>15x <a class="zold" href="https://www.wowhead.com/mop-classic/item=818" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_opal_03.jpg"/>Tigerseye</a> or 15x <a class="zold" href="https://www.wowhead.com/mop-classic/item=774" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_emerald_03.jpg"/>Malachite</a></li>
+<li>120 <a class="white" href="https://www.wowhead.com/mop-classic/item=2841" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_bronze.jpg"/>Bronze Bar</a> - 60 Copper Bar + 60 Tin Bar if you have Mining.</li>
+<li>20x <a class="zold" href="https://www.wowhead.com/mop-classic/item=1210" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_amethyst_01.jpg"/>Shadowgem</a></li>
+<li>40x <a class="zold" href="https://www.wowhead.com/mop-classic/item=1210" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_amethyst_01.jpg"/>Shadowgem</a> or 25 <a class="zold" href="https://www.wowhead.com/mop-classic/item=5498" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_pearl_03.jpg"/>Small Lustrous Pearl</a> or 40 <a class="zold" href="https://www.wowhead.com/mop-classic/item=2842" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_01.jpg"/>Silver Bar</a>. You can get a few from each. You don't have to choose one of them only.</li>
+<li>80x <a class="white" href="https://www.wowhead.com/mop-classic/item=2838" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_stone_12.jpg"/>Heavy Stone</a></li>
+<li>30x <a class="zold" href="https://www.wowhead.com/mop-classic/item=1206" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_emerald_02.jpg"/>Moss Agate</a> or 66x <a class="zold" href="https://www.wowhead.com/mop-classic/item=1705" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_crystal_01.jpg"/>Lesser Moonstone</a> (a combination of both can work too)</li>
+<li>142x <a class="white" href="https://www.wowhead.com/mop-classic/item=3860" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_06.jpg"/>Mithril Bar</a></li>
+<li>90x <a class="white" href="https://www.wowhead.com/mop-classic/item=7912" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_stone_10.jpg"/>Solid Stone</a></li>
+<li>28x <a class="zold" href="https://www.wowhead.com/mop-classic/item=6037" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_08.jpg"/>Truesilver Bar</a> or 25x <a class="zold" href="https://www.wowhead.com/mop-classic/item=3864" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_opal_02.jpg"/>Citrine</a></li>
+<li>35x <a class="zold" href="https://www.wowhead.com/mop-classic/item=7909" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_crystal_02.jpg"/>Aquamarine</a></li>
+<li>56x <a class="white" href="https://www.wowhead.com/mop-classic/item=12359" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_07.jpg"/>Thorium Bar</a></li>
+<li>10x <a class="zold" href="https://www.wowhead.com/mop-classic/item=7910" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_ruby_02.jpg"/>Star Ruby</a></li>
+<li>21x <a class="zold" href="https://www.wowhead.com/mop-classic/item=12799" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_opal_01.jpg"/>Large Opal</a></li>
+<li>20x <a class="zold" href="https://www.wowhead.com/mop-classic/item=12800" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_diamond_01.jpg"/>Azerothian Diamond</a></li>
+<li>10x <a class="zold" href="https://www.wowhead.com/mop-classic/item=12364" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_emerald_01.jpg"/>Huge Emerald</a></li>
+</ul>
+<h3>TBC</h3>
+<ul>
+<li>Buy around 40 in total from any of these: <a class="zold" href="https://www.wowhead.com/mop-classic/item=23077" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_bloodgem_03.jpg"/>Blood Garnet</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=23107" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_ebondraenite_03.jpg"/>Shadow Draenite</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=23079" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_deepperidot_03.jpg"/>Deep Peridot</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=23117" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_azuredraenite_03.jpg"/>Azure Moonstone</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=21929" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_flamespessarite_03.jpg"/>Flame Spessarite</a>. You probably shouldn't buy only one type of gem since there are parts where you can use multiple different recipes.</li>
+<li>Buy 15 more <a class="zold" href="https://www.wowhead.com/mop-classic/item=23107" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_ebondraenite_03.jpg"/>Shadow Draenite</a> or <a class="zold" href="https://www.wowhead.com/mop-classic/item=23117" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_azuredraenite_03.jpg"/>Azure Moonstone</a></li>
+<li>48x <a class="white" href="https://www.wowhead.com/mop-classic/item=24243" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_powder_adamantite.jpg"/>Adamantite Powder</a> - You can get 48 Adamantite Powder by prospecting 240 <a class="white" href="https://www.wowhead.com/mop-classic/item=23425" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_adamantium.jpg"/>Adamantite Ore</a>.</li>
+<li>12x <a class="zold" href="https://www.wowhead.com/mop-classic/item=22452" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_earth.jpg"/>Primal Earth</a></li>
+<li>12x <a class="white" href="https://www.wowhead.com/mop-classic/item=23446" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_10.jpg"/>Adamantite Bar</a></li>
+</ul>
+<h3>WotLK</h3>
+<ul>
+<li>Buy around 60 from the following gems: <a class="zold" href="https://www.wowhead.com/mop-classic/item=36917" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_12.jpg"/>Bloodstone</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=36923" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_10.jpg"/>Chalcedony</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=36932" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_07.jpg"/>Dark Jade</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=36929" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_09.jpg"/>Huge Citrine</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=36926" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_11.jpg"/>Shadow Crystal</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=36920" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_08.jpg"/>Sun Crystal</a> (don't have to be the same color)</li>
+<li>Another 5x from one of these: <a class="zold" href="https://www.wowhead.com/mop-classic/item=36917" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_12.jpg"/>Bloodstone</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=36923" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_10.jpg"/>Chalcedony</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=36929" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_09.jpg"/>Huge Citrine</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=36920" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_08.jpg"/>Sun Crystal</a></li>
+<li>10x <a class="white" href="https://www.wowhead.com/mop-classic/item=37701" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_crystal_earth.jpg"/>Crystallized Earth</a></li>
+<li>46x <a class="zold" href="https://www.wowhead.com/mop-classic/item=35624" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_eternal_earth.jpg"/>Eternal Earth</a> <b>OR</b> 23x <a class="zold" href="https://www.wowhead.com/mop-classic/item=35624" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_eternal_earth.jpg"/>Eternal Earth</a> and 23x <a class="zold" href="https://www.wowhead.com/mop-classic/item=35627" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_eternal_shadow.jpg"/>Eternal Shadow</a></li>
+<li>5x <a class="rare" href="https://www.wowhead.com/mop-classic/item=34052" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_dreamshard_02.jpg"/>Dream Shard</a></li>
+<li>5x <a class="rare" href="https://www.wowhead.com/mop-classic/item=36933" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_01.jpg"/>Forest Emerald</a></li>
+<li>5x <a class="zold" href="https://www.wowhead.com/mop-classic/item=41163" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_platinum.jpg"/>Titanium Bar</a></li>
+</ul>
+<h3>Cataclysm</h3>
+<ul>
+<li>Buy 45 from any of the following gems: <a class="zold" href="https://www.wowhead.com/mop-classic/item=52177" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior4.jpg"/>Carnelian</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=52179" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior.jpg"/>Alicite</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=52182" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior2.jpg"/>Jasper</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=52178" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior6.jpg"/>Zephyrite</a></li>
+<li>16x <a class="zold" href="https://www.wowhead.com/mop-classic/item=52181" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior5.jpg"/>Hessonite</a></li>
+<li>50x <a class="zold" href="https://www.wowhead.com/mop-classic/item=52180" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior3.jpg"/>Nightstone</a></li>
+</ul>
+<h3>Pandaria</h3>
+<ul>
+<li>Buy 60 from any of the following uncommon gems: <a class="zold" href="https://www.wowhead.com/mop-classic/item=76133" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_saphirerough_03.jpg"/>Lapis Lazuli</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=76130" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_opalrough_03.jpg"/>Tiger Opal</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=76134" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_topazrough_03.jpg"/>Sunstone</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=76135" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_amethystrough_03.jpg"/>Roguestone</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=76137" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_emeraldrough_03.jpg"/>Alexandrite</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=76136" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_rubyrough_03.jpg"/>Pandarian Garnet</a> (you should have at least 5 from each)</li>
+<li>Buy 9 from any of the following rare gems: <a class="rare" href="https://www.wowhead.com/mop-classic/item=76139" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_green.jpg"/>Wild Jade</a>, <a class="rare" href="https://www.wowhead.com/mop-classic/item=76140" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_orange.jpg"/>Vermilion Onyx</a>, <a class="rare" href="https://www.wowhead.com/mop-classic/item=76131" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_red.jpg"/>Primordial Ruby</a>, <a class="rare" href="https://www.wowhead.com/mop-classic/item=76141" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_purple.jpg"/>Imperial Amethyst</a>, <a class="rare" href="https://www.wowhead.com/mop-classic/item=76142" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_yellow.jpg"/>Sun's Radiance</a>, <a class="rare" href="https://www.wowhead.com/mop-classic/item=76138" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_blue.jpg"/>River's Heart</a>. You will have to buy these from the same color.</li>
+</ul>
+<h2 class="gtitle" id="jewelcrafting-trainers">Jewelcrafting trainers</h2>
+<p>You can learn Jewelcrafting from these trainers:</p>
+<div class="row guidegrid">
+<div class="col-xs-12 col-sm-12 col-md-6 guiderow">
+<p><b>Horde trainers:</b></p><ul>
+<li><a href="https://www.wowhead.com/npc=46675" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Lugrah</a> in Orgrimmar.</li>
+<li><a href="https://www.wowhead.com/npc=52657" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Nahari Cloudchaser</a> in Thunder Bluff.</li>
+<li><a href="https://www.wowhead.com/npc=52587" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Neller Fayne</a> in Undercity.</li>
+<li><a href="https://www.wowhead.com/wotlk/npc=19775" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Kalinda</a> in Silvermoon City.</li>
+</ul>
+</div><div class="col-xs-12 col-sm-12 col-md-6 guiderow"><p><b>Alliance trainers:</b></p><ul>
+<li><a href="https://www.wowhead.com/npc=44582" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Theresa Denman</a> in Stormwind city</li>
+<li><a href="https://www.wowhead.com/npc=52586" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Hanner Gembold</a> in Ironforge.</li>
+<li><a href="https://www.wowhead.com/npc=52645" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Aessa Silverdew</a> in Darnassus.</li>
+<li><a href="https://www.wowhead.com/wotlk/npc=19778" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Farii</a> in The Exodar.</li>
+</ul>
+</div></div>
+<h2 class="gtitle" id="Apprentice">Leveling MoP Classic Jewelcrafting</h2>
+<p><b>Draenei </b>characters have +5 Jewelcrafting skills because of their passive <a class="white" href="https://www.wowhead.com/mop-classic/spell=28875" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_misc_conjuremanajewel.jpg"/>Gemcutting</a>. An extra 5 Jewelcrafting skill means recipes stay orange for 5 more points, so you can save a lot of gold by doing lower level recipes for 10 more points.</p>
+<h3 class="gdskill">1 - 35</h3>
+<p>Buy a <a class="white" href="https://www.wowhead.com/mop-classic/item=20815" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_box_02.jpg"/>Jeweler's Kit</a> from the Jewelcrafting Supplies vendor near your trainer or General/Trade Goods vendors.</p>
+<p>55x <a class="white" href="https://www.wowhead.com/mop-classic/spell=25255" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_delicatecopperwire.jpg"/>Delicate Copper Wire</a> - 110 Copper Bar</p>
+<p>Keep these because you will need them later. But you can stop making them when you reach 35 and only make more if you need it.</p>
+<h3 class="gdskill">35 - 50</h3>
+<p>15x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=32179" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_21.jpg"/>Tigerseye Band</a> - 15 Tigerseye, 15 Delicate Copper Wire</p>
+<p>You can also make 15x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=32178" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_necklace_01.jpg"/>Malachite Pendant</a>.</p>
+<h2 class="gtitle" id="Journeyman">Journeyman Jewelcrafting</h2>
+<p>Visit your trainer and learn Journeyman Jewelcrafting. (Requires level 10)</p>
+<h3 class="gdskill">50 - 80</h3>
+<p>50x <a class="white" href="https://www.wowhead.com/mop-classic/spell=25278" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_bronzesetting.jpg"/>Bronze Setting</a> - 100 Bronze Bar</p>
+<p>Save these. You will need some of them later.</p>
+<h3 class="gdskill">80 - 100</h3>
+<p>20x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=25287" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_16.jpg"/>Gloom Band</a> - 20 Bronze Setting, 40 Shadowgem, 40 Delicate Copper Wire</p>
+<p><b>Alternative recipes:</b></p>
+<ul>
+<li>25x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=25284" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_28.jpg"/>Simple Pearl Ring</a> - 25 Small Lustrous Pearl, 25 Bronze Setting, 30 Copper Bar</li>
+<li>20x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=25317" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_05.jpg"/>Ring of Silver Might</a> - 40 Silver Bar</li>
+</ul>
+<h3 class="gdskill">100 - 110</h3>
+<p>10x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=25318" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_34.jpg"/>Ring of Twilight Shadows</a> - 20 Shadowgem, 20 Bronze Bar</p>
+<p>You can also continue to make <a class="zold" href="https://www.wowhead.com/mop-classic/spell=25317" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_05.jpg"/>Ring of Silver Might</a>, or you can switch to <a class="zold" href="https://www.wowhead.com/mop-classic/spell=36524" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_11.jpg"/>Heavy Jade Ring</a> at 105 if you have some <a class="zold" href="https://www.wowhead.com/mop-classic/item=1529" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_stone_01.jpg"/>Jade</a>.</p>
+<h3 class="gdskill">110 - 120</h3>
+<p>10x <a class="white" href="https://www.wowhead.com/mop-classic/spell=32807" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_statue_09.jpg"/>Heavy Stone Statue</a> - 80 Heavy Stone</p>
+<p>If Heavy Stone is cheap, then you can make this one up to 130. However, if it's actually really expensive, then you can keep making <a class="zold" href="https://www.wowhead.com/mop-classic/spell=36524" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_11.jpg"/>Heavy Jade Ring</a> and <a class="zold" href="https://www.wowhead.com/mop-classic/spell=25318" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_34.jpg"/>Ring of Twilight Shadows</a>.</p>
+<h3 class="gdskill">120 - 150</h3>
+<p>30x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=25610" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_shield_21.jpg"/>Pendant of the Agate Shield</a> - 30 Moss Agate, 30 Bronze Settings</p>
+<h4>Alternative recipes:</h4>
+<p>Make <a class="zold" href="https://www.wowhead.com/mop-classic/spell=25339" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_necklace_11.jpg"/>Amulet of the Moon</a> if 2x <a class="zold" href="https://www.wowhead.com/mop-classic/item=1705" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_crystal_01.jpg"/>Lesser Moonstone</a> is cheaper than one <a class="zold" href="https://www.wowhead.com/mop-classic/item=1206" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_emerald_02.jpg"/>Moss Agate</a>. But this recipe turns yellow at 140, so you might need to make more than 30 of these.</p>
+<p>If you prospected your ores, you probably have both gems, so you should make <a class="zold" href="https://www.wowhead.com/mop-classic/spell=25339" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_necklace_11.jpg"/>Amulet of the Moon</a> first because it turns yellow sooner, then switch to <a class="zold" href="https://www.wowhead.com/mop-classic/spell=25610" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_shield_21.jpg"/>Pendant of the Agate Shield</a> at around 140.</p>
+<p>The <a class="white" href="https://www.wowhead.com/mop-classic/item=20854" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Design: Amulet of the Moon</a> is sold by <a href="https://www.wowhead.com/mop-classic/item=20854#sold-by" rel="nofollow">these NPCs</a>. This is also a <b>limited supply recipe</b>, so you must wait for it to respawn if someone bought it before you. I don't know the exact respawn timer, but it's not that long (5-10 minutes)</p>
+<h2 class="gtitle" id="Expert">Expert Jewelcrafting</h2>
+<p>Visit your trainer and learn Expert Jewelcrafting. (Requires level 20)</p>
+<h3 class="gdskill">150 - 180</h3>
+<p>40x <a class="white" href="https://www.wowhead.com/mop-classic/spell=25615" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_mithrilfiligree.jpg"/>Mithril Filigree</a> - 80 Mithril Bar</p>
+<p>Keep these. You will need some of them later. (you might need more depending on which recipes you make)</p>
+<p>This recipe will be yellow for the last few points, so you probably won't end at exactly 180, but that doesn't matter. You can still go to the next step after making around 40 of these.</p>
+<h3 class="gdskill">180 - 185</h3>
+<p>9x <a class="white" href="https://www.wowhead.com/mop-classic/spell=32808" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_statue_06.jpg"/>Solid Stone Statue</a> - 90 Solid Stone</p>
+<p>If you can get cheap Solid Stones, then you could make this one up to 190.</p>
+<h4>Alternative recipes:</h4>
+<p>Make a few <a class="zold" href="https://www.wowhead.com/mop-classic/spell=25617" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_20.jpg"/>Blazing Citrine Ring</a> if you have some <a class="zold" href="https://www.wowhead.com/mop-classic/item=3864" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_opal_02.jpg"/>Citrine</a> left from prospecting.</p>
+<h3 class="gdskill">185 - 210</h3>
+<p>28x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=25620" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_35.jpg"/>Engraved Truesilver Ring</a> - 28 Truesilver Bar, 56 Mithril Filigree</p>
+<p>This recipe will be yellow for the last few points, so you might have to make a few more.</p>
+<h4>Alternative recipes:</h4>
+<p>25x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=25621" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_29.jpg"/>Citrine Ring of Rapid Healing</a> - 25 Citrine, 50 Mithril Bar</p>
+<h3 class="gdskill">210 - 220</h3>
+<p>10x <a class="rare" href="https://www.wowhead.com/mop-classic/spell=26874" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_05.jpg"/>Aquamarine Signet</a> - 30 Aquamarine, 10 Jeweler's Setting</p>
+<p><a class="white" href="https://www.wowhead.com/mop-classic/item=52188" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_bronzesetting.jpg"/>Jeweler's Setting</a> is sold by Jewelcrafting supply vendors. They are usually near the trainers in capital cities.</p>
+<h3 class="gdskill">220 - 225</h3>
+<p>5x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=26876" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_necklace_16.jpg"/>Aquamarine Pendant of the Warrior</a> - 5 Aquamarine, 15 Mithril Filigree</p>
+<h2 class="gtitle" id="Artisan">Artisan Jewelcrafting</h2>
+<p>Visit your trainer and learn Artisan Jewelcrafting. (Requires level 35)</p>
+<h3 class="gdskill">225 - 250</h3>
+<p>56x <a class="white" href="https://www.wowhead.com/mop-classic/spell=26880" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_thoriumsetting.jpg"/>Thorium Setting</a> - 56 Thorium Bar</p>
+<p>Stop making these at 250 and only make more if you need them. (you will need around 56)</p>
+<h3 class="gdskill">250 - 260</h3>
+<p>10x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=26883" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_necklace_15.jpg"/>Ruby Pendant of Fire</a> - 10 Star Ruby, 10 Thorium Setting</p>
+<h3 class="gdskill">260 - 281</h3>
+<p>21x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=26902" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_17.jpg"/>Simple Opal Ring</a> - 21 Large Opal, 21 Thorium Setting</p>
+<p>If you have a lot of <a class="zold" href="https://www.wowhead.com/mop-classic/item=12800" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_diamond_01.jpg"/>Azerothian Diamond</a> left, or if it's cheaper than <a class="zold" href="https://www.wowhead.com/mop-classic/item=12799" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_opal_01.jpg"/>Large Opal</a>, then you can start crafting <a class="zold" href="https://www.wowhead.com/mop-classic/spell=36526" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_42.jpg"/>Diamond Focus Ring</a> when you reach 265. <b>But make sure to keep at least 20x <a class="zold" href="https://www.wowhead.com/mop-classic/item=12800" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_diamond_01.jpg"/>Azerothian Diamond</a> for the next step.</b></p>
+<h4>Alternative recipe:</h4>
+<p>If <a class="zold" href="https://www.wowhead.com/mop-classic/item=12800" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_diamond_01.jpg"/>Azerothian Diamond</a> and <a class="zold" href="https://www.wowhead.com/mop-classic/item=12799" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_opal_01.jpg"/>Large Opal</a> cost around twice as much as one <a class="zold" href="https://www.wowhead.com/mop-classic/item=7910" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_ruby_02.jpg"/>Star Ruby</a>, then you should continue making <a class="zold" href="https://www.wowhead.com/mop-classic/spell=26883" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_necklace_15.jpg"/>Ruby Pendant of Fire</a> up to 275.</p>
+<h3 class="gdskill">281 - 295</h3>
+<p>20x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=36526" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_42.jpg"/>Diamond Focus Ring</a> - 20 Azerothian Diamond, 20 Thorium Setting</p>
+<h3 class="gdskill">295 - 300</h3>
+<p>5x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=34961" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_18.jpg"/>Emerald Lion Ring</a> - 10 Huge Emerald, 5 Thorium Setting</p>
+<h4>Alternatives recipes:</h4>
+<ul>
+<li>5x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=26907" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_27.jpg"/>Onslaught Ring</a> - 5 Thorium Setting, 5 Powerful Mojo, 5 Essence of Earth</li>
+<li>5x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=26908" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_necklace_11.jpg"/>Sapphire Pendant of Winter Night</a> - 5 Blue Sapphire, 5 Essence of Undeath, 5 Thorium Setting</li>
+<li>7x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=34960" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_35.jpg"/>Glowing Thorium Band</a> - 14 Azerothian Diamond, 7 Thorium Setting</li>
+</ul>
+<h2 class="gtitle" id="master">Master Jewelcrafting</h2>
+<p>Visit your trainer and learn Master Jewelcrafting. (Requires level 50)</p>
+<h3 class="gdskill">300 - 320</h3>
+<p>Cut around 30 from one of these gems:</p>
+<ul>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/spell=28925" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_ebondraenite_02.jpg"/>Timeless Shadow Draenite</a> - 1x Shadow Draenite</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/spell=28910" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_flamespessarite_02.jpg"/>Inscribed Flame Spessarite</a> - 1x Flame Spessarite</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/spell=28916" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_deepperidot_02.jpg"/>Radiant Deep Peridot</a> - 1x Deep Peridot</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/spell=28950" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_azuredraenite_02.jpg"/>Solid Azure Moonstone</a> - 1x Azure Moonstone</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/spell=28903" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_bloodgem_02.jpg"/>Brilliant Blood Garnet</a> - 1x Blood Garnet</li>
+</ul>
+<p>If you can find cheap <a class="zold" href="https://www.wowhead.com/mop-classic/item=11754" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_01.jpg"/>Black Diamond</a> at the Auction House, you can craft <a class="zold" href="https://www.wowhead.com/mop-classic/spell=62941" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_01.jpg"/>Prismatic Black Diamond</a> to level Jewelcrafting up to 315 or 320.</p>
+<h3 class="gdskill">320 - 325</h3>
+<p>Make around 5-7 from one of these:</p>
+<ul>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/spell=28914" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_ebondraenite_02.jpg"/>Glinting Shadow Draenite</a> - 1x Shadow Draenite</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/spell=34590" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_bloodgem_02.jpg"/>Delicate Blood Garnet</a> - 1x Blood Garnet</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/spell=28917" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_deepperidot_02.jpg"/>Jagged Deep Peridot</a> - 1x Deep Peridot</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/spell=28953" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_azuredraenite_02.jpg"/>Sparkling Azure Moonstone</a> - 1x Azure Moonstone</li>
+</ul>
+<h3 class="gdskill">325 - 335</h3>
+<p>12x <a class="rare" href="https://www.wowhead.com/mop-classic/spell=38068" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_arcane_arcanepotency.jpg"/>Mercurial Adamantite</a> - 48 Adamantite Powder (prospect 240 Adamantite Ore), 12 Primal Earth</p>
+<p>Save the 12x Mercurial Adamantite. You will need them at 340.</p>
+<p>You can go to the next part even if you didn't reach 335, but you must make a few more gems.</p>
+<h3 class="gdskill">335 - 340</h3>
+<p>Make 5-10 from any of the following gems.</p>
+<ul>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/spell=28948" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_azuredraenite_02.jpg"/>Rigid Azure Moonstone</a></li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=23101" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_flamespessarite_02.jpg"/>Potent Flame Spessarite</a> - Sold by <a href="https://www.wowhead.com/wotlk/npc=21655">Nakodu</a>. Requires Friendly Lower City reputation.</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/spell=28936" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_ebondraenite_02.jpg"/>Sovereign Shadow Draenite</a></li>
+</ul>
+<h3 class="gdskill">340 - 350</h3>
+<p>12x <a class="zold" href="https://www.wowhead.com/mop-classic/item=24078" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_59.jpg"/>Heavy Adamantite Ring</a> - 12 Adamantite Bar, 12 Mercurial Adamantite</p>
+<p>You can continue to make the gems above if you didn't reach 350, or you can make a few more rings.</p>
+<h2 class="gtitle" id="grand-master">Grand Master Jewelcrafting</h2>
+<p>Visit your trainer and learn Grand Master Jewelcrafting. (Requires level 65)</p>
+<h3 class="gdskill">350 - 395</h3>
+<p>There are like 50 new gem recipes you can learn from your trainer, so it would be hard to list all of them here. Go to your trainer, learn one from each color, or just one color if you have a lot of gems from one color.</p>
+<p>Buy around 60 from the following gems: <a class="zold" href="https://www.wowhead.com/mop-classic/item=36917" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_12.jpg"/>Bloodstone</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=36923" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_10.jpg"/>Chalcedony</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=36932" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_07.jpg"/>Dark Jade</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=36929" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_09.jpg"/>Huge Citrine</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=36926" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_11.jpg"/>Shadow Crystal</a>, <a class="zold" href="https://www.wowhead.com/mop-classic/item=36920" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_08.jpg"/>Sun Crystal</a> (don't have to be the same color)</p>
+<p>Make around 60x uncommon gems until you reach 395.</p>
+<h3 class="gdskill">395 - 400</h3>
+<p>Make 5 from any of the following:</p>
+<ul>
+<li>5x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=56193" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_25.jpg"/>Bloodstone Band</a> - 5 Bloodstone, 10 Crystallized Earth</li>
+<li>5x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=58142" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_necklace_16.jpg"/>Crystal Chalcedony Amulet</a> - 5 Chalcedony, 10 Crystallized Earth</li>
+<li>5x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=58141" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_necklace_03.jpg"/>Crystal Citrine Necklace</a> - 5 Huge Citrine, 10 Crystallized Earth</li>
+<li>5x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=56194" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_21.jpg"/>Sun Rock Ring</a> - 5 Sun Crystal, 10 Crystallized Earth</li>
+</ul>
+<p>These are all yellow recipes, so you might have to make more than 5.</p>
+<h3 class="gdskill">400 - 420</h3>
+<p>Make around 23 from one of the following:</p>
+<ul>
+<li>23x <a class="zold" href="https://www.wowhead.com/mop-classic/item=43248" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_02.jpg"/>Stoneguard Band</a> - 46 Eternal Earth</li>
+<li>23x <a class="zold" href="https://www.wowhead.com/mop-classic/item=43249" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_14.jpg"/>Shadowmight Ring</a> - 23 Eternal Earth, 23 Eternal Shadow</li>
+</ul>
+<p>You might have to make more than 23.</p>
+<h3 class="gdskill">420 - 425</h3>
+<p>5x <a class="rare" href="https://www.wowhead.com/mop-classic/spell=56197" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_49naxxramas.jpg"/>Dream Signet</a> - 5 Titanium Bar, 5 Forest Emerald, 5 Dream Shard</p>
+<h2 class="gtitle" id="425">Cataclysm Jewelcrafting</h2>
+<p>Visit your trainer and learn the Cataclysm Jewelcrafting skill. (Requires level 75)</p>
+<h3 class="gdskill">420 - 450</h3>
+<p>Make around 30 from any of the new Uncommon Gem Cuts you get from your trainer, but try to avoid using <a class="zold" href="https://www.wowhead.com/mop-classic/item=52180" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior3.jpg"/>Nightstone</a> and <a class="zold" href="https://www.wowhead.com/mop-classic/item=52181" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior5.jpg"/>Hessonite</a> because you will need more of them later on.</p>
+<p><a class="zold" href="https://www.wowhead.com/mop-classic/item=52306" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_stonering1.jpg"/>Jasper Ring</a> is the best if you have a lot of Jasper because you can disenchant this ring or sell it to the vendor for 5 gold.</p>
+<h3 class="gdskill">450 - 467</h3>
+<p>Make around 20 uncommon gems.</p>
+<h3 class="gdskill">467 - 475</h3>
+<p>8x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=73495" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_diamondring2.jpg"/>Hessonite Band</a> - 8 Jeweler's Setting, 16 Hessonite</p>
+<p>You can also make <a class="zold" href="https://www.wowhead.com/mop-classic/spell=73620" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_hand_1h_cataclysm_b_02-.jpg"/>Carnelian Spikes</a> if 3 Carnelian is cheaper than 2 Hessonite. You can buy the Jeweler's Setting from the vendor.</p>
+<h3 class="gdskill">475 - 500</h3>
+<p>28x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=73497" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_stonenecklace.jpg"/>Nightstone Choker</a> - 28 Jeweler's Setting, 56 Nightstone</p>
+<p>Make more Hessonite Band if you have some Hessonite left. </p>
+<p>Rare Cataclysm gems are cheap on most realms, so making <a class="rare" href="https://www.wowhead.com/mop-classic/spell=73621" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_hand_1h_cataclysm_b_01.jpg"/>The Perforator</a> between 490-500 seems very good alternative to rings and necks.</p>
+<h2 class="gtitle" id="500">MoP Classic Jewelcrafting</h2>
+<p>Some MoP recipes can be learned from trainers in Orgrimmar, but not all. The only MoP Jewelcrafting trainer who teaches every recipe is <a href="https://www.wowhead.com/mop-classic/npc=65098" rel="nofollow noopener noreferrer" target="_blank">Mai the Jade Shaper</a> in The Jade Forest.</p>
+<h3 class="gdskill">500 - 600</h3>
+<ul class="gd">
+<li><b>500 - 512</b><br/>
+		4x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=122661" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_125.jpg"/>Ornate Band</a> - 4 Lapis Lazuli, 4 Tiger Opal, 4 Sunstone
+	</li>
+</ul>
+<ul class="gd">
+<li><b>512 - 527</b><br/>
+		5x <a class="zold" href="https://www.wowhead.com/mop-classic/spell=122662" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_necklace_109.jpg"/>Shadowfire Necklace</a> - 5 Roguestone, 5 Alexandrite, 5 Pandarian Garnet
+<p>You can also keep making <a class="zold" href="https://www.wowhead.com/mop-classic/spell=122661" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_125.jpg"/>Ornate Band</a> if you have the gems.</p>
+</li></ul>
+<p>If your main goal is to learn every rare gem cut, stop leveling here and start doing your first gem research: <a class="rare" href="https://www.wowhead.com/mop-classic/spell=131593" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_variety_02.jpg"/>River's Heart</a> or <a class="rare" href="https://www.wowhead.com/mop-classic/spell=131695" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_variety_02.jpg"/>Sun's Radiance</a>. You can only make one research per day, and each gives 3 skill points. Since there are around 100 recipes to learn, you'll hit 600 just by doing these daily.</p>
+<ul class="gd">
+<li><b>527 - 575</b><br/>
+		No need to list every recipe you unlock at 525. They all stay orange up to 575. You'll learn more at 530, 535, 545, and so on. You can either craft necks and rings (3 skill points for 3 uncommon gems) or cut gems (1 point per gem). Both give the same skill-to-gem ratio. Necklaces and rings are usually easier to sell, so that's the better option. You'll use about 48 gems total.
+	</li>
+</ul>
+<ul class="gd">
+<li><b>575 - 585</b><br/>
+		At this point, necks and rings no longer give 3 points. Just cut any uncommon gem instead. You'll need around 20 gems.
+	</li>
+</ul>
+<ul class="gd">
+<li><b>585 - 588</b><br/>
+		Do a gem research like <a class="rare" href="https://www.wowhead.com/mop-classic/spell=131686" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_variety_02.jpg"/>Primordial Ruby</a>. Pick whichever you have mats for, since the new recipe you learn will match that gem color. You'll need to craft that new recipe 6 times.
+	</li>
+</ul>
+<ul class="gd">
+<li><b>588 - 600</b><br/>
+		Cut 6 rare gems from the recipe you just learned.
+	</li>
+</ul>
+<p>Now that you've maxed out Jewelcrafting, check out the complete MoP Classic Jewelcrafting overview. It covers profession bonuses, gem cuts, crafted items, reputation recipes, and more:</p>
+<p class="text-align-center"><a class="gblock" href="../../mop/jewelcrafting-overview-mop-classic/index.html">MoP Classic Jewelcrafting Overview</a></p>
+<p><br/>
+Congratulations on reaching 600! If you spot any typos, wrong material counts, or have suggestions to improve the guide, feel free to <a href="../../contact/index.html" rel="nofollow">send feedback</a>.</p>
+<p class="text-align-center"><a href="#top">(Return to Top)</a></p>
+</article>
+</main>
+<aside class="left-sidebar-menu sidebar-sticky">
+<nav>
+<h4>Quick Links</h4>
+<ul>
+<li><a href="../../mop/alchemy-leveling-guide-mop-classic/index.html">Alchemy</a></li>
+<li><a href="../../mop/blacksmithing-leveling-guide-mop-classic/index.html">Blacksmithing</a></li>
+<li><a href="../../mop/enchanting-leveling-guide-mop-classic/index.html">Enchanting</a></li>
+<li><a href="../../mop/engineering-leveling-guide-mop-classic/index.html">Engineering</a></li>
+<li><a href="../../mop/inscription-leveling-guide-mop-classic/index.html">Inscription</a></li>
+<li><a href="../../mop/jewelcrafting-leveling-guide-mop-classic/index.html">Jewelcrafting</a></li>
+<li><a href="../../mop/leatherworking-leveling-guide-mop-classic/index.html">Leatherworking</a></li>
+<li><a href="../../mop/tailoring-leveling-guide-mop-classic/index.html">Tailoring</a></li>
+<li><a href="../../mop/herbalism-leveling-guide-mop-classic/index.html">Herbalism</a></li>
+<li><a href="../../mop/mining-leveling-guide-mop-classic/index.html">Mining</a></li>
+<li><a href="../../mop/skinning-leveling-guide-mop-classic/index.html">Skinning</a></li>
+<li><a href="../../mop/first-aid-leveling-guide-mop-classic/index.html">First Aid</a></li>
+<li><a href="../../mop/cooking-leveling-guide-mop-classic/index.html">Cooking</a></li>
+<li><a href="../../mop/fishing-leveling-guide-and-overview/index.html">Fishing</a></li>
+<li><a href="../../mop/archaeology-guide-and-overview-mop-classic/index.html">Archaeology </a></li>
+</ul>
+</nav>
+</aside>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

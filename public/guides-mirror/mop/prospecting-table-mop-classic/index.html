@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="Prospecting allows you to convert 5 raw ores into useful materials that you will use to craft Jewelcrafting items. Each ore will yield different gems, so I put together the table below to list all the available gems you can get from each ore." name="description"/>
+<meta content="MoP Classic Prospecting Table" property="og:title"/>
+<meta content="Prospecting allows you to convert 5 raw ores into useful materials that you will use to craft Jewelcrafting items. Each ore will yield different gems, so I put together the table below to list all the available gems you can get from each ore." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/mop/prospecting-table-mop-classic" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>MoP Classic Prospecting Table</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=Kz2JEMw0J2e6g_IKFFUJvuLEZUwbMcV33JFCqLKhBlE-1771997341.6740253-1.0.1.1-4wLS3fxMnlX0tK0d5_iuBySjO8wJwr0uSUCyu9lSW6Q" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--4">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">MoP Classic Prospecting Table</h1>
+<article>
+<p>Prospecting allows you to convert 5 raw ores into useful materials that you will use to craft Jewelcrafting items. Each ore will yield different gems, so I put together the table below to list all the available gems you can get from each ore.</p>
+<p>Each ore also has a skill requirement, so you must level up your profession to prospect higher-level ores. You can use my <a href="../../mop/jewelcrafting-leveling-guide-mop-classic/index.html">MoP Classic Jewelcrafting leveling guide</a> if your skill is not high enough to prospect some of the ores.</p>
+<h3>How to use the table below</h3>
+<ul class="textul">
+<li><strong>Common:</strong> Each time you prospect 5 ores, <b>you will always get at least 1 gem</b> from the "Common" column in the table below. Sometimes you can get two common gems, so these numbers don't add up to 100%.</li>
+<li><strong>Rare:</strong> There is also a <b>chance to get 1 gem</b> from the "Rare" column. <b>This roll is on top of the common gem(s)</b>, so this will show up as an extra gem in your loot window.</li>
+</ul>
+<p>You can use the percentages below to estimate how many gems you will get from prospecting a large number of raw ores.</p>
+<h2 class="gtitle">Prospecting yield &amp; skill requirements</h2>
+<div class="tab-container">
+<div class="tabs spread-buttons">
+<button class="tab-button active" data-tab="tab-1">Classic</button>
+<button class="tab-button" data-tab="tab-2">TBC</button>
+<button class="tab-button" data-tab="tab-3">WotLK</button>
+<button class="tab-button" data-tab="tab-4">Cata</button>
+<button class="tab-button" data-tab="tab-5">MoP</button>
+</div>
+<div class="tab-content active" id="tab-1">
+<h3>Classic</h3>
+<table>
+<tbody>
+<tr>
+<th>5 x Ore</th>
+<th>Skill</th>
+<th>Common</th>
+<th>Rare</th>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/mop-classic/item=2770" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_copper_01.jpg"/>Copper Ore</a>
+</td>
+<td class="text-align-center">20
+                </td>
+<td><a class="zold" href="https://www.wowhead.com/mop-classic/item=774" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_emerald_03.jpg"/>Malachite</a> (50%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=818" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_opal_03.jpg"/>Tigerseye</a> (50%)
+</td>
+<td><a class="zold" href="https://www.wowhead.com/mop-classic/item=1210" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_amethyst_01.jpg"/>Shadowgem</a> (10%)
+</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/mop-classic/item=2771" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_tin_01.jpg"/>Tin Ore</a>
+</td>
+<td class="text-align-center">50
+</td>
+<td><a class="zold" href="https://www.wowhead.com/mop-classic/item=1705" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_crystal_01.jpg"/>Lesser Moonstone</a> (38%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=1206" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_emerald_02.jpg"/>Moss Agate</a> (38%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=1210" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_amethyst_01.jpg"/>Shadowgem</a> (38%)</td>
+<td><a class="zold" href="https://www.wowhead.com/mop-classic/item=7909" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_crystal_02.jpg"/>Aquamarine</a> (3.33%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=3864" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_opal_02.jpg"/>Citrine</a> (3.33%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=1529" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_stone_01.jpg"/>Jade</a> (3.33%)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/mop-classic/item=2772" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_iron_01.jpg"/>Iron Ore</a>
+</td>
+<td class="text-align-center">125
+</td>
+<td><a class="zold" href="https://www.wowhead.com/mop-classic/item=1705" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_crystal_01.jpg"/>Lesser Moonstone</a> (35%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=3864" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_opal_02.jpg"/>Citrine</a> (35%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=1529" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_stone_01.jpg"/>Jade</a> (35%)</td>
+<td><a class="zold" href="https://www.wowhead.com/mop-classic/item=7910" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_ruby_02.jpg"/>Star Ruby</a> (5%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=7909" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_crystal_02.jpg"/>Aquamarine</a> (5%)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/mop-classic/item=3858" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_mithril_02.jpg"/>Mithril Ore</a>
+</td>
+<td class="text-align-center">175
+</td>
+<td><a class="zold" href="https://www.wowhead.com/mop-classic/item=7910" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_ruby_02.jpg"/>Star Ruby</a> (35%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=7909" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_crystal_02.jpg"/>Aquamarine</a> (35%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=3864" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_opal_02.jpg"/>Citrine</a> (35%)</td>
+<td><a class="zold" href="https://www.wowhead.com/mop-classic/item=12361" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_sapphire_02.jpg"/>Blue Sapphire</a> (2.5%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=12799" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_opal_01.jpg"/>Large Opal</a> (2.5%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=12800" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_diamond_01.jpg"/>Azerothian Diamond</a> (2.5%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=12364" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_emerald_01.jpg"/>Huge Emerald</a> (2.5%)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/mop-classic/item=10620" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_thorium_02.jpg"/>Thorium Ore</a>
+</td>
+<td class="text-align-center">250
+</td>
+<td><a class="zold" href="https://www.wowhead.com/mop-classic/item=7910" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_ruby_02.jpg"/>Star Ruby</a> (30%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=12364" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_emerald_01.jpg"/>Huge Emerald</a> (16%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=12800" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_diamond_01.jpg"/>Azerothian Diamond</a> (16%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=12361" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_sapphire_02.jpg"/>Blue Sapphire</a> (16%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=12799" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_opal_01.jpg"/>Large Opal</a> (16%)</td>
+<td><a class="zold" href="https://www.wowhead.com/mop-classic/item=23077" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_bloodgem_03.jpg"/>Blood Garnet</a> (1.66%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=23079" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_deepperidot_03.jpg"/>Deep Peridot</a> (1.66%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=21929" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_flamespessarite_03.jpg"/>Flame Spessarite</a> (1.66%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=23112" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_goldendraenite_03.jpg"/>Golden Draenite</a> (1.66%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=23107" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_ebondraenite_03.jpg"/>Shadow Draenite</a> (1.66%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=23117" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_azuredraenite_03.jpg"/>Azure Moonstone</a> (1.66%)</td>
+</tr>
+</tbody>
+</table> </div>
+<div class="tab-content" id="tab-2">
+<h3>The Burning Crusade</h3>
+<table>
+<tbody>
+<tr>
+<th>5 x Ore</th>
+<th>Skill</th>
+<th>Common</th>
+<th>Rare</th>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/mop-classic/item=23424" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_feliron.jpg"/>Fel Iron Ore</a>
+</td>
+<td class="text-align-center">275
+                </td>
+<td><a class="zold" href="https://www.wowhead.com/mop-classic/item=23077" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_bloodgem_03.jpg"/>Blood Garnet</a> (18%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=23079" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_deepperidot_03.jpg"/>Deep Peridot</a> (18%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=21929" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_flamespessarite_03.jpg"/>Flame Spessarite</a> (18%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=23112" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_goldendraenite_03.jpg"/>Golden Draenite</a> (18%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=23107" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_ebondraenite_03.jpg"/>Shadow Draenite</a> (18%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=23117" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_azuredraenite_03.jpg"/>Azure Moonstone</a> (18%)
+</td>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/item=23439" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_nobletopaz_02.jpg"/>Noble Topaz</a> (1.3%)<br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=23440" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_dawnstone_02.jpg"/>Dawnstone</a> (1.3%)<br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=23436" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_livingruby_02.jpg"/>Living Ruby</a> (1.3%)<br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=23441" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_nightseye_02.jpg"/>Nightseye</a> (1.3%)<br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=23438" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_starofelune_02.jpg"/>Star of Elune</a> (1.3%)<br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=23437" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_talasite_02.jpg"/>Talasite</a> (1.3%)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/mop-classic/item=23425" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_adamantium.jpg"/>Adamantite Ore</a>
+</td>
+<td class="text-align-center">325
+</td>
+<td><a class="zold" href="https://www.wowhead.com/mop-classic/item=23077" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_bloodgem_03.jpg"/>Blood Garnet</a> (18%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=23079" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_deepperidot_03.jpg"/>Deep Peridot</a> (18%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=21929" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_flamespessarite_03.jpg"/>Flame Spessarite</a> (18%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=23112" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_goldendraenite_03.jpg"/>Golden Draenite</a> (18%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=23107" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_ebondraenite_03.jpg"/>Shadow Draenite</a> (18%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=23117" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_azuredraenite_03.jpg"/>Azure Moonstone</a> (18%)</td>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/item=23439" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_nobletopaz_02.jpg"/>Noble Topaz</a> (4%)<br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=23440" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_dawnstone_02.jpg"/>Dawnstone</a> (4%)<br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=23436" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_livingruby_02.jpg"/>Living Ruby</a> (4%)<br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=23441" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_nightseye_02.jpg"/>Nightseye</a> (4%)<br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=23438" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_starofelune_02.jpg"/>Star of Elune</a> (4%)<br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=23437" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_talasite_02.jpg"/>Talasite</a> (4%)</td>
+</tr>
+</tbody>
+</table> </div>
+<div class="tab-content" id="tab-3">
+<h3>Wrath of the Lich King</h3>
+<table>
+<tbody>
+<tr>
+<th>5 x Ore</th>
+<th>Skill</th>
+<th>Common</th>
+<th>Rare</th>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/mop-classic/item=36909" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_cobalt.jpg"/>Cobalt Ore</a></td>
+<td class="text-align-center">350</td>
+<td>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=36929" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_09.jpg"/>Huge Citrine</a> (23%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=36926" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_11.jpg"/>Shadow Crystal</a> (23%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=36917" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_12.jpg"/>Bloodstone</a> (23%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=36923" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_10.jpg"/>Chalcedony</a> (23%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=36932" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_07.jpg"/>Dark Jade</a> (23%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=36920" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_08.jpg"/>Sun Crystal</a> (23%)
+        </td>
+<td>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=36930" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_02.jpg"/>Monarch Topaz</a> (1.3%)<br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=36933" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_01.jpg"/>Forest Emerald</a> (1.3%)<br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=36924" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_05.jpg"/>Sky Sapphire</a> (1.3%)<br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=36921" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_03.jpg"/>Autumn's Glow</a> (1.3%)<br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=36918" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_04.jpg"/>Scarlet Ruby</a> (1.3%)<br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=36927" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_06.jpg"/>Twilight Opal</a> (1.3%)
+        </td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/mop-classic/item=36912" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_saronite_01.jpg"/>Saronite Ore</a></td>
+<td class="text-align-center">400</td>
+<td>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=36929" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_09.jpg"/>Huge Citrine</a> (18%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=36926" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_11.jpg"/>Shadow Crystal</a> (18%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=36917" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_12.jpg"/>Bloodstone</a> (18%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=36923" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_10.jpg"/>Chalcedony</a> (18%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=36932" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_07.jpg"/>Dark Jade</a> (18%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=36920" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_08.jpg"/>Sun Crystal</a> (18%)
+        </td>
+<td>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=36930" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_02.jpg"/>Monarch Topaz</a> (4%)<br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=36933" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_01.jpg"/>Forest Emerald</a> (4%)<br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=36924" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_05.jpg"/>Sky Sapphire</a> (4%)<br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=36921" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_03.jpg"/>Autumn's Glow</a> (4%)<br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=36918" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_04.jpg"/>Scarlet Ruby</a> (4%)<br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=36927" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_gem_06.jpg"/>Twilight Opal</a> (4%)
+        </td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="tab-content" id="tab-4">
+<h3>Cataclysm</h3>
+<table>
+<tbody>
+<tr>
+<th>5 x Ore</th>
+<th>Skill</th>
+<th>Common</th>
+<th>Rare</th>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/mop-classic/item=53038" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/item_elementiumore.jpg"/>Obsidium Ore</a>
+</td>
+<td class="text-align-center">425
+                </td>
+<td>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=52177" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior4.jpg"/>Carnelian</a> (23%) <br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=52181" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior5.jpg"/>Hessonite</a>(23%) <br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=52182" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior2.jpg"/>Jasper</a>(23%) <br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=52180" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior3.jpg"/>Nightstone</a>(23%) <br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=52179" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior.jpg"/>Alicite</a>(23%) <br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=52178" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior6.jpg"/>Zephyrite</a>(23%)
+</td>
+<td>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=52190" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemnormal3.jpg"/>Inferno Ruby</a> (1.2%) <br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=52195" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemnormal5.jpg"/>Amberjewel</a> (1.2%) <br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=52194" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemnormal4.jpg"/>Demonseye</a> (1.2%) <br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=52192" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemnormal1.jpg"/>Dream Emerald</a> (1.2%) <br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=52193" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemnormal.jpg"/>Ember Topaz</a> (1.2%) <br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=52191" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemnormal2.jpg"/>Ocean Sapphire</a> (1.2%)</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/mop-classic/item=52185" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/item_pyriumore.jpg"/>Elementium Ore</a>
+</td>
+<td class="text-align-center">475
+</td>
+<td>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=52177" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior4.jpg"/>Carnelian</a> (18%) <br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=52181" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior5.jpg"/>Hessonite</a>(18%) <br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=52182" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior2.jpg"/>Jasper</a>(18%) <br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=52180" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior3.jpg"/>Nightstone</a>(18%) <br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=52179" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior.jpg"/>Alicite</a>(18%) <br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=52178" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior6.jpg"/>Zephyrite</a>(18%)</td>
+<td>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=52190" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemnormal3.jpg"/>Inferno Ruby</a> (5%) <br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=52195" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemnormal5.jpg"/>Amberjewel</a> (5%) <br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=52194" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemnormal4.jpg"/>Demonseye</a> (5%) <br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=52192" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemnormal1.jpg"/>Dream Emerald</a> (5%) <br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=52193" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemnormal.jpg"/>Ember Topaz</a> (5%) <br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=52191" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemnormal2.jpg"/>Ocean Sapphire</a> (5%)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/mop-classic/item=52183" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_arcanite_01.jpg"/>Pyrite Ore</a>
+</td>
+<td class="text-align-center">500
+</td>
+<td>
+<a class="white" href="https://www.wowhead.com/mop-classic/item=52327" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_volatileearth.jpg"/>Volatile Earth</a> (100%)<br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=52177" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior4.jpg"/>Carnelian</a> (17%) <br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=52181" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior5.jpg"/>Hessonite</a>(17%) <br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=52182" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior2.jpg"/>Jasper</a>(17%) <br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=52180" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior3.jpg"/>Nightstone</a>(17%) <br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=52179" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior.jpg"/>Alicite</a>(17%) <br/>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=52178" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior6.jpg"/>Zephyrite</a>(17%)</td>
+<td>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=52190" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemnormal3.jpg"/>Inferno Ruby</a> (7%) <br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=52195" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemnormal5.jpg"/>Amberjewel</a> (7%) <br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=52194" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemnormal4.jpg"/>Demonseye</a> (7%) <br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=52192" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemnormal1.jpg"/>Dream Emerald</a> (7%) <br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=52193" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemnormal.jpg"/>Ember Topaz</a> (7%) <br/>
+<a class="rare" href="https://www.wowhead.com/mop-classic/item=52191" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemnormal2.jpg"/>Ocean Sapphire</a> (7%)
+</td>
+</tr>
+</tbody>
+</table> </div>
+<div class="tab-content" id="tab-5">
+<h3>Mists of Pandaria</h3>
+<table>
+<tbody>
+<tr>
+<th>5 x Ore</th>
+<th>Skill</th>
+<th>Common</th>
+<th>Rare</th>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/mop-classic/item=72092" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_ghostiron.jpg"/>Ghost Iron Ore</a></td>
+<td class="text-align-center">500</td>
+<td><ul>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76134" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_topazrough_03.jpg"/>Sunstone</a> 24%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76130" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_opalrough_03.jpg"/>Tiger Opal</a> 24%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76133" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_saphirerough_03.jpg"/>Lapis Lazuli</a> 24%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76136" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_rubyrough_03.jpg"/>Pandarian Garnet</a> 24%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76135" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_amethystrough_03.jpg"/>Roguestone</a> 24%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76137" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_emeraldrough_03.jpg"/>Alexandrite</a> 24%</li>
+</ul></td>
+<td><ul>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76138" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_blue.jpg"/>River's Heart</a> (5%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76131" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_red.jpg"/>Primordial Ruby</a> (5%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76139" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_green.jpg"/>Wild Jade</a> (5%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76142" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_yellow.jpg"/>Sun's Radiance</a> (5%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76140" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_orange.jpg"/>Vermilion Onyx</a> (5%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76141" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_purple.jpg"/>Imperial Amethyst</a> (5%)</li>
+</ul></td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/mop-classic/item=72093" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_manticyte.jpg"/>Kyparite</a></td>
+<td class="text-align-center">550</td>
+<td><ul>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76134" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_topazrough_03.jpg"/>Sunstone</a> 24%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76130" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_opalrough_03.jpg"/>Tiger Opal</a> 24%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76133" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_saphirerough_03.jpg"/>Lapis Lazuli</a> 24%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76136" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_rubyrough_03.jpg"/>Pandarian Garnet</a> 24%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76135" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_amethystrough_03.jpg"/>Roguestone</a> 24%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76137" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_emeraldrough_03.jpg"/>Alexandrite</a> 24%</li>
+</ul></td>
+<td><ul>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76138" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_blue.jpg"/>River's Heart</a> (5%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76131" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_red.jpg"/>Primordial Ruby</a> (5%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76139" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_green.jpg"/>Wild Jade</a> (5%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76142" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_yellow.jpg"/>Sun's Radiance</a> (5%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76140" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_orange.jpg"/>Vermilion Onyx</a> (5%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76141" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_purple.jpg"/>Imperial Amethyst</a> (5%)</li>
+</ul></td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/mop-classic/item=72094" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_trilliumblack.jpg"/>Black Trillium Ore</a><br/> <a class="zold" href="https://www.wowhead.com/mop-classic/item=72103" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_trilliumwhite.jpg"/>White Trillium Ore</a></td>
+<td class="text-align-center">600</td>
+<td><ul>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76134" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_topazrough_03.jpg"/>Sunstone</a> 17%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76130" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_opalrough_03.jpg"/>Tiger Opal</a> 17%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76133" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_saphirerough_03.jpg"/>Lapis Lazuli</a> 17%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76136" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_rubyrough_03.jpg"/>Pandarian Garnet</a> 17%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76135" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_amethystrough_03.jpg"/>Roguestone</a> 17%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76137" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_emeraldrough_03.jpg"/>Alexandrite</a> 17%</li>
+</ul></td>
+<td><ul>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76138" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_blue.jpg"/>River's Heart</a> (17%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76131" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_red.jpg"/>Primordial Ruby</a> (17%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76139" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_green.jpg"/>Wild Jade</a> (17%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76142" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_yellow.jpg"/>Sun's Radiance</a> (17%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76140" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_orange.jpg"/>Vermilion Onyx</a> (17%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76141" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_purple.jpg"/>Imperial Amethyst</a> (17%)</li>
+</ul></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div></article>
+</main>
+<aside class="left-sidebar-menu sidebar-sticky">
+<nav>
+<h4>Quick Links</h4>
+<ul>
+<li><a href="../../mop/alchemy-leveling-guide-mop-classic/index.html">Alchemy</a></li>
+<li><a href="../../mop/blacksmithing-leveling-guide-mop-classic/index.html">Blacksmithing</a></li>
+<li><a href="../../mop/enchanting-leveling-guide-mop-classic/index.html">Enchanting</a></li>
+<li><a href="../../mop/engineering-leveling-guide-mop-classic/index.html">Engineering</a></li>
+<li><a href="../../mop/inscription-leveling-guide-mop-classic/index.html">Inscription</a></li>
+<li><a href="../../mop/jewelcrafting-leveling-guide-mop-classic/index.html">Jewelcrafting</a></li>
+<li><a href="../../mop/leatherworking-leveling-guide-mop-classic/index.html">Leatherworking</a></li>
+<li><a href="../../mop/tailoring-leveling-guide-mop-classic/index.html">Tailoring</a></li>
+<li><a href="../../mop/herbalism-leveling-guide-mop-classic/index.html">Herbalism</a></li>
+<li><a href="../../mop/mining-leveling-guide-mop-classic/index.html">Mining</a></li>
+<li><a href="../../mop/skinning-leveling-guide-mop-classic/index.html">Skinning</a></li>
+<li><a href="../../mop/first-aid-leveling-guide-mop-classic/index.html">First Aid</a></li>
+<li><a href="../../mop/cooking-leveling-guide-mop-classic/index.html">Cooking</a></li>
+<li><a href="../../mop/fishing-leveling-guide-and-overview/index.html">Fishing</a></li>
+<li><a href="../../mop/archaeology-guide-and-overview-mop-classic/index.html">Archaeology </a></li>
+</ul>
+</nav>
+</aside>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

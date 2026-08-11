@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="This Dragonflight Jewelcrafting leveling guide will show you the fastest and easiest way how to level your Dragon Isles Jewelcrafting skill up from 1 to 100." name="description"/>
+<meta content="Dragon Isles Jewelcrafting Leveling Guide 1-100 (Dragonflight)" property="og:title"/>
+<meta content="This Dragonflight Jewelcrafting leveling guide will show you the fastest and easiest way how to level your Dragon Isles Jewelcrafting skill up from 1 to 100." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/guides/dragon-isles-jewelcrafting-leveling-guide-dragonflight" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>Dragon Isles Jewelcrafting Leveling Guide 1-100 (Dragonflight)</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=kof3BGoxXbwrSWgSREUEfW1WfCdU8LnSoDYwEl2sHI8-1771996986.9025688-1.0.1.1-E34FvS3embB5z8lCwKKFBYKE5pS4Cshd_yIm2.CspeI" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--3">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#jewelcrafting-trainers">Dragonflight Jewelcrafting Trainers</a></li>
+<li><a href="#new-features">New features in Dragonflight</a></li>
+<li><a href="#crafting-orders">Crafting Orders</a></li>
+<li><a href="#mats">Shopping List</a></li>
+<li><a href="#1-75">Leveling to 75</a></li>
+<li><a href="#75-100">75 to 100</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+<div class="related-guides" data-pagefind-ignore="all">
+<h4 class="sidebar-header">Jewelcrafting Guides</h4>
+<ul>
+<li>
+<a href="../../guides/vanilla-jewelcrafting-leveling/index.html">
+                        Vanilla 1-300
+                      </a>
+</li>
+<li>
+<a href="../../guides/outland-jewelcrafting-leveling/index.html">
+                        Outland 1-75
+                      </a>
+</li>
+<li>
+<a href="../../guides/northrend-jewelcrafting-leveling/index.html">
+                        Northrend 1-75
+                      </a>
+</li>
+<li>
+<a href="../../guides/cataclysm-jewelcrafting-leveling/index.html">
+                        Cataclysm 1-75
+                      </a>
+</li>
+<li>
+<a href="../../guides/pandaria-jewelcrafting-leveling/index.html">
+                        Pandaria 1-75
+                      </a>
+</li>
+<li>
+<a href="../../guides/draenor-jewelcrafting-leveling/index.html">
+                        Draenor 1-100
+                      </a>
+</li>
+<li>
+<a href="../../guides/legion-jewelcrafting-leveling/index.html">
+                        Legion 1-100
+                      </a>
+</li>
+<li>
+<a href="../../guides/zandalari-kul-tiran-bfa-jewelcrafting-leveling-guide/index.html">
+                        BfA 1-175
+                      </a>
+</li>
+<li>
+<a href="../../guides/shadowlands-jewelcrafting-leveling-guide/index.html">
+                        Shadowlands 1-100
+                      </a>
+</li>
+<li class="active">
+<a class="active" href="../../guides/dragon-isles-jewelcrafting-leveling-guide-dragonflight/index.html">
+                        Dragonflight 1-100
+                      </a>
+</li>
+<li>
+<a href="../../the-war-within/khaz-algar-jewelcrafting-leveling-guide/index.html">
+                        The War Within 1-100
+                      </a>
+</li>
+<li>
+<a href="../../guides/wow-jewelcrafting-leveling-guide/index.html">
+                        Midnight 1-100
+                      </a>
+</li>
+</ul>
+</div>
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">Dragon Isles Jewelcrafting Leveling Guide 1-100 (Dragonflight)</h1>
+<article>
+<p><img align="left" height="64" src="../../images/icons/professions/jewelcrafting.png" style="margin-right: 8px;" width="64"/><a name="top"></a>This Dragonflight Jewelcrafting leveling guide will show you the fastest and easiest way how to level your Dragon Isles Jewelcrafting skill up from 1 to 100.</p>
+<div class="old-toc">
+<h4>Table of contents</h4>
+<ul>
+<li><a href="#jewelcrafting-trainers">Dragonflight Jewelcrafting Trainers</a></li>
+<li><a href="#new-features">New features in Dragonflight</a></li>
+<li><a href="#crafting-orders">Crafting Orders</a></li>
+<li><a href="#mats">Shopping List</a></li>
+<li><a href="#1-75">Leveling to 75</a></li>
+<li><a href="#75-100">75 to 100</a></li>
+</ul>
+</div>
+<h2 class="gtitle" id="jewelcrafting-trainers">Dragonflight Jewelcrafting Trainers</h2>
+<ul>
+<li><a href="https://www.wowhead.com/npc=198398" rel="nofollow noopener noreferrer" target="_blank">Misty Catseye</a> in The Waking Shores.</li>
+<li><a href="https://www.wowhead.com/npc=190094" rel="nofollow noopener noreferrer" target="_blank">Tuluradormi</a> in Valdrakken.</li>
+<li><a href="https://www.wowhead.com/npc=198240" rel="nofollow noopener noreferrer" target="_blank">Herrod</a> in The Azura Span.</li>
+<li><a href="https://www.wowhead.com/npc=190103" rel="nofollow noopener noreferrer" target="_blank">Uluami</a> in Ohn'ahran Plains</li>
+</ul>
+<h2 class="gtitle" id="new-features">New Dragonflight Jewelcrafting features</h2>
+<p>There are a lot of new stats added to professions in Dragonflight, so here is a quick explanation for some of these.</p>
+<h4>Recipe Difficulty</h4>
+<p>Recipe Difficulty shows you how much profession skill is required to make a recipe at the highest quality. You can see your current profession Skill below the Recipe Difficulty stat. Your Skill comes from your base profession skill, specializations, profession equipment, racials, and using high-quality reagents. So, your profession skill can go well above 100.</p>
+<h4>Item Quality</h4>
+<p>Every crafted piece of Jewelcrafting equipement have 5 different qualities. Jewelcrafting Crafted Reagents, Enchantments, and Consumable items have 3 different qualities.</p>
+<p>Basically, if you have higher skill, you can make higher-ilvl gear, higher-quality consumables that give more stat, and higher-quality reagents that give more profession skill when used in recipes.</p>
+<h4>Inspiration, Multicraft, Resourcefulness</h4>
+<ul>
+<li><strong>Inspiration</strong>: Each time you craft something, there is a chance you get Inspired and craft the recipe with some bonus profession skill, so you can craft an item with higher quality than you could normally. This stat is only helpful when you craft recipes with higher Recipe Difficulty than your current Skill.</li>
+<li><strong>Resourcefulness</strong>: You have a chance to use fewer reagents.</li>
+<li><strong>Multicraft</strong>: You have a chance to craft additional items. (doesn't work on crafted gear, only consumables and reagents)</li>
+</ul>
+<h4>Dragon Isles Jewelcrafting Knowledge</h4>
+<p>Dragon Isles Jewelcrafting Knowledge points are the "talent points" you can put into your profession specialization to learn new skills, stats, and bonuses.</p>
+<h2 class="gtitle" id="crafting-orders">Crafting Orders</h2>
+<p>Crafting Orders are a new way for players to request a crafter to craft something for them. The interface basically looks like the Auction House, but instead of players posting Auctions, it will be filled with Crafting Orders that players can complete as Jewelcrafters.</p>
+<p>Completing crafting orders can give you skill points if you complete orders for items that would normally give you a skill point.</p>
+<h3>How to Complete Crafting Orders</h3>
+<p>Clicking on the Crafting Orders tab at the bottom of your profession window will open the Crafting Order UI, where you can browse Crafting Orders posted by other players. <strong>You must be near a Crafting Table for your profession to access Crafting Orders.</strong></p>
+<p><img class="maps" height="250" src="../../images/dragonflight/complete-crafting-orders.jpg" width="750"/></p>
+<h3>Jewelcrafting Crafting Table location</h3>
+<p>You can find the Jewelcrafting crafting table in Valdrakken at the location in the picture below.</p>
+<p><img class="maps" height="530" src="../../images/dragonflight/jewelcrafting-crafting-table.jpg" width="796"/></p>
+<h2 class="gtitle" id="mats">Shopping List</h2>
+<p>This is the total list of materials required to reach 100. <strong>The quality doesn't matter. Buy the cheapest.</strong></p>
+<ul>
+<li>30x <a class="white" href="https://www.wowhead.com/item=190396" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_tyrivite.jpg"/>Serevite Ore</a></li>
+<li>22x <a class="white" href="https://www.wowhead.com/item=192834" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting2_gemsetting_color1.jpg"/>Shimmering Clasp</a></li>
+<li>5x <a class="rare" href="https://www.wowhead.com/item=190315" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_elementalshardfoozles_earth.jpg"/>Rousing Earth</a></li>
+<li>68x <a class="rare" href="https://www.wowhead.com/item=190320" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_elementalshardfoozles_fire.jpg"/>Rousing Fire</a></li>
+<li>2x <a class="rare" href="https://www.wowhead.com/item=190328" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_elementalshardfoozles_frost.jpg"/>Rousing Frost</a></li>
+<li>2x <a class="rare" href="https://www.wowhead.com/item=190326" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_elementalshardfoozles_air.jpg"/>Rousing Air</a></li>
+<li>12x <a class="zold" href="https://www.wowhead.com/item=192849" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_gem1leveling_uncut_bronze.jpg"/>Eternity Amber</a></li>
+<li>3x <a class="zold" href="https://www.wowhead.com/item=192840" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_gem1leveling_uncut_blue.jpg"/>Mystic Sapphire</a></li>
+<li>3x <a class="zold" href="https://www.wowhead.com/item=192837" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_gem1leveling_uncut_red.jpg"/>Queen's Ruby</a></li>
+<li>4x <a class="zold" href="https://www.wowhead.com/item=192846" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_gem1leveling_uncut_black.jpg"/>Sundered Onyx</a></li>
+<li>2x <a class="zold" href="https://www.wowhead.com/item=192843" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_gem1leveling_uncut_green.jpg"/>Vibrant Emerald</a></li>
+<li>11x <a class="white" href="https://www.wowhead.com/item=192872" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting2_glassshards_color1.jpg"/>Fractured Glass</a></li>
+<li>70x <a class="zold" href="https://www.wowhead.com/item=193368" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_wod_dust4.jpg"/>Silken Gemdust</a></li>
+<li>60x <a class="zold" href="https://www.wowhead.com/item=193922" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_tailoring_clothrare_color3.jpg"/>Wildercloth</a></li>
+<li>29x <a class="rare" href="https://www.wowhead.com/item=192866" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_gem2standard_uncut_bronze.jpg"/>Nozdorite</a></li>
+<li>24x <a class="rare" href="https://www.wowhead.com/item=190321" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_elementalcombinedfoozles_fire.jpg"/>Awakened Fire</a></li>
+<li>1x <a class="rare" href="https://www.wowhead.com/item=190327" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_elementalcombinedfoozles_air.jpg"/>Awakened Air</a></li>
+<li>1x <a class="rare" href="https://www.wowhead.com/item=190316" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_elementalcombinedfoozles_earth.jpg"/>Awakened Earth</a></li>
+<li>1x <a class="rare" href="https://www.wowhead.com/item=190329" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_elementalcombinedfoozles_frost.jpg"/>Awakened Frost</a></li>
+<li>9x <a class="rare" href="https://www.wowhead.com/item=192859" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_gem2standard_uncut_green.jpg"/>Ysemerald</a></li>
+<li>9x <a class="rare" href="https://www.wowhead.com/item=192887" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_elementalcombinedfoozles_primordial.jpg"/>Elemental Harmony</a></li>
+</ul>
+<h2 class="gtitle" id="1-75">Leveling Dragonflight Jewelcrafting</h2>
+<h3>Racial Bonuses</h3>
+<p>Draenei characters have +10 Jewelcrafting skill because of their passive, and Kul Tiran characters have +5 from. Any extra Jewelcrafting skill means recipes stay orange for more points. You can save some gold by doing lower level recipes for more points.</p>
+<h3>First Craft Bonus</h3>
+<p>You will get 1x Dragon Isles Jewelcrafting Knowledge talent points each time you craft something for the first time. Dragon Isles Jewelcrafting Knowledge is valuable and has a weekly cap from other sources. So, instead of leveling Jewelcrafting and then going back to craft grey recipes, <strong>this leveling guide is designed to get the "First Craft Bonus" from most recipes while they give you skill points.</strong> </p>
+<h3 class="gdskill">1 - 6</h3>
+<p>Use <a class="white" href="https://www.wowhead.com/spell=374627" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_bloodgem_01.jpg"/>Dragon Isles Prospecting</a> on 25x <a class="white" href="https://www.wowhead.com/item=190396" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_tyrivite.jpg"/>Serevite Ore</a> (5x Prospecting).</p>
+<h3 class="gdskill">6 - 12</h3>
+<p>Buy 1x <a class="white" href="https://www.wowhead.com/item=20815" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_box_02.jpg"/>Jeweler's Toolset</a> , 1x <a class="white" href="https://www.wowhead.com/item=192833" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_primitive_ring29.jpg"/>Misshapen Filigree</a> and 5x <a class="white" href="https://www.wowhead.com/item=200860" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_archaeology_vrykul_runestick.jpg"/>Draconic Stopper</a> from <a href="https://www.wowhead.com/npc=198586" rel="nofollow noopener noreferrer" target="_blank">Shakey Flatlap</a> in Valdrakken. (he is outside in front of the building where your trainer is)</p>
+<p>Make one from each of these:</p>
+<ul>
+<li>1x <a class="white" href="https://www.wowhead.com/spell=374480" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_stone_sharpeningstone_05.jpg"/>Glossy Stone</a> - 4x Crumbled Stone, 2x Rousing Earth, 1x Eternity Amber</li>
+<li>1x <a class="white" href="https://www.wowhead.com/spell=374475" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting2_gemsetting_color1.jpg"/>Shimmering Clasp</a> - 1x Misshapen Filigree, 1x Mystic Sapphire</li>
+<li>1x <a class="white" href="https://www.wowhead.com/spell=395696" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_amethyst_03.jpg"/>Dragon Isles Crushing</a> - Use it on <a class="zold" href="https://www.wowhead.com/item=192849" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_gem1leveling_uncut_bronze.jpg"/>Eternity Amber</a>.</li>
+</ul>
+<p>Then make three Solid Eternity Amber:</p>
+<ul>
+<li>3x <a class="zold" href="https://www.wowhead.com/spell=374441" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_gem1leveling_cut_bronze.jpg"/>Solid Eternity Amber</a> - 6x Eternity Amber</li>
+</ul>
+<h3 class="gdskill">12 - 15</h3>
+<p>Make one from each of these:</p>
+<ul>
+<li>1x <a class="white" href="https://www.wowhead.com/spell=374478" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting2_glasslens_color1.jpg"/>Frameless Lens</a> - 1x Rousing Earth, 3x Fractured Glass, 2x Silken Gemdust</li>
+<li>1x <a class="zold" href="https://www.wowhead.com/spell=374439" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_gem1leveling_cut_green.jpg"/>Energized Vibrant Emerald</a> - 2x Rousing Frost, 2x Vibrant Emerald</li>
+<li>1x <a class="zold" href="https://www.wowhead.com/spell=374438" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_gem1leveling_cut_blue.jpg"/>Zen Mystic Sapphire</a> - 2x Rousing Earth, 2x Mystic Sapphire</li>
+</ul>
+<h3 class="gdskill">15 - 20</h3>
+<p>Make one from each of these:</p>
+<ul>
+<li>1x <a class="zold" href="https://www.wowhead.com/spell=374440" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_gem1leveling_cut_black.jpg"/>Sensei's Sundered Onyx</a> - 2x Rousing Fire, 2x Sundered Onyx</li>
+<li>1x <a class="zold" href="https://www.wowhead.com/spell=374437" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_gem1leveling_cut_red.jpg"/>Crafty Queen's Ruby</a> - 2x Rousing Air, 2x Queen's Ruby</li>
+<li>1x <a class="rare" href="https://www.wowhead.com/spell=376233" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_rings_ring1_color1.jpg"/>Band of New Beginnings</a> - 5x Rousing Fire, 1x Shimmering Clasp, 2x Eternity Amber</li>
+<li>1x <a class="rare" href="https://www.wowhead.com/spell=374494" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_necklace_necklace3_color1.jpg"/>Pendant of Impending Perils</a> - 1x Shimmering Clasp, 1x Sundered Onyx</li>
+</ul>
+<h3 class="gdskill">20 - 26</h3>
+<p>Craft these three to get your "First Craft" bonuses.</p>
+<ul>
+<li>1x <a class="zold" href="https://www.wowhead.com/spell=374530" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_armor_scribesspecs_b_01_gold.jpg"/>Bold-Print Bifocals</a> - 2x Serevite Ore, 2x Frameless Lens</li>
+<li>1x <a class="zold" href="https://www.wowhead.com/spell=374532" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_armor_jewelersspecs_b_01.jpg"/>Sundered Onyx Loupe</a> - 2x Serevite Ore, 1x Sundered Onyx, 2x Frameless Lens</li>
+<li>1x <a class="white" href="https://www.wowhead.com/spell=374477" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_alchemy_bottle_shape1_empty.jpg"/>Draconic Vial</a> - 1x Rousing Fire, 5x Fractured Glass, 5x Draconic Stopper, 1x Silken Gemdust</li>
+</ul>
+<p>Equip the <a class="zold" href="https://www.wowhead.com/item=193037" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_armor_jewelersspecs_b_01.jpg"/>Sundered Onyx Loupe</a>. You can sell the <a class="white" href="https://www.wowhead.com/item=20815" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_box_02.jpg"/>Jeweler's Toolset</a>, you won't need it anymore.</p>
+<h3>Jewelcrafting Specializations</h3>
+<p>When you hit 25, you will unlock Jewelcrafting specializations.</p>
+<h4>Which Specialization to choose first?</h4>
+<p>I recommend choosing <a class="white" href="https://www.wowhead.com/profession-trait/28610" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting2_gemsetting_color1.jpg"/>Enterprising</a> as your first specialization, so you use the <a class="zold" href="https://www.wowhead.com/spell=374483" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_blottedsand_color2.jpg"/>Blotting Sand</a> recipe for leveling between 29-55. (You can learn all 4 specializations as you level up your profession).</p>
+<p>You will need 50 skill points to unlock the second specialization, 65 for the third, and 75 for the fourth.</p>
+<h4>Where should you put your Dragon Isles Jewelcrafting Knowledge points?</h4>
+<p><b>Don't spend any points yet!</b> I recommend leveling your profession to 75 first. You will need 20 points to unlock a recipe that you will use to level Jewelcrafting. (more on this later at 75)</p>
+<h3 class="gdskill">26 - 29</h3>
+<ul>
+<li>1x <a class="rare" href="https://www.wowhead.com/spell=374550" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_immactaladite_orange.jpg"/>Timewatcher's Patience</a> - 3x Fractured Glass, 4x Eternity Amber, 1x Silken Gemdust</li>
+<li>2x <a class="zold" href="https://www.wowhead.com/spell=374506" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_statue_color4.jpg"/>Revitalizing Red Carving</a> - 2x Shimmering Clasp, 2x Queen's Ruby, 4x Glossy Stone, 2x Silken Gemdust</li>
+</ul>
+<h3 class="gdskill">29 - 55</h3>
+<p>60x <a class="zold" href="https://www.wowhead.com/spell=374483" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_blottedsand_color2.jpg"/>Blotting Sand</a> - 60x Rousing Fire, 60x Wildercloth, 60x Silken Gemdust</p>
+<p>You can learn this recipe by picking the <a class="white" href="https://www.wowhead.com/profession-trait/28610" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting2_gemsetting_color1.jpg"/>Enterprising</a> specialization as your first. If you didn't follow the guide and picked another specialization, you can make the following alternative recipe below.</p>
+<h4>Alternative recipe</h4>
+<p>Craft any recipe that gives you skill points if you are not at 30, then learn the gem recipe below from the trainer.</p>
+<p>25x <a class="rare" href="https://www.wowhead.com/spell=374460" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_gem2standard_fire_cut_bronze.jpg"/>Jagged Nozdorite</a> - 25x Awakened Fire, 25x Nozdorite</p>
+<h3 class="gdskill">55 - 75</h3>
+<p>Craft one from each gem to get the "First Craft" bonuses.</p>
+<ul>
+<li>1x <a class="rare" href="https://www.wowhead.com/spell=374461" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_gem2standard_air_cut_bronze.jpg"/>Forceful Nozdorite</a> - 1x Awakened Air, 1x Nozdorite</li>
+<li>1x <a class="rare" href="https://www.wowhead.com/spell=374462" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_gem2standard_earth_cut_bronze.jpg"/>Puissant Nozdorite</a> - 1x Awakened Earth, 1x Nozdorite</li>
+<li>1x <a class="rare" href="https://www.wowhead.com/spell=374460" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_gem2standard_fire_cut_bronze.jpg"/>Jagged Nozdorite</a> - 1x Awakened Fire, 1x Nozdorite</li>
+<li>1x <a class="rare" href="https://www.wowhead.com/spell=374463" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_gem2standard_frost_cut_bronze.jpg"/>Steady Nozdorite</a> - 1x Awakened Frost, 1x Nozdorite</li>
+</ul>
+<p>Then craft <a class="rare" href="https://www.wowhead.com/spell=374460" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_gem2standard_fire_cut_bronze.jpg"/>Jagged Nozdorite</a> until you reach 75.</p>
+<p>25x <a class="rare" href="https://www.wowhead.com/spell=374460" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_gem2standard_fire_cut_bronze.jpg"/>Jagged Nozdorite</a> - 25x Awakened Fire, 25x Nozdorite</p>
+<p><a name="75-100"></a></p>
+<h3 class="gdskill">75 - 100</h3>
+<p>From this point, most recipes that are good for leveling require a <a class="epic" href="https://www.wowhead.com/item=190453" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_misc_titansspark_color1.jpg"/>Spark of Ingenuity</a>. This crafting reagent Binds on Pickup (BoP), so you can't just buy it from the Auction House.</p>
+<p>Below is a step-by-step guide on how to learn the <a class="epic" href="https://www.wowhead.com/item=192999" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_rings_ring2_color3.jpg"/>Signet of Titanic Insight</a> recipe and get <a class="epic" href="https://www.wowhead.com/item=190453" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_misc_titansspark_color1.jpg"/>Spark of Ingenuity</a>. Step 2 is the most time-consuming, but it's account-wide, and it's something you probably already completed.</p>
+<h3>Step 1. #Learning the Ring recipe</h3>
+<ol>
+<li>Put 10 points into the <a class="white" href="https://www.wowhead.com/profession-trait/28728" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_jewelcrafting_setting_color1.jpg"/>Setting</a> specialization.</li>
+<li>Learn the <a class="white" href="https://www.wowhead.com/profession-trait/28727" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_jewelcrafting_jewelry_color2.jpg"/>Jewelry</a> sub-specialization.</li>
+<li>Put 10 points into <a class="white" href="https://www.wowhead.com/profession-trait/28727" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_jewelcrafting_jewelry_color2.jpg"/>Jewelry</a>.</li>
+<li>Learn the <a class="white" href="https://www.wowhead.com/profession-trait/28725" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_rings_ring2_color1.jpg"/>Rings</a> sub-specialization. This will teach you the <a class="epic" href="https://www.wowhead.com/item=192999" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_rings_ring2_color3.jpg"/>Signet of Titanic Insight</a> recipe.</li>
+</ol>
+<p>You will use this recipe to level to 100. This is the easiest to get and the cheapest to make.</p>
+<h3>Step 2. #Dragonflight campaign quests</h3>
+<p>You have already completed this step if you see world quests on your world map.</p>
+<p>To get Spark of Ingenuity,<b> you must complete the Dragonflight main story campaign quests until you unlock World Quests. This is ACCOUNT-WIDE, so you only need to complete these quests with one of your characters.</b> If you open your quest log, you will find these quests at the top in the campaign section under the "Dragonflight" title.</p>
+<ul>
+<li>Complete the Dragonflight campaign quests until you get <a href="https://www.wowhead.com/quest=71232" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Renown of the Dragon Isles</a> from <a href="https://www.wowhead.com/npc=187678" rel="nofollow noopener noreferrer" target="_blank">Alexstrasza the Life-Binder</a>.</li>
+<li>Talk to <a href="https://www.wowhead.com/npc=196499" rel="nofollow noopener noreferrer" target="_blank">Therazal</a> to complete <a href="https://www.wowhead.com/quest=71232" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Renown of the Dragon Isles</a>.</li>
+</ul>
+<h3>Step 3. #Engine of Innovation Questline</h3>
+<p>Pick up the <a href="https://www.wowhead.com/quest=72773" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Learning Ingenuity</a> quest from <a href="https://www.wowhead.com/npc=196499" rel="nofollow noopener noreferrer" target="_blank">Therazal</a>. This quest will start the Engine of Innovation Questline that will award you with Spark of Ingenuity.</p>
+<p>Talk to <a href="https://www.wowhead.com/npc=196066" rel="nofollow noopener noreferrer" target="_blank">Greyzik Cobblefinger</a> to complete <a href="https://www.wowhead.com/quest=72773" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Learning Ingenuity</a> and pick up the <a href="https://www.wowhead.com/quest=70180" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Jump-Start? Jump-Starting!</a> quest.</p>
+<p><b>You don't have to do it again if you have already completed the Engine of Innovation Questline with one of your characters. Talk to <a href="https://www.wowhead.com/npc=196066" rel="nofollow noopener noreferrer" target="_blank">Greyzik Cobblefinger</a> to skip the quests,</b> and then talk to <a href="https://www.wowhead.com/npc=196475" rel="nofollow noopener noreferrer" target="_blank">Maiden of Inspiration</a> to get your 5x <a class="epic" href="https://www.wowhead.com/item=190453" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_misc_titansspark_color1.jpg"/>Spark of Ingenuity</a>.</p>
+<p>Otherwise, you must complete the entire Engine of Innovation Questline until you get all five <a class="epic" href="https://www.wowhead.com/item=190453" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_misc_titansspark_color1.jpg"/>Spark of Ingenuity</a>.</p>
+<h3>Step 3. #Getting More Spark of Ingenuity with Alts</h3>
+<p>You will need 9x <a class="epic" href="https://www.wowhead.com/item=190453" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_misc_titansspark_color1.jpg"/>Spark of Ingenuity</a> to level to 100, but you can only get 5 on one character. Fortunately, <strong>you can use the crafting order system to send crafting orders to your characters</strong>, so you can get more from your alts or by creating trial characters.</p>
+<h4>Creating a trial character</h4>
+<p>If you have two level 58 alt characters, you can skip this part and use them instead of creating trials.</p>
+<ol>
+<li>Go to the character selection screen and click "Create New Character" in the bottom left corner.</li>
+<li>On the character creation page, tick the "Class Trial" box in the bottom left corner.</li>
+<li>Choose any class and talents, then create your Character.</li>
+<li>Go to the portal room in Orgrimmar/Stormwind and click on the Valdrakken portal.</li>
+</ol>
+<h4>Skipping quests to get 5x Sparks</h4>
+<ol>
+<li>Talk to <a href="https://www.wowhead.com/npc=196066" rel="nofollow noopener noreferrer" target="_blank">Greyzik Cobblefinger</a> about skipping the quests, and then talk to <a href="https://www.wowhead.com/npc=196475" rel="nofollow noopener noreferrer" target="_blank">Maiden of Inspiration</a>.</li>
+<li>Talk to the crafting order NPC <a href="https://www.wowhead.com/npc=199342" rel="nofollow noopener noreferrer" target="_blank">Clerk Silverpaw</a> in Valdrakken.</li>
+<li>Click on Armor -&gt; Miscellaneous -&gt; Finger, then click "Search" and pick <a class="epic" href="https://www.wowhead.com/item=192999" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_jewelcrafting_rings_ring2_color3.jpg"/>Signet of Titanic Insight</a></li>
+<li><b>Change Public Order to Personal Order in the top right</b>, then type in your main character name.</li>
+<li>You don't have to fill in materials besides the Spark of Ingenuity in the "Spark" slot. You can fill the rest of the materials with your main.</li>
+<li>Send 4 crafting orders to your main.</li>
+</ol>
+<h4>Leveling to 100</h4>
+<ol>
+<li>Log in with your main character.</li>
+<li>Go to the Jewelcrafting crafting table in Valdrakken. (scroll back to the crafting order section above in the guide if you don't know where it is)</li>
+<li>Open your profession window and click the Crafting Orders tab at the bottom.</li>
+<li>Click on the Personal Tab and complete the crafting orders from your alts.</li>
+<li>Craft 5x more rings with the Sparks in your inventory.</li>
+</ol>
+</article>
+</main>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

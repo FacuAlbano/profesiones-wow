@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="" name="description"/>
+<meta content="Cataclysm Classic Fishing and Cooking Leveling Guide 1-525" property="og:title"/>
+<meta content="" property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/cataclysm/fishing-and-cooking-leveling-guide-cataclysm-classic" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>Cataclysm Classic Fishing and Cooking Leveling Guide 1-525</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=k4EQAwAaAZfmO91BItlYpV0LFVaF37pC8nXAgM3a6hw-1771997389.972293-1.0.1.1-Al2oe0C35TELI053Mz60WRiU.jhb7olLTNDGUYnICGo" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--4">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#apprentice">1-75</a></li>
+<li><a href="#journeyman">75-150 | Cooking: 1-125</a></li>
+<li><a href="#expert">150-215 | Cooking: 125-150</a></li>
+<li><a href="#artisan">215-275 | Cooking: 150-175</a></li>
+<li><a href="#cooking-175-225">Cooking: 175-225</a></li>
+<li><a href="#275">275-310 | Cooking: 225-250</a></li>
+<li><a href="#310">310-330 | Cooking: 250-300</a></li>
+<li><a href="#master">330-365 | Cooking: 300-350</a></li>
+<li><a href="#grand-master">365-475 | Cooking: 350-415</a></li>
+<li><a href="#cooking-415">Cooking 415-450</a></li>
+<li><a href="#cata">472-525 | Cooking: 450-525</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">Cataclysm Classic Fishing and Cooking Leveling Guide 1-525</h1>
+<article>
+<p><a name="top"></a></p>
+<p><img align="left" height="64" src="../../images/icons/professions/fishing_n_cooking.png" style="margin-right: 8px;" width="64"/></p>
+<p>This Cataclysm Classic Fishing and Cooking leveling guide will show you the fastest way to level Fishing and Cooking from 1 to 525 in WoW Cataclysm Classic.</p>
+<p>Since leveling your fishing takes a long time, leveling these professions together is best. You'll discover that it requires a lot of patience and time to build your skill level to the maximum. You will have to catch a lot of fish from start to finish.</p>
+<p class="zygor">I recommend trying <a href="../../recommends/zygor-wotlk/index.html">Zygor's 1-85 Leveling Guide</a> if you are still leveling your character or you just started a new alt. The guide will help you to reach level 85 a lot faster.</p>
+<h2 class="gtitle" id="apprentice">Level Fishing to 75</h2>
+<div class="tab-container">
+<div class="tabs">
+<button class="tab-button active" data-tab="horde-tab"><img height="20" src="../../images/icons/horde-m.png" style="margin-right: 8px;" width="20"/>Horde</button>
+<button class="tab-button" data-tab="alliance-tab"><img height="20" src="../../images/icons/alliance-m.png" style="margin: 0px 8px;" width="20"/>Alliance</button>
+</div>
+<div class="tab-content active" id="horde-tab">
+<ol>
+<li>Go to Bloodhoof Village in Mulgore and learn Cooking from <a href="https://www.wowhead.com/cata/npc=3067" rel="nofollow noopener noreferrer" target="_blank">Pyall Silentstride</a>.</li>
+<li>Buy <a class="white" href="https://www.wowhead.com/cata/item=6325" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Brilliant Smallfish</a> and <a class="white" href="https://www.wowhead.com/cata/item=6328" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Longjaw Mud Snapper</a> from <a href="https://www.wowhead.com/cata/npc=5940" rel="nofollow noopener noreferrer" target="_blank">Harn Longcast</a></li>
+<li>Buy a <a class="white" href="https://www.wowhead.com/cata/item=6256" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_fishingpole_02.jpg"/>Fishing Pole</a>, 5x <a class="white" href="https://www.wowhead.com/cata/item=6532" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_variety_02.jpg"/>Bright Baubles</a> and 5x <a class="white" href="https://www.wowhead.com/cata/item=6529" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_orb_03.jpg"/>Shiny Bauble</a> from <a href="https://www.wowhead.com/cata/npc=5940" rel="nofollow noopener noreferrer" target="_blank">Harn Longcast</a>.</li>
+<li>Learn Fishing from <a href="https://www.wowhead.com/cata/npc=5938" rel="nofollow noopener noreferrer" target="_blank">Uthan Stillwater</a>.</li>
+<li>Equip your fishing pole, attach a <a class="white" href="https://www.wowhead.com/cata/item=6529" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_orb_03.jpg"/>Shiny Bauble</a>, and fish from Stonebull Lake until your fishing skill reaches 75. You will catch about 60 <a class="white" href="https://www.wowhead.com/cata/item=6291" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_08.jpg"/>Raw Brilliant Smallfish</a> and some <a class="white" href="https://www.wowhead.com/cata/item=6289" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_32.jpg"/>Raw Longjaw Mud Snapper</a>.</li>
+<li>Learn Journeyman Fishing from <a href="https://www.wowhead.com/cata/npc=5938" rel="nofollow noopener noreferrer" target="_blank">Uthan Stillwater</a>.</li>
+</ol>
+</div>
+<div class="tab-content" id="alliance-tab"><ol>
+<li>Go to Goldshire in Elwynn Forest and learn Cooking from <a href="https://www.wowhead.com/cata/npc=1430" rel="nofollow noopener noreferrer" target="_blank">Tomas</a>. He is the cook inside the Lion's Pride Inn kitchen.</li>
+<li>Buy <a class="white" href="https://www.wowhead.com/cata/item=6325" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Brilliant Smallfish</a> and <a class="white" href="https://www.wowhead.com/cata/item=6328" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Longjaw Mud Snapper</a> from <a href="https://www.wowhead.com/cata/npc=66" rel="nofollow noopener noreferrer" target="_blank">Tharynn Bouden </a></li>
+<li>Buy a <a class="white" href="https://www.wowhead.com/cata/item=6256" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_fishingpole_02.jpg"/>Fishing Pole</a>, 5x <a class="white" href="https://www.wowhead.com/cata/item=6532" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_variety_02.jpg"/>Bright Baubles</a> and 5x <a class="white" href="https://www.wowhead.com/cata/item=6529" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_orb_03.jpg"/>Shiny Bauble</a> from <a href="https://www.wowhead.com/cata/npc=66" rel="nofollow noopener noreferrer" target="_blank">Tharynn Bouden</a>.</li>
+<li>Learn Fishing from <a href="https://www.wowhead.com/cata/npc=1651" rel="nofollow noopener noreferrer" target="_blank">Lee Brown</a>. He is at the lake east of Goldshire.</li>
+<li>Equip your fishing pole, attach a <a class="white" href="https://www.wowhead.com/cata/item=6529" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_orb_03.jpg"/>Shiny Bauble</a> and fish from any lake near Goldshire until your fishing skill reaches 75. You will catch about 60 <a class="white" href="https://www.wowhead.com/cata/item=6291" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_08.jpg"/>Raw Brilliant Smallfish</a> and some <a class="white" href="https://www.wowhead.com/cata/item=6289" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_32.jpg"/>Raw Longjaw Mud Snapper</a>.</li>
+<li>Learn Journeyman Fishing from <a href="https://www.wowhead.com/cata/npc=1651" rel="nofollow noopener noreferrer" target="_blank">Lee Brown</a>.</li>
+</ol>
+</div> </div>
+<h2 class="gtitle" id="journeyman">Fishing: 75-150 | Cooking: 1-125</h2>
+<div class="tab-container">
+<div class="tabs">
+<button class="tab-button active" data-tab="horde-tab"><img height="20" src="../../images/icons/horde-m.png" style="margin-right: 8px;" width="20"/>Horde</button>
+<button class="tab-button" data-tab="alliance-tab"><img height="20" src="../../images/icons/alliance-m.png" style="margin: 0px 8px;" width="20"/>Alliance</button>
+</div>
+<div class="tab-content-container">
+<div class="tab-content active" id="horde-tab">
+<ol>
+<li>
+<p>Go to Thunder Bluff and fish in the pond near Thunder Bluff's auction house until your skill reaches 150. You don't have to use any lures.</p>
+</li>
+<li>
+<p>You should catch about 20 <a class="white" href="https://www.wowhead.com/cata/item=6291" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_08.jpg"/>Raw Brilliant Smallfish</a>, 50 <a class="white" href="https://www.wowhead.com/cata/item=6289" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_32.jpg"/>Raw Longjaw Mud Snapper</a>, and 20 <a class="white" href="https://www.wowhead.com/cata/item=6308" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_30.jpg"/>Raw Bristle Whisker Catfish</a>. </p>
+</li>
+<li>
+<p>Learn Expert Fishing from <a href="https://www.wowhead.com/cata/npc=3028" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Kah Mistrunner</a>.</p>
+</li>
+</ol><h3>Cooking</h3><ol>
+<li>
+<p>Learn the recipe <a class="white" href="https://www.wowhead.com/cata/item=6325" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Brilliant Smallfish</a>, and cook all your fish. This should take your cooking skill above 50. Stop making them at 65 if you caught too many and sell the rest at the Auction House.</p>
+</li>
+<li>
+<p>Learn Journeyman Cooking from <a href="https://www.wowhead.com/cata/npc=3026" rel="nofollow noopener noreferrer" target="_blank">Aska Mistrunner</a>. Then learn <a class="white" href="https://www.wowhead.com/cata/item=6328" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Longjaw Mud Snapper</a>, and cook all your Longjaw Mud Snapper. Your cooking skill should rise to above 100. (the precise number is not important).</p>
+</li>
+<li>
+<p>Buy the <a class="white" href="https://www.wowhead.com/cata/item=6330" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Bristle Whisker Catfish</a> from <a href="https://www.wowhead.com/cata/npc=3027" rel="nofollow noopener noreferrer" target="_blank">Naal Mistrunner</a> in Thunder Bluff.</p>
+</li>
+</ol>
+</div>
+<div class="tab-content" id="alliance-tab"><ol>
+<li>
+<p>Fish in the canals of Stormwind City until your skill reaches 150. You don't have to use any lures.</p>
+</li>
+<li>
+<p>You should catch about 20 <a class="white" href="https://www.wowhead.com/cata/item=6291" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_08.jpg"/>Raw Brilliant Smallfish</a>, 50 <a class="white" href="https://www.wowhead.com/cata/item=6289" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_32.jpg"/>Raw Longjaw Mud Snapper</a>, and 25 <a class="white" href="https://www.wowhead.com/cata/item=6308" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_30.jpg"/>Raw Bristle Whisker Catfish</a>.</p>
+</li>
+<li>
+<p>Learn Expert Fishing from <a href="https://www.wowhead.com/cata/npc=5493" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Arnold Leland</a>.</p>
+</li>
+</ol><h3>Cooking</h3><ol>
+<li>
+<p>Find <a href="https://www.wowhead.com/cata/npc=5494" rel="nofollow noopener noreferrer" target="_blank">Catherine Leland</a> in Stormwind City and buy <a class="white" href="https://www.wowhead.com/cata/item=6330" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Bristle Whisker Catfish</a>.</p>
+</li>
+<li>
+<p>Learn the recipe <a class="white" href="https://www.wowhead.com/cata/item=6325" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Brilliant Smallfish</a> and cook all your fish. This should take your cooking skill above 50. Stop making them at 65 if you caught too many and sell the rest at the Auction House.</p>
+</li>
+<li>
+<p>Learn Journeyman Cooking from <a href="https://www.wowhead.com/cata/npc=5482" rel="nofollow noopener noreferrer" target="_blank">Stephen Ryback</a> in Stormwind City. Then learn <a class="white" href="https://www.wowhead.com/cata/item=6328" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Longjaw Mud Snapper</a>, and cook all your Longjaw Mud Snapper. Your cooking skill should rise to above 100. (the precise number is not important).</p>
+</li>
+</ol>
+</div></div>
+</div>
+<h2 class="gtitle" id="expert">Fishing: 150-215 | Cooking: 125-150</h2>
+<ol>
+<li>
+<p>
+<b><img height="15" src="../../images/icons/horde.png" style="margin-right: 8px;" width="15"/>Horde:</b> Fly to Sun Rock Retreat in Stonetalon Mountains, fish in the small lake there until 215.<br/>
+<b><img height="15" src="../../images/icons/alliance.png" style="margin-right: 8px;" width="15"/>Alliance:</b> Fly to Redridge Mountains, fish in Lake Everstill until 215.
+		</p>
+</li>
+<li>
+<p>You will catch around 35x <a class="white" href="https://www.wowhead.com/cata/item=6289" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_32.jpg"/>Raw Longjaw Mud Snapper</a> and 70x <a class="white" href="https://www.wowhead.com/cata/item=6308" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_30.jpg"/>Raw Bristle Whisker Catfish</a>.</p>
+</li>
+<li><p>Cook the <a class="white" href="https://www.wowhead.com/cata/item=6289" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_32.jpg"/>Raw Longjaw Mud Snapper</a>. Your cooking skill will rise to about 115.</p>
+</li>
+<li><p>Learn <a class="white" href="https://www.wowhead.com/cata/item=6330" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Bristle Whisker Catfish</a> and then cook all your fish. Your cooking skill must reach at least 150.</p>
+</li>
+<li><p>Go back to Thunder Bluff / Stormwind City and learn Expert Cooking from <a href="https://www.wowhead.com/npc=3026" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Aska Mistrunner</a> / <a href="https://www.wowhead.com/npc=5482" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Stephen Ryback</a>.</p>
+</li></ol>
+<h2 class="gtitle" id="artisan">Fishing: 215-275 | Cooking: 150-175</h2>
+<ol>
+<li>
+<p>Learn Artisan Fishing from <a href="https://www.wowhead.com/cata/npc=3028" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Kah Mistrunner</a> / <a href="https://www.wowhead.com/cata/npc=5493" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Arnold Leland</a> in Thunder Bluff / Stormwind City.</p>
+</li>
+<li><p>Go to Dustwallow Marsh and fish from 215 to 275 in any of the small patches of water scattered around in the zone.<b> Do not fish in the ocean or any coastal water!</b></p>
+</li>
+<li><p>225 fishing skill is required to stop catching junk here, so you should use a <a class="white" href="https://www.wowhead.com/cata/item=6529" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_orb_03.jpg"/>Shiny Bauble</a> until you reach 225.</p>
+</li>
+<li><p>You will catch around 40x <a class="white" href="https://www.wowhead.com/cata/item=6308" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_30.jpg"/>Raw Bristle Whisker Catfish</a> and 70x <a class="white" href="https://www.wowhead.com/cata/item=8365" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_02.jpg"/>Raw Mithril Head Trout</a>.</p>
+</li>
+<li><p>Cook all your <a class="white" href="https://www.wowhead.com/cata/item=6308" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_30.jpg"/>Raw Bristle Whisker Catfish</a>. Your cooking skill must reach at least 175. If you did't reach 175 cooking skill, catch more fish. The recipe will be "green", so skills-up very slowly and unreliably.</p>
+</li></ol>
+<h2 class="gtitle" id="cooking-175-225">Cooking: 175-225</h2>
+<ol>
+<li>
+<p>Go to Rachet, then use the boat there to go to <b>Booty Bay</b> in Stranglethorn Vale.</p>
+</li>
+<li><p>Find <a href="https://www.wowhead.com/cata/npc=2664" rel="nofollow noopener noreferrer" target="_blank">Kelsey Yance</a> in Booty Bay. He is in the <a href="../../images/general/kelsey-location.jpg">large building at the end of the ship dock in Booty Bay</a>. Enter the building and make an immediate left.</p>
+</li>
+<li><p>Buy these two recipes: <a class="white" href="https://www.wowhead.com/cata/item=17062" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Mithril Head Trout</a>, <a class="white" href="https://www.wowhead.com/cata/item=13941" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Filet of Redgill</a>.</p>
+</li>
+<li><p>Learn <a class="white" href="https://www.wowhead.com/cata/item=17062" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Mithril Head Trout</a> and start cooking Mithril Head Trout.</p>
+</li>
+<li>Your Cooking skill should rise to 200.</li>
+<li><p>Learn Artisan Cooking from <a href="https://www.wowhead.com/npc=54232" rel="nofollow noopener noreferrer" target="_blank">Mrs. Gant</a>. She's in a building in the bottom level of Booty Bay. Turn left on the small ramp that leads to the bottom level. </p>
+</li>
+<li><p>Learn Master Fishing from <a href="https://www.wowhead.com/npc=2834" rel="nofollow noopener noreferrer" target="_blank">Myizz Luckycatch</a>. You can find him right under the big shark in Booty Bay. (close to the Inn)</p>
+</li></ol>
+<h2 class="gtitle" id="275">Fishing: 275-310 | Cooking: 225-250</h2>
+<ol>
+<li>
+<p>Travel to Feralas and buy <a class="white" href="https://www.wowhead.com/cata/item=13949" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Baked Salmon</a> from <a href="https://www.wowhead.com/cata/npc=8145" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Sheendra Tallgrass</a> / <a href="https://www.wowhead.com/cata/npc=7947" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Vivianna</a>.</p>
+</li>
+<li><p>300 fishing skill is required to stop catching junk here, so you should use a <a class="white" href="https://www.wowhead.com/cata/item=6529" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_orb_03.jpg"/>Shiny Bauble</a> until you reach 300.</p>
+</li>
+<li><p>Fish in the marked river until you reach Fishing 310 . The other lakes and rivers have lower level fish so make sure you fish in this one.</p><img class="maps" height="252" loading="lazy" src="../../images/general/fishing-feralas-275-310.jpg" width="502"/>
+</li><li><p>Cook any remaining <a class="white" href="https://www.wowhead.com/cata/spell=20916" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_02.jpg"/>Mithril Headed Trout</a>.</p>
+</li>
+<li><p>Learn <a class="white" href="https://www.wowhead.com/cata/item=13941" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Filet of Redgill</a> and make as many as you can.</p>
+</li>
+<li><p>Your cooking skill must reach at least 250.</p>
+</li>
+<li><p>
+<b><img height="15" src="../../images/icons/horde.png" style="margin-right: 8px;" width="15"/>Horde:</b> Visit your cooking trainer <a href="https://www.wowhead.com/npc=3026" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Aska Mistrunner</a> in Thunder Bluff <br/>
+<b><img height="15" src="../../images/icons/alliance.png" style="margin-right: 8px;" width="15"/>Alliance:</b> Visit your cooking trainer <a href="https://www.wowhead.com/npc=4894" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Craig Nollward</a> in Dustwallow Marsh.
+</p>
+</li>
+<li><p>Learn <a class="white" href="https://www.wowhead.com/cata/spell=18244" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_19.jpg"/>Poached Sunscale Salmon</a> and <a class="white" href="https://www.wowhead.com/cata/spell=18243" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_drink_17.jpg"/>Nightfin Soup</a> from the trainer.</p>
+</li></ol>
+<h2 class="gtitle" id="310">Fishing: 310-330 | Cooking: 250-300</h2>
+<ol>
+<li>
+<p>Go to Un'Goro Crater and fish in any water until 330.</p>
+</li>
+<li><p>375 fishing skill is required to stop catching junk here, so you should use <a class="white" href="https://www.wowhead.com/cata/item=6532" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_variety_02.jpg"/>Bright Baubles</a>.</p>
+</li>
+<li>Make as many <a class="white" href="https://www.wowhead.com/cata/spell=18244" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_19.jpg"/>Poached Sunscale Salmon</a> and <a class="white" href="https://www.wowhead.com/cata/spell=18243" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_drink_17.jpg"/>Nightfin Soup</a> as you can. Your cooking skill should rise to about 285.</li>
+<li><p>Learn <a class="white" href="https://www.wowhead.com/cata/item=13949" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Baked Salmon</a> and cook <a class="white" href="https://www.wowhead.com/cata/spell=18247" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_20.jpg"/>Baked Salmon</a> until Cooking 300. You can sell any remaining Fish at the Auction House.</p>
+</li></ol>
+<h2 class="gtitle" id="master">Fishing: 330-365 | Cooking: 300-350</h2>
+<h3>Fishing to 365</h3>
+<p>Go to the small lake next to the graveyard outside the eastern exit from Shattrath City, then Fish in Terokkar Forest until fishing skill 365. Keep using <a class="white" href="https://www.wowhead.com/cata/item=6532" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_variety_02.jpg"/>Bright Baubles</a>. If you are out of lures, you can buy them from <a href="https://www.wowhead.com/npc=19194" rel="nofollow noopener noreferrer" target="_blank">Ernie Packwell</a> in Shattrath City.</p>
+<p>You can fish in other places, but don't go to flying-restricted areas or the big lake near Shattrath City because they require a lot higher fishing skill, and you will get more junk!</p>
+<p>You should catch at least 15x <a class="white" href="https://www.wowhead.com/cata/item=27438" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_36.jpg"/>Golden Darter</a>, 50x <a class="white" href="https://www.wowhead.com/cata/item=27422" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_37.jpg"/>Barbed Gill Trout</a>, and 10x <a class="white" href="https://www.wowhead.com/cata/item=27425" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_39.jpg"/>Spotted Feltail</a>.</p>
+<img class="maps" height="490" src="../../images/classic/fishing-lake-terokkar.jpg" width="750"/>
+<h3>Cooking to 350</h3>
+<ol>
+<li>
+<p>Buy <a class="white" href="https://www.wowhead.com/cata/item=27699" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Golden Fish Sticks</a> from <a href="https://www.wowhead.com/cata/npc=19296" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Innkeeper Biribi </a>/ <a href="https://www.wowhead.com/cata/npc=18960" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Rungor</a>.</p>
+</li>
+<li><p>Travel to Cenarion Refuge in Zangarmarsh. Learn Master Cooking from <a href="https://www.wowhead.com/cata/npc=18993" rel="nofollow noopener noreferrer" target="_blank">Naka</a> in the inn.</p>
+</li>
+<li><p>Buy <a class="white" href="https://www.wowhead.com/cata/item=27695" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Feltail Delight</a> from <a href="https://www.wowhead.com/cata/npc=18011" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Zurai</a> / <a href="https://www.wowhead.com/cata/npc=20028" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Doba</a> (read the "Kurenai Reputation" at the bottom of this section below if you can't talk to Doba)</p>
+</li>
+<li><p>Buy <a class="white" href="https://www.wowhead.com/cata/item=27694" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Blackened Trout</a> from <a href="https://www.wowhead.com/cata/npc=18015" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Gambarinka</a> / <a href="https://www.wowhead.com/cata/npc=20028" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Doba</a>.</p>
+</li>
+<li><p>Learn <a class="white" href="https://www.wowhead.com/cata/item=27695" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Feltail Delight</a> and cook all your fish.</p>
+</li>
+<li><p>Learn <a class="white" href="https://www.wowhead.com/cata/item=27694" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Blackened Trout</a> and cook <a class="white" href="https://www.wowhead.com/cata/spell=33290" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_food_77.jpg"/>Blackened Trout</a> <b>until 320</b></p>
+</li>
+<li><p>Go back to Cenarion Refuge in Zangarmarsh. Learn <a class="white" href="https://www.wowhead.com/cata/spell=42296" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_food_64.jpg"/>Stewed Trout</a> from <a href="https://www.wowhead.com/cata/npc=18993" rel="nofollow noopener noreferrer" target="_blank">Naka</a> in the inn and Cook all the remaining Trout as Stewed Trout.</p>
+</li>
+<li><p>Learn <a class="white" href="https://www.wowhead.com/cata/item=27699" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Golden Fish Sticks</a>, then cook all your <a class="white" href="https://www.wowhead.com/cata/item=27438" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_36.jpg"/>Golden Darter</a>. Your cooking skill will be around 350.</p>
+</li></ol>
+<h4>Kurenai Reputation</h4>
+<p>Alliance characters start as 'Unfriendly' with the Kurenai, so you can't buy recipes from <a href="https://www.wowhead.com/cata/npc=20028" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Doba</a> if you haven't completed any quests in Zangarmarsh yet.</p>
+<ol>
+<li>Talk to <a href="https://www.wowhead.com/cata/npc=18008" rel="nofollow noopener noreferrer" target="_blank">Ikuti</a> at the Orebor Harborage. Pick up <a href="https://www.wowhead.com/cata/quest=9835" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Ango'rosh Encroachment</a> and <a href="https://www.wowhead.com/cata/quest=10115" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Daggerfen Deviance</a> from him.</li>
+<li>Interact with the Wanted Poster near <a href="https://www.wowhead.com/cata/npc=18008" rel="nofollow noopener noreferrer" target="_blank">Ikuti</a> and pick up the <a href="https://www.wowhead.com/cata/quest=10116" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Wanted: Chieftain Mummaki</a> quest. (if you face him, the poster is to your left)</li>
+<li>Completing these 3 quests will give you enough reputation to reach Neutral with the Kurenai faction then Doba will sell you his cooking recipes.</li>
+</ol>
+<h2 class="gtitle" id="grand-master">Fishing: 365-475 | Cooking: 350-415</h2>
+<div class="tab-container">
+<div class="tabs">
+<button class="tab-button active" data-tab="horde-tab"><img height="20" src="../../images/icons/horde-m.png" style="margin-right: 8px;" width="20"/>Horde</button>
+<button class="tab-button" data-tab="alliance-tab"><img height="20" src="../../images/icons/alliance-m.png" style="margin: 0px 8px;" width="20"/>Alliance</button>
+</div>
+<div class="tab-content active" id="horde-tab">
+<ol>
+<li>
+<p>Travel to Vengeance Landing in Howling Fjord and learn Grand Master cooking from <a href="https://www.wowhead.com/npc=26953" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Thomas Kolichio</a>.</p>
+</li>
+<li><p>Learn <a class="white" href="https://www.wowhead.com/cata/spell=58065" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_cauldron_frost.jpg"/>Dalaran Clam Chowder</a>, <a class="white" href="https://www.wowhead.com/cata/spell=45560" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_food_131_fish.jpg"/>Smoked Rockfin</a>, and <a class="white" href="https://www.wowhead.com/cata/spell=45569" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_food_140_fish.jpg"/>Baked Manta Ray</a> from the Cooking trainer.</p>
+</li>
+<li><p>Train Grand Master Fishing from <a href="https://www.wowhead.com/npc=26957" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Angelina Soren</a>. She is on the dock.</p>
+</li>
+<li><p>Fish from 365 to 475 next to the fishing trainer. Keep using <a class="white" href="https://www.wowhead.com/cata/item=6532" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_variety_02.jpg"/>Bright Baubles</a>.</p>
+</li>
+<li><p>Train Illustrious Fishing between fishing skill 425 and 450.</p>
+</li>
+<li><p>Cook the Rockfin Grouper into <a class="white" href="https://www.wowhead.com/cata/spell=45560" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_food_131_fish.jpg"/>Smoked Rockfin</a>. Your cooking skill should rise to about 375.</p>
+</li>
+<li><p>Cook all your Imperial Manta Ray into <a class="white" href="https://www.wowhead.com/cata/spell=45569" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_food_140_fish.jpg"/>Baked Manta Ray</a> and Succulent Clam Meat (open <a class="white" href="https://www.wowhead.com/cata/item=36781" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_shell_02.jpg"/>Darkwater Clams</a>) into <a class="white" href="https://www.wowhead.com/cata/spell=58065" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_cauldron_frost.jpg"/>Dalaran Clam Chowder</a>. Your cooking skill must rise to at least 400.</p>
+</li>
+<li><p>Return to the cooking trainer. Learn <a class="white" href="https://www.wowhead.com/cata/spell=64358" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_slime_02.jpg"/>Black Jelly</a> and cook all your Borean Man O' War. This should take your cooking skill to about 415.</p>
+</li>
+</ol>
+</div>
+<div class="tab-content" id="alliance-tab">
+<ol>
+<li><p>Travel to Valiance Keep in Borean Tundra and learn Grand Master cooking from <a href="https://www.wowhead.com/npc=26989" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Rollick MacKreel</a>.</p>
+</li>
+<li><p>Learn <a class="white" href="https://www.wowhead.com/cata/spell=58065" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_cauldron_frost.jpg"/>Dalaran Clam Chowder</a>, <a class="white" href="https://www.wowhead.com/cata/spell=45560" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_food_131_fish.jpg"/>Smoked Rockfin</a> and <a class="white" href="https://www.wowhead.com/cata/spell=45569" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_food_140_fish.jpg"/>Baked Manta Ray</a> from the Cooking trainer.</p>
+</li>
+<li><p>Train Grand Master Fishing from <a href="https://www.wowhead.com/npc=26993" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Old Man Robert</a> (he is next to the cooking trainer).</p>
+</li>
+<li><p>Fish within the dock area of Valiance Keep from 365 to 475. Keep using <a class="white" href="https://www.wowhead.com/cata/item=6532" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_variety_02.jpg"/>Bright Baubles</a>. If you start catching <a class="white" href="https://www.wowhead.com/cata/item=41808" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_48.jpg"/>Bonescale Snapper</a>, you are in the wrong place.</p>
+</li>
+<li><p>Train Illustrious Fishing between fishing skill 425 and 450.</p>
+</li>
+<li><p>Cook the Rockfin Grouper into <a class="white" href="https://www.wowhead.com/cata/spell=45560" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_food_131_fish.jpg"/>Smoked Rockfin</a>. Your cooking skill should rise to about 375.</p>
+</li>
+<li><p>Cook all your Imperial Manta Ray into <a class="white" href="https://www.wowhead.com/cata/spell=45569" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_food_140_fish.jpg"/>Baked Manta Ray</a> and Succulent Clam Meat (open <a class="white" href="https://www.wowhead.com/cata/item=36781" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_shell_02.jpg"/>Darkwater Clams</a>) into <a class="white" href="https://www.wowhead.com/cata/spell=58065" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_cauldron_frost.jpg"/>Dalaran Clam Chowder</a>. Your cooking skill must rise to at least 400.</p>
+</li>
+<li><p>Return to the cooking trainer. Learn <a class="white" href="https://www.wowhead.com/cata/spell=64358" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_slime_02.jpg"/>Black Jelly</a> and cook all your Borean Man O' War. This should take your cooking skill to about 415.</p>
+</li>
+</ol>
+</div></div>
+<h2 class="gtitle" id="cooking-415">Cooking: 415-450</h2>
+<h3>415 - 440</h3>
+<p>Learn <a class="white" href="https://www.wowhead.com/cata/spell=88015" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_drink_05.jpg"/>Darkbrew Lager</a> from the the cooking trainer.</p>
+<p>50x <a class="white" href="https://www.wowhead.com/cata/spell=88015" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_drink_05.jpg"/>Darkbrew Lager</a> - 100x <a class="white" href="https://www.wowhead.com/cata/item=2596" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_drink_milk_02.jpg"/>Skin of Dwarven Stout</a>, 50x <a class="white" href="https://www.wowhead.com/cata/item=2595" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cask_02.jpg"/>Jug of Badlands Bourbon</a></p>
+<p>You can buy the <a class="white" href="https://www.wowhead.com/cata/item=2596" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_drink_milk_02.jpg"/>Skin of Dwarven Stout</a> and the <a class="white" href="https://www.wowhead.com/cata/item=2595" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cask_02.jpg"/>Jug of Badlands Bourbon</a> from these vendors:</p>
+<ul>
+<li><a href="https://www.wowhead.com/npc=5111" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Innkeeper Firebrew</a> in Ironforge. (Alliance)</li>
+<li><a href="https://www.wowhead.com/npc=1301" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Julia Gallina</a> in Stormwind City. (Alliance)</li>
+<li><a href="https://www.wowhead.com/npc=33026" rel="nofollow noopener noreferrer" target="_blank">Sarah Brady</a> in Dalaran.</li>
+<li><a href="https://www.wowhead.com/npc=2832" rel="nofollow noopener noreferrer" target="_blank">Nixxrax Fillamug</a> in Booty bay.</li>
+</ul>
+<h3>440 - 450</h3>
+<p>Learn <a class="white" href="https://www.wowhead.com/cata/spell=88006" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_food_108_meadcaribou.jpg"/>Blackened Surprise</a> and Illustrious Grand Master Cooking from a cooking trainer.</p>
+<p>10x <a class="white" href="https://www.wowhead.com/cata/spell=88006" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_food_108_meadcaribou.jpg"/>Blackened Surprise</a> - 10x <a class="white" href="https://www.wowhead.com/cata/item=62778" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_food_91.jpg"/>Toughened Flesh</a></p>
+<h2 class="gtitle" id="cata">Cooking Daily Quest and Recipes</h2>
+<p>From this point, every recipe will be purchased with <a class="white" href="https://www.wowhead.com/cata/currency=402" rel="nofollow noopener" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/achievement_profession_chefhat.jpg"/>Chef's Award</a>. This currency is rewarded for completing daily cooking quests for <a href="https://www.wowhead.com/npc=42506" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Marogg</a> in Orgrimmar and for <a href="https://www.wowhead.com/npc=42288" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Robby Flay</a> in Stormwind City.</p>
+<p>Once you have enough awards, you can buy recipes from <a href="https://www.wowhead.com/npc=49737" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Shazdar</a> in Orgrimmar and <a href="https://www.wowhead.com/npc=49701" rel="nofollow noopener noreferrer" target="_blank">Bario Matalli</a> in Stormwind City. One recipe usually costs 3x <a class="white" href="https://www.wowhead.com/cata/currency=402" rel="nofollow noopener" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/achievement_profession_chefhat.jpg"/>Chef's Award</a></p>
+<p>You will need to buy the following 3 recipes. The order does not really matter, you will need all of them to reach 525. You can also buy other recipes if you have a lot of Chef's Award, so you can cook your other fishes that you might catch.</p>
+<ul>
+<li>(450) <a class="zold" href="https://www.wowhead.com/cata/item=65412" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_06.jpg"/>Recipe: Lightly Fried Lurker</a> or <a class="zold" href="https://www.wowhead.com/cata/item=65416" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_06.jpg"/>Recipe: Lurker Lunch</a></li>
+<li>(475) <a class="zold" href="https://www.wowhead.com/cata/item=65417" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_06.jpg"/>Recipe: Pickled Guppy</a></li>
+<li>(500) <a class="zold" href="https://www.wowhead.com/cata/item=65422" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_06.jpg"/>Recipe: Delicious Sagefish Tail</a> or <a class="zold" href="https://www.wowhead.com/cata/item=65426" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_06.jpg"/>Recipe: Baked Rockfish</a></li>
+</ul>
+<h2 class="gtitle" id="475">Fishing: 475-510 | Cooking: 450-500</h2>
+<ol>
+<li>
+<p>Train Illustrious Cook from the cooking trainer and learn the next rank of Fishing if you didn't already.</p>
+</li>
+<li>
+<p>Go to the Verrall River or lake in Twilight Highlands. </p>
+</li>
+<li>
+<p>Fish inland open water in the Twilight Highlands until you have caught at least 50x <a class="white" href="https://www.wowhead.com/cata/item=53067" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_88.jpg"/>Striped Lurker</a> and 25x <a class="white" href="https://www.wowhead.com/cata/item=53064" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_77.jpg"/>Highland Guppy</a>.</p>
+</li>
+<li>
+<p><b>Cooking 450 to 480:</b> <a class="white" href="https://www.wowhead.com/cata/spell=88028" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_food_157_fish_80.jpg"/>Lightly Fried Lurker</a> or <a class="white" href="https://www.wowhead.com/cata/spell=88030" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_food_meat_cooked_05.jpg"/>Lurker Lunch</a></p>
+</li>
+<li>
+<p><b>Cooking 480 to 500:</b> <a class="white" href="https://www.wowhead.com/cata/spell=88033" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_food_162_fish_90.jpg"/>Pickled Guppy</a></p>
+</li>
+</ol>
+<h2 class="gtitle" id="510">Fishing: 510-525 |  Cooking: 500-525</h2>
+<ol>
+<li>
+<p>Learn <a class="white" href="https://www.wowhead.com/cata/spell=88016" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_food_158_fish_81.jpg"/>Delicious Sagefish Tail</a> or <a class="white" href="https://www.wowhead.com/cata/spell=88003" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_food_155_fish_78.jpg"/>Baked Rockfish</a>.</p>
+</li>
+<li>
+<p>Travel across the Twilight Highlands to find <b>coastal water</b> and fish there. You will catch <a class="white" href="https://www.wowhead.com/cata/item=53069" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_89.jpg"/>Murglesnout</a>, <a class="white" href="https://www.wowhead.com/cata/item=53072" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_79.jpg"/>Deepsea Sagefish</a> and <a class="white" href="https://www.wowhead.com/cata/item=53071" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_84.jpg"/>Algaefin Rockfish</a>.</p>
+</li>
+<li><p>Catch a few fish and then Cook them. Keep fishing until your Cooking skill reaches 525. The last few skill points will come very slowly.</p></li>
+<li>
+<p>525 fishing skill will take many more catches than 525 cooking. Once you have reached the maximum cooking skill, you can continue to raise your fishing skill anywhere, even in Orgrimmar or Stormwind.</p>
+</li>
+</ol>
+<p><br/>
+    Congratulations on reaching 525! Please <a href="../../contact/index.html" rel="nofollow noopener noreferrer">send feedback</a> about the guide if you think there are parts I could improve, or you found typos, errors, wrong material numbers!</p>
+</article>
+</main>
+<aside class="left-sidebar-menu sidebar-sticky">
+<nav>
+<h4>Quick Links</h4>
+<ul>
+<li><a href="../../cataclysm/alchemy-leveling-guide-cataclysm-classic/index.html">Alchemy</a></li>
+<li><a href="../../cataclysm/blacksmithing-leveling-guide-cataclysm-classic/index.html">Blacksmithing</a></li>
+<li><a href="../../cataclysm/enchanting-leveling-guide-cataclysm-classic/index.html">Enchanting</a></li>
+<li><a href="../../cataclysm/engineering-leveling-guide-cataclysm-classic/index.html">Engineering</a></li>
+<li><a href="../../cataclysm/inscription-leveling-guide-cataclysm-classic/index.html">Inscription</a></li>
+<li><a href="../../cataclysm/jewelcrafting-leveling-guide-cataclysm-classic/index.html">Jewelcrafting</a></li>
+<li><a href="../../cataclysm/leatherworking-leveling-guide-cataclysm-classic/index.html">Leatherworking</a></li>
+<li><a href="../../cataclysm/tailoring-leveling-guide-cataclysm-classic/index.html">Tailoring</a></li>
+<li><a href="../../cataclysm/herbalism-leveling-guide-cataclysm-classic/index.html">Herbalism</a></li>
+<li><a href="../../cataclysm/mining-leveling-guide-cataclysm-classic/index.html">Mining</a></li>
+<li><a href="../../cataclysm/skinning-leveling-guide-cataclysm-classic/index.html">Skinning</a></li>
+<li><a href="../../cataclysm/first-aid-leveling-guide-cataclysm-classic/index.html">First Aid</a></li>
+<li><a href="../../cataclysm/fishing-and-cooking-leveling-guide-cataclysm-classic/index.html">Fishing+Cooking</a></li>
+<li><a href="../../cataclysm/cooking-leveling-guide-cataclysm-classic/index.html">Cooking</a></li>
+<li><a href="../../cataclysm/fishing-leveling-guide-cataclysm-classic/index.html">Fishing</a></li>
+<li><a href="../../cataclysm/archaeology-leveling-guide-cataclysm-classic/index.html">Archaeology</a></li>
+</ul>
+</nav>
+</aside>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="This guide provides a comprehensive list of all the weekly sources of Profession Knowledge Points in The War Within. If you want to make sure youre collecting every available point, this guide covers all the key sources." name="description"/>
+<meta content="Weekly Profession Knowledge Points (The War Within)" property="og:title"/>
+<meta content="This guide provides a comprehensive list of all the weekly sources of Profession Knowledge Points in The War Within. If you want to make sure youre collecting every available point, this guide covers all the key sources." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/guides/the-war-within/weekly-profession-knowledge-points" property="og:url"/>
+<!-- Favicons -->
+<link href="../../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>Weekly Profession Knowledge Points (The War Within)</title>
+<script async="" src="../../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=vlazJ2nrA0JpqXLiFqXz2AP83wA9_M4Rs03SEi0WriY-1771996846.4250548-1.0.1.1-I_rGN44UNwI3R07yvfjQjeWZYQPuR0jgkLZmlAyJnnA" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../../index.html">
+<img alt="" height="40" src="../../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../../midnight/index.html">Midnight</a></li>
+<li><a href="../../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../../classic/index.html">Classic Era</a></li>
+<li><a href="../../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../../mop/index.html">MoP</a></li>
+<li><a href="../../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../../midnight/index.html">Midnight</a></li>
+<li><a href="../../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../../classic/index.html">Classic Era</a></li>
+<li><a href="../../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../../mop/index.html">MoP</a></li>
+<li><a href="../../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--3">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#weekly-points">How Many Knowledge Points Can You Get Each Week?</a></li>
+<li><a href="#weekly">Weekly Quests</a></li>
+<li><a href="#patron">Patron Crafting Orders (NPC)</a></li>
+<li><a href="#treasure">Treasure Drops</a></li>
+<li><a href="#gathering">Gathering and Disenchanting</a></li>
+<li><a href="#treatises">Treatises</a></li>
+<li><a href="#darkmoon">Darkmoon Faire (Monthly)</a></li>
+<li><a href="#catchup">Knowledge Point Catch-up</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">Weekly Profession Knowledge Points (The War Within)</h1>
+<article>
+<p>This guide provides a comprehensive list of all the weekly sources of Profession Knowledge Points in The War Within. If you want to make sure you're collecting every available point, this guide covers all the key sources.</p>
+<p>I also have a separate guide for One-Time Knowledge Points, so be sure to check that out as well:</p>
+<p class="text-align-center"><a class="gblock" href="../../../guides/the-war-within/one-time-profession-knowledge-points/index.html">One-Time Knowledge Points</a></p>
+<h2 class="gtitle" id="weekly-points">How Many Knowledge Points Can You Get Each Week?</h2>
+<p>The number of weekly Knowledge Points you can earn varies depending on your profession and the activities you complete. I've compiled all the details into a handy table that you can refer to.</p>
+<p>As a general rule, every knowledge point earned will also reward you with 5 Artisan Acuity. For example, if you earn 15 Knowledge Points in a week, that's 75 Artisan Acuity points.</p>
+<p>It looks like you can earn 8-12 profession knowledge every 3 or 4 days, and then you'll get another batch of 8-12. So, it's roughly 16-24 per week.</p>
+<div class="table-container">
+<table>
+<tbody><tr>
+<th>Profession</th>
+<th>Weekly Quest</th>
+<th>Patron Crafting Orders</th>
+<th>Treasure Drops</th>
+<th>Treatises</th>
+<th>Gathering</th>
+<th>Weekly Total</th>
+</tr>
+<tr>
+<td>Alchemy
+        </td><td>2
+        </td><td>16
+        </td><td>4
+        </td><td>1
+        </td><td>-
+        </td><td>23
+    </td></tr>
+<tr>
+<td>Blacksmithing
+        </td><td>2
+        </td><td>24
+        </td><td>2
+        </td><td>1
+        </td><td>-
+        </td><td>29
+    </td></tr>
+<tr>
+<td>Enchanting
+        </td><td>3
+        </td><td>-
+        </td><td>2
+        </td><td>1
+        </td><td>* 9
+        </td><td>15
+    </td></tr>
+<tr>
+<td>Engineering
+        </td><td>1
+        </td><td>16
+        </td><td>2
+        </td><td>1
+        </td><td>-
+        </td><td>20
+    </td></tr>
+<tr>
+<td>Inscription
+        </td><td>2
+        </td><td>24
+        </td><td>4
+        </td><td>1
+        </td><td>-
+        </td><td>31
+    </td></tr>
+<tr>
+<td>Jewelcrafting
+        </td><td>2
+        </td><td>16
+        </td><td>4
+        </td><td>1
+        </td><td>-
+        </td><td>23
+    </td></tr>
+<tr>
+<td>Leatherworking
+        </td><td>2
+        </td><td>24
+        </td><td>2
+        </td><td>1
+        </td><td>-
+        </td><td>29
+    </td></tr>
+<tr>
+<td>Tailoring
+        </td><td>2
+        </td><td>24
+        </td><td>2
+        </td><td>1
+        </td><td>-
+        </td><td>29
+    </td></tr>
+<tr>
+<td>Herbalism
+        </td><td>3
+        </td><td>-
+        </td><td>-
+        </td><td>1
+        </td><td>9
+        </td><td>13
+    </td></tr>
+<tr>
+<td>Mining
+        </td><td>3
+        </td><td>-
+        </td><td>-
+        </td><td>1
+        </td><td>8
+        </td><td>12
+    </td></tr>
+<tr>
+<td>Skinning
+        </td><td>3
+        </td><td>-
+        </td><td>-
+        </td><td>1
+        </td><td>7
+        </td><td>11
+    </td></tr>
+</tbody></table>
+</div>
+<p><b>*Enchanters get their weekly knowledge from disenchanting items instead of Patron Crafting Orders.</b></p>
+<h2 class="gtitle" id="weekly">Weekly Profession Quests</h2>
+<p>In The War Within, each profession, including Gathering professions, has <b>only one weekly quest</b>. For Gathering professions and Enchanting, this quest can be picked up from your profession trainer in the main city and typically involves turning in specific items. Completing this quest rewards three Knowledge Points.</p>
+<p>For crafting professions, the weekly quest involves completing crafting orders. Most professions will earn two Knowledge Points from this, but Engineering only grants one Knowledge Point. You can pick up the crafting orders quests from <a href="https://www.wowhead.com/npc=228177" rel="nofollow noopener noreferrer" target="_blank">Kala Clayhoof</a> in Dornogal.</p>
+<h2 class="gtitle" id="patron">Patron Crafting Orders (NPC)</h2>
+<p>One of the largest sources of Knowledge Points for crafting professions is through Patron crafting orders (NPC crafting orders). Depending on your profession, you can earn 16 to 24 Knowledge Points per week from these orders.</p>
+<p>Patron orders can be challenging because they often require specific recipes, meeting minimum quality requirements, and often using your own materials. The list of NPC orders is randomized for each player, so <b>there will be times when you can't complete certain orders</b> due to insufficient skill or missing recipes.</p>
+<p><b>To access Crafting Orders:</b></p>
+<ol>
+<li>Head to your profession trainer in Dornogal, where you'll find the Crafting Table for each profession.</li>
+<li>Open your profession window.</li>
+<li>Click on the "Crafting Orders" tab at the bottom.</li>
+<li>Then, navigate to the "Patron Orders" tab at the top.</li>
+</ol>
+<p>To quickly scan the list of orders, <b>you can hover over the little golden chests to view the rewards</b>. Look for the blue "Glimmer" items, as these indicate knowledge points.</p>
+<img class="maps" height="250" src="../../../images/general/npc-orders-chest-icon.jpg" width="630"/>
+<h2 class="gtitle" id="treasure">Treasure Drops</h2>
+<p>Each crafting profession has two treasure drops available every week, which can be found in the various treasure chests scattered across the world. These drops can provide either one or two Knowledge Points each, depending on your profession.</p>
+<p><b>Hallowfall</b> and the <b>Ringing Deeps</b> is the best place to farm these treasures because they are marked on your map. You will see them all over in these zones, for example: <a href="https://www.wowhead.com/object=452696" rel="nofollow noopener noreferrer" target="_blank">Machine Speaker's Reliquary</a>, <a href="https://www.wowhead.com/object=444798" rel="nofollow noopener noreferrer" target="_blank">Arathi Treasure Hoard</a>.</p>
+<p>The drop rate is pretty high, so you can probably get these by just picking up treasures while you do your World Quests.</p>
+<p><b>Tip:</b> You can buy an <a class="white" href="https://www.wowhead.com/item=124640" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_132.jpg"/>Inky Black Potion</a> from the Auction House to improve visibility when searching for Dirt Piles, since they are not marked on your map.</p>
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<th>
+Profession
+</th><th>Knowledge Item
+</th>
+</tr>
+<tr>
+<td>Alchemy
+</td><td><a class="rare" href="https://www.wowhead.com/item=225234" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_powder_mithril.jpg"/>Alchemical Sediment</a>, <a class="rare" href="https://www.wowhead.com/item=225235" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_archaeology_ogres_mortarpestle.jpg"/>Deepstone Crucible</a>
+</td></tr>
+<tr>
+<td>Blacksmithing
+</td><td><a class="rare" href="https://www.wowhead.com/item=225232" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_titansteel_dark.jpg"/>Coreway Billet</a>, <a class="rare" href="https://www.wowhead.com/item=225233" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_stone_sharpeningstone_05.jpg"/>Dense Bladestone</a>
+</td></tr>
+<tr>
+<td>Enchanting
+</td><td><a class="rare" href="https://www.wowhead.com/item=225230" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_dawnstone_03.jpg"/>Crystalline Repository</a>, <a class="rare" href="https://www.wowhead.com/item=225231" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_wod_dust.jpg"/>Powdered Fulgurance</a>
+</td></tr>
+<tr>
+<td>Engineering
+</td><td><a class="rare" href="https://www.wowhead.com/item=225228" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enggizmos_14.jpg"/>Rust-Locked Mechanism</a>, <a class="rare" href="https://www.wowhead.com/item=225229" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gear_03.jpg"/>Earthen Induction Coil</a>
+</td></tr>
+<tr>
+<td>Inscription
+</td><td><a class="rare" href="https://www.wowhead.com/item=225226" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_shadestone.jpg"/>Striated Inkstone</a>, <a class="rare" href="https://www.wowhead.com/item=225227" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_letter_02.jpg"/>Wax-Sealed Records</a>
+</td></tr>
+<tr>
+<td>Jewelcrafting
+</td><td><a class="rare" href="https://www.wowhead.com/item=225224" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_70_gem01_white.jpg"/>Diaphanous Gem Shards</a>, <a class="rare" href="https://www.wowhead.com/item=225225" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_uncommon_cut_green.jpg"/>Deepstone Fragment</a>
+</td></tr>
+<tr>
+<td>Leatherworking
+</td><td><a class="rare" href="https://www.wowhead.com/item=225222" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_10_skinning_scales_black.jpg"/>Stone-Leather Swatch</a>, <a class="rare" href="https://www.wowhead.com/item=225223" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_shoulder_04.jpg"/>Sturdy Nerubian Carapace</a>
+</td></tr>
+<tr>
+<td>Tailoring
+</td><td><a class="rare" href="https://www.wowhead.com/item=225220" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_10_tailoring_purchasedthread_color1.jpg"/>Chitin Needle</a>, <a class="rare" href="https://www.wowhead.com/item=225221" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_thread_01.jpg"/>Spool of Webweave</a>
+</td></tr>
+</tbody></table>
+</div>
+<h2 class="gtitle" id="gathering">Gathering and Disenchanting</h2>
+<p>For Herbalism, Mining and Skinning, you can earn Knowledge Points by simply gathering materials.</p>
+<p>For Enchanting, <b>Knowledge Points are earned through disenchanting items</b>, regardless of the item's quality.</p>
+<p>All four of these professions follow the same pattern. Once you've obtained 5 of the blue-quality knowledge items, you'll eventually receive an epic one, which will be your final knowledge item until the next reset.</p>
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<th>
+Profession
+</th><th>Knowledge Item
+</th>
+</tr>
+<tr>
+<td>Enchanting
+</td><td>5x <a class="rare" href="https://www.wowhead.com/item=227659" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_magic_swirl_color2.jpg"/>Fleeting Arcane Manifestation</a>, 1x <a class="epic" href="https://www.wowhead.com/item=227661" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_10_enchanting_crystal_color3.jpg"/>Gleaming Telluric Crystal</a>
+</td></tr>
+<tr>
+<td>Herbalism
+</td><td>5x <a class="rare" href="https://www.wowhead.com/item=224264" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_-misc_herb_deathblossom_leaf.jpg"/>Deepgrove Petal</a>, 1x <a class="epic" href="https://www.wowhead.com/item=224265" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_trinket_05.jpg"/>Deepgrove Rose</a>
+</td></tr>
+<tr>
+<td>Mining
+</td><td>5x <a class="rare" href="https://www.wowhead.com/item=224583" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_adamantium_01.jpg"/>Slab of Slate</a> 1x <a class="epic" href="https://www.wowhead.com/item=224584" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_arcanite_02.jpg"/>Erosion Polished Slate</a>
+</td></tr>
+<tr>
+<td>Skinning
+</td><td>5x <a class="rare" href="https://www.wowhead.com/item=224780" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_skinning_stormchargedleather1.jpg"/>Toughened Tempest Pelt</a>, 1x <a class="epic" href="https://www.wowhead.com/item=224781" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_pelt_11.jpg"/>Abyssal Fur</a>
+</td></tr></tbody></table>
+</div>
+<h2 class="gtitle" id="treatises">Treatises</h2>
+<p>Treatises grant +1 Knowledge Point each week. If you're a Scribe with 30 points in the Pursuit of Knowledge specialization, your own Treatise will give you +2 Knowledge instead.</p>
+<p>To get a Treatise, <b>you need to submit a Public Crafting Order</b> since they are bind-on-pickup (BoP). They can be a bit pricey due to reagent costs, but it's an easy way to get extra weekly Knowledge.</p>
+<p><b>Treatises are Warbound</b>, so if you have an alt with Inscription, you can craft them and send them to your main.</p>
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<th>
+Treatise
+</th><th>Reagents
+</th>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=444187" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_profession_book_alchemy.jpg"/>Algari Treatise on Alchemy</a></td><td> 2x <a class="rare" href="https://www.wowhead.com/item=213612" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_viridescent_spores_violet.jpg"/>Viridescent Spores</a>, 1x <a class="rare" href="https://www.wowhead.com/item=222558" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialreagentfoozles_coolegg_red.jpg"/>Boundless Cipher</a>, 2x <a class="rare" href="https://www.wowhead.com/item=222615" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_inscriptions_ink_yellow.jpg"/>Apricate Ink</a>
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=444184" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_profession_book_blacksmithing.jpg"/>Algari Treatise on Blacksmithing</a></td><td> 2x <a class="rare" href="https://www.wowhead.com/item=213611" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_writhing_samples_violet.jpg"/>Writhing Sample</a>, 1x <a class="rare" href="https://www.wowhead.com/item=222558" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialreagentfoozles_coolegg_red.jpg"/>Boundless Cipher</a>, 2x <a class="rare" href="https://www.wowhead.com/item=222609" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_inscriptions_ink_purple.jpg"/>Shadow Ink</a>
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=444188" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_profession_book_enchanting.jpg"/>Algari Treatise on Enchanting</a></td><td> 2x <a class="rare" href="https://www.wowhead.com/item=213613" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_leyline_residue_violet.jpg"/>Leyline Residue</a>, 1x <a class="rare" href="https://www.wowhead.com/item=222558" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialreagentfoozles_coolegg_red.jpg"/>Boundless Cipher</a>, 2x <a class="rare" href="https://www.wowhead.com/item=222609" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_inscriptions_ink_purple.jpg"/>Shadow Ink</a>
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=444223" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_professionbook_engineering_color2.jpg"/>Algari Treatise on Engineering</a></td><td> 2x <a class="rare" href="https://www.wowhead.com/item=213611" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_writhing_samples_violet.jpg"/>Writhing Sample</a>, 1x <a class="rare" href="https://www.wowhead.com/item=222558" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialreagentfoozles_coolegg_red.jpg"/>Boundless Cipher</a>, 2x <a class="rare" href="https://www.wowhead.com/item=222609" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_inscriptions_ink_purple.jpg"/>Shadow Ink</a>
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=444182" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_profession_book_herbalism.jpg"/>Algari Treatise on Herbalism</a></td><td> 2x <a class="rare" href="https://www.wowhead.com/item=213612" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_viridescent_spores_violet.jpg"/>Viridescent Spores</a>, 1x <a class="rare" href="https://www.wowhead.com/item=222558" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialreagentfoozles_coolegg_red.jpg"/>Boundless Cipher</a>, 2x <a class="rare" href="https://www.wowhead.com/item=222615" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_inscriptions_ink_yellow.jpg"/>Apricate Ink</a>
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=447868" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_profession_book_inscription.jpg"/>Algari Treatise on Inscription</a></td><td> 2x <a class="rare" href="https://www.wowhead.com/item=213613" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_leyline_residue_violet.jpg"/>Leyline Residue</a>, 1x <a class="rare" href="https://www.wowhead.com/item=222558" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialreagentfoozles_coolegg_red.jpg"/>Boundless Cipher</a>, 2x <a class="rare" href="https://www.wowhead.com/item=222615" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_inscriptions_ink_yellow.jpg"/>Apricate Ink</a>
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=444189" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_profession_book_jewelcrafting.jpg"/>Algari Treatise on Jewelcrafting</a></td><td> 2x <a class="rare" href="https://www.wowhead.com/item=213610" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_crystalline_powder_orange.jpg"/>Crystalline Powder</a>, 1x <a class="rare" href="https://www.wowhead.com/item=222558" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialreagentfoozles_coolegg_red.jpg"/>Boundless Cipher</a>, 2x <a class="rare" href="https://www.wowhead.com/item=222609" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_inscriptions_ink_purple.jpg"/>Shadow Ink</a>
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=444185" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_profession_book_leatherworking.jpg"/>Algari Treatise on Leatherworking</a></td><td> 2x <a class="rare" href="https://www.wowhead.com/item=213612" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_viridescent_spores_violet.jpg"/>Viridescent Spores</a>, 1x <a class="rare" href="https://www.wowhead.com/item=222558" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialreagentfoozles_coolegg_red.jpg"/>Boundless Cipher</a>, 2x <a class="rare" href="https://www.wowhead.com/item=222615" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_inscriptions_ink_yellow.jpg"/>Apricate Ink</a>
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=444183" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_professionbook_mining_orig.jpg"/>Algari Treatise on Mining</a></td><td> 2x <a class="rare" href="https://www.wowhead.com/item=213610" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_crystalline_powder_orange.jpg"/>Crystalline Powder</a>, 1x <a class="rare" href="https://www.wowhead.com/item=222558" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialreagentfoozles_coolegg_red.jpg"/>Boundless Cipher</a>, 2x <a class="rare" href="https://www.wowhead.com/item=222609" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_inscriptions_ink_purple.jpg"/>Shadow Ink</a>
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=444236" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_professionbook_skinning_color1.jpg"/>Algari Treatise on Skinning</a></td><td> 2x <a class="rare" href="https://www.wowhead.com/item=213612" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_viridescent_spores_violet.jpg"/>Viridescent Spores</a>, 1x <a class="rare" href="https://www.wowhead.com/item=222558" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialreagentfoozles_coolegg_red.jpg"/>Boundless Cipher</a>, 2x <a class="rare" href="https://www.wowhead.com/item=222615" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_inscriptions_ink_yellow.jpg"/>Apricate Ink</a>
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=444186" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_profession_book_tailoring.jpg"/>Algari Treatise on Tailoring</a></td><td> 2x <a class="rare" href="https://www.wowhead.com/item=213613" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_leyline_residue_violet.jpg"/>Leyline Residue</a>, 1x <a class="rare" href="https://www.wowhead.com/item=222558" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialreagentfoozles_coolegg_red.jpg"/>Boundless Cipher</a>, 2x <a class="rare" href="https://www.wowhead.com/item=222615" rel="nofollow" target="_blank"><img class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_inscriptions_ink_yellow.jpg"/>Apricate Ink</a>
+</td></tr>
+</tbody></table>
+</div>
+<h2 class="gtitle" id="darkmoon">Darkmoon Faire Profession Quests (Monthly)</h2>
+<p>Darkmoon Faire Profession Quests are monthly, not weekly, but I thought it was worth mentioning them here.</p>
+<p>The Darkmoon Faire event happens once a month, starting at 00:01 on the Sunday before the first Monday of each month. During this event, you can complete quests for each of your professions. These quests grant +2 skill points and +3 Knowledge Points.</p>
+<p>For more details about these quests, check out my Darkmoon Faire Guide:</p>
+<p class="text-align-center"><a class="gblock" href="../../../wowguides/darkmoon-faire-profession-quests/index.html">Darkmoon Faire Profession Quests</a></p>
+<h2 class="gtitle" id="catchup">Knowledge Point Catch-up</h2>
+<p>If you start late in War Within or miss some weeks, you can still catch up. Crafting professions can slowly close the gap with players who started on Day 1, but it takes time. Gathering professions can catch up much faster.</p>
+<h3 class="gtitle">Crafting Professions</h3>
+<p>Crafters get extra Knowledge Points from Patron Crafting Orders. Each day, you'll receive <b>three catch-up Crafting Orders</b>, with each one rewarding +1 Knowledge (e.g., <a class="rare" href="https://www.wowhead.com/item=228724" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_cosmicvoid_orb.jpg"/>Flicker of Alchemy Knowledge</a>).</p>
+<p>This adds up to an extra <b>+3 Knowledge per day</b>.</p>
+<h3 class="gtitle">Mining, Herbalism and Skinning</h3>
+<p>Gatherers earn extra Knowledge after receiving their Weekly Knowledge Drops. Each catch-up point gives +1 Knowledge, and the amount you receive depends on how far behind you are.</p>
+<p><b>You need to complete the weekly quest from your trainer</b> before you can start earning catch-up points.</p>
+<p><b>These do not have a weekly cap</b> - you can keep earning them until you're fully caught up.</p>
+<ul>
+<li>Mining: <a class="rare" href="https://www.wowhead.com/item=224838" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_10_enchanting_shard_color2.jpg"/>Null Sliver</a></li>
+<li>Herbalism: <a class="rare" href="https://www.wowhead.com/item=224835" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Deepgrove Roots</a></li>
+<li>Skinning: <a class="rare" href="https://www.wowhead.com/item=224782" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_raptortalon_nightmare.jpg"/>Razor Talon</a></li>
+</ul>
+<h3 class="gtitle">Enchanting Knowledge Catch-Up</h3>
+<p>Enchanters can earn extra Knowledge Points by Disenchanting. After getting all your Weekly Knowledge Points, you'll start looting <a class="rare" href="https://www.wowhead.com/item=227662" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_dust_color4.jpg"/>Shimmering Dust</a>, which gives +1 Knowledge per drop. The amount you get depends on how many points you're behind.</p>
+<p>To make Shimmering Dust start dropping, <b>you must first complete your weekly Enchanting tasks</b>:</p>
+<ul>
+<li>Trainer weekly quest</li>
+<li>Disenchant items until you get the 5x blue and 1x purple weekly Knowledge Points</li>
+<li>Loot the 2 weekly item from treasures: <a class="rare" href="https://www.wowhead.com/ptr-2/item=225230" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_dawnstone_03.jpg"/>Crystalline Repository</a>, <a class="rare" href="https://www.wowhead.com/ptr-2/item=225231" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_wod_dust.jpg"/>Powdered Fulgurance</a> (e.g., Dirt Piles on the Isle of Dorn)</li>
+</ul>
+<p>Once those are done, Shimmering Dust will begin to drop from disenchanting eligible items. Just like gathering professions, <b>these do not have a weekly cap</b> - you can earn them until you're caught up.</p>
+<h4>Shimmering Dust Drop rate:</h4>
+<p>I only tested a few hundred disenchanting attempts, but the results should be close enough to give you a good idea of the drop rates:</p>
+<ul>
+<li><b>Greens:</b> ~10%</li>
+<li><b>Blues:</b> ~50%</li>
+<li><b>Epics:</b> Always drop 1 (100%).</li>
+</ul>
+</article>
+</main>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../../contact/index.html">Contact</a><a href="../../../privacy-policy/index.html">Privacy Policy</a><a href="../../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

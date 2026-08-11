@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="At Engineering skill 200 and character level 30, you can specialize in Gnomish or Goblin Engineering. This guide will list the items that can be crafted by each specialization to help you choose between the two. Some items require a specific specialization to use, while other items are crafted by one specialization but are usable by any engineer." name="description"/>
+<meta content="Guide to Engineering Specializations in TBC Classic" property="og:title"/>
+<meta content="At Engineering skill 200 and character level 30, you can specialize in Gnomish or Goblin Engineering. This guide will list the items that can be crafted by each specialization to help you choose between the two. Some items require a specific specialization to use, while other items are crafted by one specialization but are usable by any engineer." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/tbc/engineering-specializations-tbc-classic" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>Guide to Engineering Specializations in TBC Classic</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=S72RPv3FcC6XuaSPoXDMp6NEif.aEPgbMrTpjFUcfPs-1771996679.620614-1.0.1.1-84dbI2.57VocPWvMUvuNwjyXvEM5LcK0_MS9vkEWEAw" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--4">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#gnomish-or-goblin">Gnomish or Goblin Engineering?</a></li>
+<li><a href="#gnomish">Gnomish Engineering Quest</a></li>
+<li><a href="#goblin">Goblin Engineering Quest</a></li>
+<li><a href="#changing">Changing Engineering specialization</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">Guide to Engineering Specializations in TBC Classic</h1>
+<article>
+<p>At Engineering skill 200 and character level 30, you can specialize in Gnomish or Goblin Engineering. This guide will list the items that can be crafted by each specialization to help you choose between the two. Some items require a specific specialization to use, while other items are crafted by one specialization but are usable by any engineer.</p>
+<h2 class="gtitle" id="gnomish-or-goblin">1. Gnomish or Goblin Engineering?</h2>
+<p>You should focus on items exclusive to one specialization when deciding which specialization to choose. A lot of recipes crafted by one specialization can be used by both, meaning you can buy them from other Engineers.</p>
+<p>You should not base your decision on items that you will only craft once and could have just bought at the Auction House from another Engineer.</p>
+<h3>1.1. List of BoP and Exclusive items</h3>
+<p>This is the full list of items that require Goblin or Gnome Engineer specialization to use. The list also includes Bind on Pickup (BoP) items that the other specialization could theoretically use, but they Bind on Pickup. (you can still use them if you drop Engineering, re-level it, then choose the other specialization)</p>
+<div class="tab-container">
+<div class="tabs">
+<button class="tab-button active" data-tab="engineering-recipes-tab-1">Gnomish Recipes</button>
+<button class="tab-button" data-tab="engineering-recipes-tab-2">Goblin Recipes</button>
+</div>
+<div class="tab-content active" id="engineering-recipes-tab-1" role="tabpanel">
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<th>Item</th>
+<th>Description</th>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/tbc/spell=30575" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_gizmo_newgoggles.jpg"/>Gnomish Battle Goggles</a> (TBC)
+                        </td><td>Leather Helm (physical DPS)
+                    </td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/tbc/spell=30574" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helmet_47.jpg"/>Gnomish Power Goggles</a> (TBC)
+                        </td><td>Cloth Helm
+                    </td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/tbc/spell=30569" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enggizmos_06.jpg"/>Gnomish Poultryizer</a> (TBC)
+                        </td><td>+45 Stamina Tank trinket. Turns the target into a chicken for 15 sec. (5 Min CD)
+                    </td></tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/tbc/spell=36955" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enggizmos_12.jpg"/>Ultrasafe Transporter - Toshley's Station</a> (TBC)
+                        </td><td>Teleport to Toshley's Station in Blade's Edge Mountains
+                    </td></tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/tbc/spell=23489" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enggizmos_12.jpg"/>Ultrasafe Transporter - Gadgetzan</a>
+</td><td>Teleport to Gadgetzan in Tanaris
+                    </td></tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/tbc/spell=23129" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enggizmos_08.jpg"/>World Enlarger</a>
+</td><td>A fun item that makes you smaller. This effect is similar to the Noggenfogger elixir's shrink.
+                    </td></tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/tbc/item=11826" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_idol_02.jpg"/>Lil' Smoky</a>
+</td><td>Non-combat pet.
+                    </td></tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/tbc/spell=12906" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_magic_polymorphchicken.jpg"/>Gnomish Battle Chicken</a>
+</td><td>A trinket that creates a Battle Chicken that will fight for you for 1.50 min or until it is destroyed. (20 Min CD)
+                    </td></tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/tbc/spell=12759" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_gizmo_08.jpg"/>Gnomish Death Ray</a>
+</td><td>A trinket that does high damage to both you and your target. 4-sec cast. (5 Min CD)
+                    </td></tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/tbc/spell=12897" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helmet_47.jpg"/>Gnomish Goggles</a>
+</td><td>Low-level Cloth helm
+                    </td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="tab-content" id="engineering-recipes-tab-2" role="tabpanel">
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<th>Item</th>
+<th>Description</th>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/tbc/spell=30565" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helmet_60.jpg"/>Foreman's Enchanted Helmet</a> (TBC)
+                        </td><td>Cloth helm with +10% stun resist
+                    </td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/tbc/spell=30566" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helmet_60.jpg"/>Foreman's Reinforced Helmet</a> (TBC)
+                        </td><td>Mail helm with +10% stun resist
+                    </td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/tbc/spell=30563" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_gizmo_rocketlauncher.jpg"/>Goblin Rocket Launcher</a> (TBC)
+                        </td><td>+45 Stamina Tank trinket. Can be used to Fire a rocket that does 960 to 1440 damage and stuns for 3 sec.(2 Min CD)
+                    </td></tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/tbc/spell=36954" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enggizmos_07.jpg"/>Dimensional Ripper - Area 52</a> (TBC)
+                        </td><td>Teleport to Area 52 in Netherstorm
+                    </td></tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/tbc/spell=23486" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enggizmos_07.jpg"/>Dimensional Ripper - Everlook</a>
+</td><td>Teleport to Everlook in Winterspring
+                    </td></tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/tbc/spell=15628" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_bomb_04.jpg"/>Pet Bombling</a>
+</td><td>Non-combat pet.
+                    </td></tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/tbc/spell=12755" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_gizmo_06.jpg"/>Goblin Bomb Dispenser</a>
+</td><td>Creates a mobile bomb that charges the nearest enemy and explodes for 315 to 385 fire damage. (30 Min CD)
+                    </td></tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/tbc/item=10727" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_fire_flamebolt.jpg"/>Goblin Dragon Gun</a>
+</td><td>Trinket that Deals 61 to 69 fire damage for 10 sec to all targets in a cone in front of the engineer using the weapon.(5 Min CD)
+                    </td></tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/tbc/item=10542" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helmet_25.jpg"/>Goblin Mining Helmet</a>
+</td><td>Mail helm with +5 Mining
+                    </td></tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/tbc/item=10543" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helmet_60.jpg"/>Goblin Construction Helmet</a>
+</td><td>Cloth Helm with +15 Fire Resist. With on use effect that absorbs 300 to 500 Fire damage. Lasts 1 min. (1 Hour CD)
+                    </td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<h3>1.2. Consumables and Bind on Equip (BoE) items</h3>
+<p>Both specializations can use these items, but only one of them can craft them. You can buy them at the Auction House from another Engineer.</p>
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<th>Goblin</th>
+<th>Gnomish</th>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/tbc/spell=8895" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_gizmo_rocketboot_01.jpg"/>Goblin Rocket Boots</a>
+</td><td><a class="zold" href="https://www.wowhead.com/tbc/spell=12905" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_boots_02.jpg"/>Gnomish Rocket Boots</a>
+</td></tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/tbc/spell=12716" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_musket_01.jpg"/>Goblin Mortar</a>
+</td><td><a class="white" href="https://www.wowhead.com/tbc/spell=12899" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_gizmo_09.jpg"/>Gnomish Shrink Ray</a>
+</td></tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/tbc/spell=12754" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_bomb_04.jpg"/>The Big One</a>
+</td><td><a class="white" href="https://www.wowhead.com/tbc/spell=23096" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enggizmos_13.jpg"/>Alarm-O-Bot</a>
+</td></tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/tbc/spell=12758" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helmet_49.jpg"/>Goblin Rocket Helmet</a>
+</td><td><a class="zold" href="https://www.wowhead.com/tbc/spell=12907" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helmet_49.jpg"/>Gnomish Mind Control Cap</a>
+</td></tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/tbc/spell=12760" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_fire_selfdestruct.jpg"/>Goblin Sapper Charge</a>
+</td><td><a class="white" href="https://www.wowhead.com/tbc/spell=12902" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_net_01.jpg"/>Gnomish Net-o-Matic Projector</a>
+</td></tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/tbc/spell=23078" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enggizmos_11.jpg"/>Goblin Jumper Cables XL</a>
+</td><td><a class="zold" href="https://www.wowhead.com/tbc/spell=12903" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_belt_06.jpg"/>Gnomish Harm Prevention Belt</a>
+</td></tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/tbc/spell=30558" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_gizmo_thebiggerone.jpg"/>The Bigger One</a> (TBC)
+			</td><td><a class="white" href="https://www.wowhead.com/tbc/spell=30568" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_gizmo_gnomishflameturret.jpg"/>Gnomish Flame Turret</a> (TBC)
+		</td></tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/tbc/spell=30560" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_gizmo_supersappercharge.jpg"/>Super Sapper Charge</a> (TBC)
+			</td><td><a class="rare" href="https://www.wowhead.com/tbc/spell=30570" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_belt_27.jpg"/>Nigh-Invulnerability Belt</a> (TBC)
+		</td></tr>
+</tbody>
+</table>
+</div>
+<h2 class="gtitle" id="gnomish">2. Gnomish Engineering Quest</h2>
+<p>To Become a Gnomish Engineer, you have to complete the following quests:</p>
+<div class="tab-container">
+<div class="tabs">
+<button class="tab-button active" data-tab="gnomish-engineering-quest-tab-1">Alliance</button>
+<button class="tab-button" data-tab="gnomish-engineering-quest-tab-2">Horde</button>
+</div>
+<div class="tab-content active" id="gnomish-engineering-quest-tab-1" role="tabpanel">
+<ol>
+<li>Pick up the <a href="https://www.wowhead.com/tbc/quest=3632" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/><img height="15" src="../../images/icons/alliance.png" width="15"/>Gnome Engineering</a> quest from <a href="https://www.wowhead.com/tbc/npc=5174" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Springspindle Fizzlegear</a> in Ironforge.</li>
+<li>Deliver the quest to <a href="https://www.wowhead.com/tbc/npc=7944" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Tinkmaster Overspark</a>, then pick up <a href="https://www.wowhead.com/tbc/quest=3640" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/><img height="15" src="../../images/icons/alliance.png" width="15"/>The Pledge of Secrecy</a>.</li>
+<li>Right click on the <a class="white" href="https://www.wowhead.com/tbc/item=10793" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_note_02.jpg"/>Overspark's Pledge of Secrecy</a> in your inventory to complete the quest.</li>
+<li>Accept the <a href="https://www.wowhead.com/tbc/quest=3641" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/><img height="15" src="../../images/icons/alliance.png" width="15"/>Show Your Work</a> quest.</li>
+</ol>
+</div>
+<div class="tab-content" id="gnomish-engineering-quest-tab-2" role="tabpanel">
+<ol>
+<li>Go to Rachet and pick up <a href="https://www.wowhead.com/tbc/quest=3637" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/><img height="15" src="../../images/icons/horde.png" width="15"/>Gnome Engineering</a> from <a href="https://www.wowhead.com/tbc/npc=3494" rel="nofollow noopener noreferrer" target="_blank">Tinkerwiz</a>.</li>
+<li>Use the ship to go to Booty Bay, then find <a href="https://www.wowhead.com/tbc/npc=7406" rel="nofollow noopener noreferrer" target="_blank">Oglethorpe Obnoticus</a>. Pick up the next quest <a href="https://www.wowhead.com/tbc/quest=3642" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/><img height="15" src="../../images/icons/horde.png" width="15"/>The Pledge of Secrecy</a>.</li>
+<li>Right click on the <a class="white" href="https://www.wowhead.com/tbc/item=10794" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_note_02.jpg"/>Oglethorpe's Pledge of Secrecy</a> in your inventory to complete the quest.</li>
+<li>Accept the <a href="https://www.wowhead.com/tbc/quest=3643" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/><img height="15" src="../../images/icons/horde.png" width="15"/>Show Your Work</a> quest.</li>
+</ol>
+</div>
+</div>
+<p> </p>
+<p>To complete the quest, you will need the following items:</p>
+<div class="old-toc">
+<ul>
+<li>6x <a class="white" href="https://www.wowhead.com/tbc/spell=12589" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_musket_01.jpg"/>Mithril Tube</a></li>
+<li>1x <a class="white" href="https://www.wowhead.com/tbc/spell=3979" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_spyglass_02.jpg"/>Accurate Scope</a></li>
+<li>2x <a class="white" href="https://www.wowhead.com/tbc/spell=3965" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_crate_05.jpg"/>Advanced Target Dummy</a></li>
+</ul>
+</div>
+<p>The <a class="white" href="https://www.wowhead.com/tbc/item=13310" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Schematic: Accurate Scope</a> recipe is sold by <a href="https://www.wowhead.com/tbc/npc=2685" rel="nofollow noopener noreferrer" target="_blank">Mazk Snipeshot</a> in Booty Bay. It's a limited supply recipe, so you have to wait if someone bought it before you. (or just buy it at the Auction House)</p>
+<h4>Total Raw Materials needed:</h4>
+<ul>
+<li>18x <a class="white" href="https://www.wowhead.com/tbc/item=3860" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_06.jpg"/>Mithril Bar</a></li>
+<li>6x <a class="white" href="https://www.wowhead.com/tbc/item=2841" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_bronze.jpg"/>Bronze Bar</a></li>
+<li>1x <a class="zold" href="https://www.wowhead.com/tbc/item=1529" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_stone_01.jpg"/>Jade</a></li>
+<li>1x <a class="zold" href="https://www.wowhead.com/tbc/item=3864" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_opal_02.jpg"/>Citrine</a></li>
+<li>6x <a class="white" href="https://www.wowhead.com/tbc/item=3575" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_iron.jpg"/>Iron Bar</a></li>
+<li>2x <a class="white" href="https://www.wowhead.com/tbc/item=2319" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_05.jpg"/>Medium Leather</a></li>
+<li>2x <a class="white" href="https://www.wowhead.com/tbc/item=2592" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_fabric_wool_01.jpg"/>Wool Cloth</a></li>
+<li>2x <a class="zold" href="https://www.wowhead.com/tbc/item=3577" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_03.jpg"/>Gold Bar</a></li>
+<li>8x <a class="white" href="https://www.wowhead.com/tbc/item=4234" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_07.jpg"/>Heavy Leather</a></li>
+</ul>
+<h2 class="gtitle" id="goblin">3. Goblin Engineering Quest</h2>
+<p>To Become a Goblin Engineer, you have to complete the following quests:</p>
+<ol>
+<li>Pick up <a href="https://www.wowhead.com/tbc/quest=3633" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Goblin Engineering</a> from <a href="https://www.wowhead.com/tbc/npc=3494" rel="nofollow noopener noreferrer" target="_blank">Tinkerwiz</a> in Ratchet.</li>
+<li>Go to Gadgetzan in Tanaris and pick up <a href="https://www.wowhead.com/tbc/quest=3638" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>The Pledge of Secrecy</a> from <a href="https://www.wowhead.com/tbc/npc=8126" rel="nofollow noopener noreferrer" target="_blank">Nixx Sprocketspring</a>.</li>
+<li>Right-click on the <a class="white" href="https://www.wowhead.com/tbc/item=10792" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_note_02.jpg"/>Nixx's Pledge of Secrecy</a> in your inventory to complete the quest. Then pick up <a href="https://www.wowhead.com/tbc/quest=3639" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Show Your Work.</a></li>
+</ol>
+<p>To complete the quest, you will need to craft the following items:</p>
+<ul>
+<li>20x <a class="white" href="https://www.wowhead.com/tbc/spell=3967" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_bomb_01.jpg"/>Big Iron Bomb</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/tbc/spell=12586" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_bomb_06.jpg"/>Solid Dynamite</a></li>
+<li>5x <a class="white" href="https://www.wowhead.com/tbc/spell=3955" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_nature_polymorph.jpg"/>Explosive Sheep</a></li>
+</ul>
+<h4>Total Raw Materials needed:</h4>
+<ul>
+<li>2x <a class="zold" href="https://www.wowhead.com/tbc/item=2842" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_01.jpg"/>Silver Bar</a></li>
+<li>30x <a class="white" href="https://www.wowhead.com/tbc/item=3575" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_iron.jpg"/>Iron Bar</a></li>
+<li>40x <a class="white" href="https://www.wowhead.com/tbc/item=2838" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_stone_12.jpg"/>Heavy Stone</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/tbc/item=7912" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_stone_10.jpg"/>Solid Stone</a></li>
+<li>10x <a class="white" href="https://www.wowhead.com/tbc/item=4306" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_fabric_silk_01.jpg"/>Silk Cloth</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/tbc/item=2592" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_fabric_wool_01.jpg"/>Wool Cloth</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/tbc/item=2841" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_bronze.jpg"/>Bronze Bar</a></li>
+<li>5x <a class="white" href="https://www.wowhead.com/tbc/item=2319" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_05.jpg"/>Medium Leather</a></li>
+</ul>
+<h2 class="gtitle" id="changing">4. Changing Engineering Specialization</h2>
+<p>The only way to switch your specialization is to COMPLETELY unlearn Engineering and then level it back up again. Here is how to do it step by step:</p>
+<h4>4.1. Unlearn Engineering</h4>
+<p>Open your character info, click on the Skills tab at the bottom, and unlearn Engineering.</p>
+<p><span style="color:red;"><b>Doing this will cause you to lose all your recipes and skill points!!!</b></span></p>
+<p><img class="maps" height="300" src="../../images/classic/unlearn-engineering.jpg" width="750"/></p>
+<h4>4.2. Level Engineering</h4>
+<p>You have to level Engineering back up to 200 again. <b>You don't have to do any quests again after this.</b></p>
+<p>Use my <a href="../../tbc/engineering-leveling-guide-burning-crusade-classic/index.html">TBC Classic Engineering Leveling Guide 1-375</a> to quickly get back to 200.</p>
+<h4>4.3. "Soothsaying for Dummies"</h4>
+<p>Now go to Steamwheedle Port in Tanaris and click on the "Soothsaying for Dummies" book located inside a hut. You can see the exact location marked in the picture below. Once you've read it, you will be able to take up the other specialization.</p>
+<p><img class="maps" height="300" src="../../images/classic/changing-leatherworking-specialization.jpg" width="750"/></p>
+</article>
+</main>
+<aside class="left-sidebar-menu sidebar-sticky">
+<nav>
+<h4>Quick Links</h4>
+<ul>
+<li><a href="../../tbc/alchemy-leveling-guide-burning-crusade-classic/index.html">Alchemy</a></li>
+<li><a href="../../tbc/blacksmithing-leveling-guide-burning-crusade-classic/index.html">Blacksmithing</a></li>
+<li><a href="../../tbc/enchanting-leveling-guide-burning-crusade-classic/index.html">Enchanting</a></li>
+<li><a href="../../tbc/engineering-leveling-guide-burning-crusade-classic/index.html">Engineering</a></li>
+<li><a href="../../tbc/jewelcrafting-leveling-guide-burning-crusade-classic/index.html">Jewelcrafting</a></li>
+<li><a href="../../tbc/leatherworking-leveling-guide-burning-crusade-classic/index.html">Leatherworking</a></li>
+<li><a href="../../tbc/tailoring-leveling-guide-burning-crusade-classic/index.html">Tailoring</a></li>
+<li><a href="../../tbc/herbalism-leveling-guide-tbc-classic/index.html">Herbalism</a></li>
+<li><a href="../../tbc/mining-leveling-guide-tbc-classic/index.html">Mining</a></li>
+<li><a href="../../tbc/skinning-leveling-guide-tbc-classic/index.html">Skinning</a></li>
+<li><a href="../../tbc/first-aid-leveling-guide-burning-crusade-classic/index.html">First Aid</a></li>
+<li><a href="../../tbc/fishing-and-cooking-leveling-guide-burning-crusade-classic/index.html">Fishing+Cooking</a></li>
+<li><a href="../../tbc/cooking-leveling-guide-tbc-classic/index.html">Cooking</a></li>
+<li><a href="../../tbc/fishing-leveling-guide-burning-crusade-classic/index.html">Fishing</a></li>
+<li><a href="../../tbc/lockpicking-leveling-guide-tbc-classic/index.html">Lockpicking</a></li>
+</ul>
+</nav>
+</aside>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="Complete WoW Midnight Skinning guide covering farming spots, specializations, Knowledge Points, profession equipment, lures, diffusers, and materials." name="description"/>
+<meta content="Midnight Skinning Guide: Knowledge, Specs, and Farming" property="og:title"/>
+<meta content="Complete WoW Midnight Skinning guide covering farming spots, specializations, Knowledge Points, profession equipment, lures, diffusers, and materials." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/guides/wow-skinning-leveling-guide" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>Midnight Skinning Guide: Knowledge, Specs, and Farming</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=Qjbi_mdy_XXyoCBzjPakRRl3fuqsDNrRbUAoCV8Iyns-1771996626.7676964-1.0.1.1-6u1J4m2SA6CMtYPjvfnuxJjy04GRDETP1953YakcqIo" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--4">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#trainer">Skinning Trainer</a></li>
+<li><a href="#changes">What Changed in Midnight</a></li>
+<li><a href="#materials">Skinning Materials</a></li>
+<li><a href="#high-value">High Value Beasts</a></li>
+<li><a href="#diffusers">Diffusers</a></li>
+<li><a href="#lures">Lures &amp; Renowned Beasts</a></li>
+<li><a href="#tools">Profession Equipment</a></li>
+<li><a href="#knowledge">Knowledge Points</a></li>
+<li><a href="#specializations">Specializations</a></li>
+<li><a href="#where-to-farm">Where to Farm</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">Midnight Skinning Guide: Knowledge, Specs, and Farming</h1>
+<article>
+<p><img align="left" height="64" src="../../images/icons/professions/skinning.png" style="margin-right: 8px;" width="64"/>This is the complete Skinning guide for Midnight. It covers the best farming spots, profession equipment, lures, diffusers, Knowledge Points, and specialization paths, plus what changed from The War Within.</p>
+<div class="important"><p><b>There are only 2 days left until early access</b> release when I'm publishing this guide, and <b>there are still many issues with Skinning</b>. I'll highlight them in the guide, but keep in mind that anything might change here. I'll keep testing in the last two days. Maybe they hotfix these, or we get a new beta build, or there is a version of the game that beta players won't get and live will be different.</p></div>
+<h2 class="line-header" id="trainer">Skinning Trainer</h2>
+<p>You can learn Midnight Skinning from Tyn in Silvermoon City.</p>
+<div class="npc-media">
+<div class="media-card">
+<div class="media-header">
+<span class="media-title">Silvermoon City</span>
+<div class="waypoint-actions">
+<button class="btn-waypoint" data-clipboard-text="/way #2393 43.3 55.6 Tyn">TomTom</button>
+<button class="btn-waypoint" data-clipboard-text="/run local m=2393;local x=0.433;local y=0.556;C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(m,x,y));C_SuperTrack.SetSuperTrackedUserWaypoint(true)">In-Game Pin</button>
+</div>
+</div>
+<div class="media-content">
+<div class="map-embed" data-coords="43.3, 55.6" data-map-img="/images/maps/normal/silvermoon-city.jpg" data-title="Tyn" data-zone="2393" data-zone-name="Silvermoon City">
+<div class="map-zone">Silvermoon City</div>
+<div class="map-image" style="background-image: url('/images/maps/normal/silvermoon-city.jpg');">
+<div class="map-pin" style="left: 43.3%; top: 55.6%;"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="media-card">
+<div class="media-header">
+<span class="media-title">Tyn</span>
+</div>
+<div class="media-content">
+<img alt="Tyn" class="lightbox" height="668" onerror="this.closest('.media-card').style.display='none'" src="../../images/npc/midnight/243527.jpg" width="1002"/>
+</div>
+</div>
+</div>
+<h2 class="line-header" id="changes">What Changed in Midnight</h2>
+<p>If you played a Skinner in The War Within, here's what's different.</p>
+<ul>
+<li>
+<p><b>Fishing Lures Removed from Skinning:</b> Fishing lures are no longer part of the Skinning profession. They've been moved to Fishing where they belong.</p>
+</li>
+<li>
+<p><b>Two Qualities Only:</b> Just like other professions, reagents now only have Silver and Gold quality. Bronze is gone.</p>
+</li>
+<li>
+<p><b>Lure System Expanded:</b> There is now one lure for each zone, plus a Grand Beast Lure. You throw diffusers at mobs instead of placing lures on the ground to attract creatures.</p>
+</li>
+<li>
+<p><b>Track High Value Beasts:</b> A new ability that shows High Value Beasts on your minimap. These mobs give more leather when skinned.</p>
+</li>
+<li>
+<p><b>No More Refining:</b> You can no longer refine leather, scales, or hides to a higher rank. What you skin is what you get.</p>
+</li>
+<li>
+<p><b>New Epic Tier for Profession Equipment:</b> Profession equipment now includes an Epic tier on top of Green and Blue.</p>
+</li>
+</ul>
+<h2 class="line-header" id="materials">Skinning Materials</h2>
+<p>These are the base skinning materials in Midnight.</p>
+<div class="important"><a class="zold" href="https://www.wowhead.com/item=238525" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_pelt_13.jpg"/>Fantastic Fur</a>, <a class="zold" href="https://www.wowhead.com/item=238522" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_animalparts_feathers.jpg"/>Peerless Plumage</a>, and <a class="zold" href="https://www.wowhead.com/item=238523" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_animalparts_tetth.jpg"/>Carving Canine</a> either have an extremely low drop rate (which I doubt since they are used in many recipes), or they forgot to add them to most creatures. I killed hundreds of beasts everywhere and I didn't get a single one from any of them on beta.</div>
+<table class="tbl-minimal">
+<thead>
+<tr>
+<th>Material</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/item=238511" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_thalassianleather_brown.jpg"/>Void-Tempered Leather</a></td>
+<td>Leather mobs</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/item=238513" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_thalassianscale_violet.jpg"/>Void-Tempered Scales</a></td>
+<td>Scale mobs</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/item=238518" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_thalassianhide_brown.jpg"/>Void-Tempered Hide</a></td>
+<td>Rare mobs, Sharpen Your Knife, lure beasts</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/item=238520" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_pristinescale_violet.jpg"/>Void-Tempered Plating</a></td>
+<td>Rare scale mobs, Sharpen Your Knife, lure beasts</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/item=238525" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_pelt_13.jpg"/>Fantastic Fur</a></td>
+<td>Furred creatures</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/item=238522" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_animalparts_feathers.jpg"/>Peerless Plumage</a></td>
+<td>Feathered creatures</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/item=238523" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_animalparts_tetth.jpg"/>Carving Canine</a></td>
+<td>Fanged creatures</td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/item=238528" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_animalparts_claws.jpg"/>Majestic Claw</a></td>
+<td>Renowned Beasts (lure system)</td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/item=238529" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_skinning_stormchargedleather1.jpg"/>Majestic Hide</a></td>
+<td>Renowned Beasts (lure system)</td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/item=238530" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_icon_wing01b.jpg"/>Majestic Fin</a></td>
+<td>Renowned Beasts (lure system)</td>
+</tr>
+</tbody>
+</table>
+<h2 class="line-header" id="high-value">High Value Beasts</h2>
+<p>This is a new system in Midnight. High Value Beasts show up on your minimap as a skinning knife icon. When you skin one, you get more leather, depending on the mob, that's anywhere from 5 to 10 leather or scales.</p>
+<p>You don't need to do anything special to track High Value Beasts. The tracking is automatically enabled when you learn Midnight Skinning, but you can also toggle it on and off with <a class="white" href="https://www.wowhead.com/spell=1250491" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_skinningspecializations_talentedtracking.jpg"/>Find High-Value Beasts</a> in your spellbook.</p>
+<p>The beasts have a red outline and they glow a bit to make them easier to spot.</p>
+<p class="text-align-center"><img alt="High Value beasts location map for the Midnight Skinning Guide" class="lightbox guide-img" height="882" src="../../images/midnight/midnight-skinning-high-value-beast.jpg" width="1138"/></p>
+<h2 class="line-header" id="diffusers">Diffusers</h2>
+<p>Diffusers replace the old lure system for Mote farming. Instead of placing a lure on the ground and waiting, you throw a diffuser at a mob. When you kill and skin it, you get Motes.</p>
+<p>To use a diffuser, just target any skinnable beast, click the diffuser in your bags to throw it at them, and then kill and skin the mob normally.</p>
+<p>Each diffuser costs <b>2 Motes</b> of its type to craft. The first diffuser you unlock is the Lightbloom Diffuser at 1 point in Dedicated Diffuser.</p>
+<div class="important"><b>I'm pretty sure diffusers are bugged right now, and we have two days before early access.</b> These have no cooldown, so you could theoretically print motes since you get more than you spend when you fully specialize. Also, if you have one, you can't use it because it says missing reagent, so you have to make at least two to use one diffuser and there will always be one bugged in the bag that you cannot use. So, yeah completely bugged.</div>
+<table class="tbl-minimal">
+<thead>
+<tr>
+<th>Diffuser</th>
+<th>Material Cost</th>
+<th>Drops</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/item=238657" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_60pvp_trinket2b.jpg"/>Lightbloom Diffuser</a></td>
+<td>2x Mote of Light</td>
+<td>1-4 Mote of Light</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/item=238658" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_60pvp_trinket2c.jpg"/>Wild Diffuser</a></td>
+<td>2x Mote of Wild Magic</td>
+<td>1-4 Mote of Wild Magic</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/item=238659" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_60pvp_trinket2a.jpg"/>Primal Diffuser</a></td>
+<td>2x Mote of Primal Energy</td>
+<td>1-4 Mote of Primal Energy</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/item=238660" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_60pvp_trinket2d.jpg"/>Void Diffuser</a></td>
+<td>2x Mote of Pure Void</td>
+<td>1-4 Mote of Pure Void</td>
+</tr>
+</tbody>
+</table>
+<h2 class="line-header" id="lures">Majestic Lures &amp; Renowned Beasts</h2>
+<p>Renowned beasts are similar to what we have in War Within how <a class="epic" href="https://www.wowhead.com/item=219013" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_redsaberonfang.jpg"/>Superb Beast Fang</a> worked, but instead of 1 Lure, there is now a zone-specific lure for each zone, plus a Grand Beast Lure.</p>
+<div class="important"><p><b>This system is probably bugged.</b> Right now, some Renowned Beasts are spammable while others are on a daily cooldown. If that is intended, it means you can convert fish into leather with some lures, which feels wrong. Eversong and Voidstorm seem spammable, but Zul'Aman and Harandar are daily, so the rules are inconsistent.</p>
+<p>The Majestic material drop rate also looks off. <b>I had full specialization unlocked</b>, so my drop chance should have been higher. Across 18 total beast kills, I got 1 Majestic material. Making this many baits took hours of fish farming.</p>
+<p><b>I couldn't find the Grand Beast Lure</b> location, and it looks like no one has confirmed it yet. That might change how this system feels. I see the possibility that the Grand Beast will have guaranteed or at least a lot higher drop chance, while the rest of them will just have a lower chance, but this is all just speculation. I will update this section as soon as I get more data.</p>
+</div>
+<h3>Majestic Lure Recipes</h3>
+<p>Lures are unlocked through in the Talented Tracker Specialization tree.</p>
+<table class="tbl-minimal">
+<thead>
+<tr>
+<th>Lure</th>
+<th>Fish Required</th>
+<th>Spec Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/item=238652" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cooking_90_aetherealmeat_color03.jpg"/>Majestic Eversong Lure</a></td>
+<td>8x <a class="white" href="https://www.wowhead.com/item=238371" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_crystalinefish_blue.jpg"/>Arcane Wyrmfish</a>, 8x <a class="white" href="https://www.wowhead.com/item=238366" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_fishing_lynxfish_yellow.jpg"/>Lynxfish</a></td>
+<td>Talented Tracker (free)</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/item=238653" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cooking_90_aetherealmeat_color03.jpg"/>Majestic Zul'Aman Lure</a></td>
+<td>8x <a class="zold" href="https://www.wowhead.com/item=238382" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_fishing_goreguppies_red.jpg"/>Gore Guppy</a></td>
+<td>Talented Tracker (10 pts)</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/item=238654" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cooking_90_aetherealmeat_color03.jpg"/>Majestic Harandar Lure</a></td>
+<td>8x <a class="zold" href="https://www.wowhead.com/item=238375" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_38.jpg"/>Fungalskin Pike</a>, 8x <a class="zold" href="https://www.wowhead.com/item=238374" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_fishing_lumifin_blue.jpg"/>Tender Lumifin</a></td>
+<td>Talented Tracker (20 pts)</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/item=238655" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cooking_90_aetherealmeat_color03.jpg"/>Majestic Voidstorm Lure</a></td>
+<td>4x <a class="rare" href="https://www.wowhead.com/item=238373" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_babyoctopus_black.jpg"/>Ominous Octopus</a></td>
+<td>Talented Tracker (30 pts)</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1225948" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cooking_90_aetherealmeat_color03.jpg"/>Grand Beast Lure</a></td>
+<td>4x <a class="rare" href="https://www.wowhead.com/item=238380" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_60.jpg"/>Null Voidfish</a></td>
+<td>Talented Tracker (40 pts)</td>
+</tr>
+</tbody>
+</table>
+<h3>Majestic Lure Locations and Drop rates</h3>
+<p>You can't use lures just anywhere. Each zone has a specific spot where you have to place the lure to summon the Renowned Beast.</p>
+<p>The three new reagents are: <a class="epic" href="https://www.wowhead.com/item=238529" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_skinning_stormchargedleather1.jpg"/>Majestic Hide</a>, <a class="epic" href="https://www.wowhead.com/item=238530" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_icon_wing01b.jpg"/>Majestic Fin</a>, and <a class="epic" href="https://www.wowhead.com/item=238528" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_animalparts_claws.jpg"/>Majestic Claw</a>. The drop rates are not confirmed yet, we need more data.</p>
+<table class="tbl-minimal">
+<thead>
+<tr>
+<th>Zone</th>
+<th>Location</th>
+<th>Renowned Beast</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Eversong Woods</td>
+<td>41.95, 79.70</td>
+<td><a href="https://www.wowhead.com/beta/npc=245688/gloomclaw" rel="nofollow noopener noreferrer" target="_blank">Gloomclaw</a></td>
+</tr>
+<tr>
+<td>Zul'Aman</td>
+<td>47.55, 53.65</td>
+<td><a href="https://www.wowhead.com/npc=245699" rel="nofollow noopener noreferrer" target="_blank">Silverscale</a></td>
+</tr>
+<tr>
+<td>Harandar</td>
+<td>66.00, 48.00</td>
+<td><a href="https://www.wowhead.com/beta/npc=245690/lumenfin" rel="nofollow noopener noreferrer" target="_blank">Lumenfin</a></td>
+</tr>
+<tr>
+<td>Voidstorm</td>
+<td>54.15, 65.27</td>
+<td><a href="https://www.wowhead.com/beta/npc=247096/umbrafang" rel="nofollow noopener noreferrer" target="_blank">Umbrafang</a></td>
+</tr>
+<tr>
+<td>Grand Beast</td>
+<td>Unknown</td>
+<td><a href="https://www.wowhead.com/npc=247101/netherscythe" rel="nofollow noopener noreferrer" target="_blank">Netherscythe</a></td>
+</tr>
+</tbody>
+</table>
+<h2 class="line-header" id="tools">Profession Equipment</h2>
+<p>Skinning profession equipment now includes an Epic tier. There's no primary skill difference between Blue and Epic pieces. The only difference is the secondary stat amount.</p>
+<p>You have three equipment slots: Cap, Pack, and Knife. Cap and Pack are accessories from Leatherworking, and the Knife is a tool from Blacksmithing.</p>
+<p><a class="white" href="https://www.wowhead.com/item=251665" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_tailoring_tailoringspecializations_fiberarts.jpg"/>Silverleaf Thread</a> is sold by vendors, so if you are submiting Crafting Orders, you can buy them from the Leatherworking supply vendor near your trainer.</p>
+<div class="table-container wrap">
+<table class="tbl-minimal">
+<thead>
+<tr>
+<th>Tool/Accessory</th>
+<th>Crafted By</th>
+<th>Materials Needed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1237569" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_armor_skinning_a_01.jpg"/>Skinner's Cap</a></td>
+<td>Leatherworking</td>
+<td>40x <a class="white" href="https://www.wowhead.com/item=238511" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_thalassianleather_brown.jpg"/>Void-Tempered Leather</a>, 20x <a class="white" href="https://www.wowhead.com/item=238513" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_thalassianscale_violet.jpg"/>Void-Tempered Scales</a></td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1237566" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cape_special_skinning_c_01.jpg"/>Skinner's Backpack</a></td>
+<td>Leatherworking</td>
+<td>40x <a class="white" href="https://www.wowhead.com/item=238511" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_thalassianleather_brown.jpg"/>Void-Tempered Leather</a>, 20x <a class="white" href="https://www.wowhead.com/item=238513" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_thalassianscale_violet.jpg"/>Void-Tempered Scales</a></td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1229608" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_knife_1h_skinningbloodelf_b_01.jpg"/>Thalassian Skinning Knife</a></td>
+<td>Blacksmithing</td>
+<td>6x <a class="zold" href="https://www.wowhead.com/item=238197" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_blacksmithing_blacksmithingalloys_thoriuminfused.jpg"/>Refulgent Copper Ingot</a></td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1237570" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_armor_skinning_a_01.jpg"/>Eversong Hunter's Headcover</a></td>
+<td>Leatherworking</td>
+<td>100x <a class="white" href="https://www.wowhead.com/item=238511" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_thalassianleather_brown.jpg"/>Void-Tempered Leather</a>, 100x <a class="white" href="https://www.wowhead.com/item=238513" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_thalassianscale_violet.jpg"/>Void-Tempered Scales</a>, 10x <a class="rare" href="https://www.wowhead.com/item=236949" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofpurelight_gold.jpg"/>Mote of Light</a>, 2x <a class="rare" href="https://www.wowhead.com/item=244631" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_leatherworking_combo_hide_purple.jpg"/>Scalewoven Hide</a></td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1237567" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cape_special_skinning_c_01.jpg"/>Sin'dorei Hunter's Pack</a></td>
+<td>Leatherworking</td>
+<td>100x <a class="white" href="https://www.wowhead.com/item=238511" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_thalassianleather_brown.jpg"/>Void-Tempered Leather</a>, 100x <a class="white" href="https://www.wowhead.com/item=238513" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_thalassianscale_violet.jpg"/>Void-Tempered Scales</a>, 20x <a class="rare" href="https://www.wowhead.com/item=236949" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofpurelight_gold.jpg"/>Mote of Light</a>, 2x <a class="rare" href="https://www.wowhead.com/item=244631" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_leatherworking_combo_hide_purple.jpg"/>Scalewoven Hide</a></td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1229600" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_knife_1h_skinningbloodelf_b_01.jpg"/>Sun-Blessed Skinning Knife</a></td>
+<td>Blacksmithing</td>
+<td>5x <a class="zold" href="https://www.wowhead.com/item=238204" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_blacksmithing_blacksmithingalloys_dazzling.jpg"/>Sterling Alloy</a>, 2x <a class="rare" href="https://www.wowhead.com/item=237366" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_mining_dazzlingthorium-.jpg"/>Dazzling Thorium</a>, 1x <a class="epic" href="https://www.wowhead.com/item=238528" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_animalparts_claws.jpg"/>Majestic Claw</a></td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=1237571" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_armor_skinning_a_01.jpg"/>Thalassian Wildseeker's Stridercap</a></td>
+<td>Leatherworking</td>
+<td>40x <a class="rare" href="https://www.wowhead.com/item=236951" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofwildmadic_lightgreen.jpg"/>Mote of Wild Magic</a>, 1x <a class="rare" href="https://www.wowhead.com/item=244633" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_leatherworking_combo_hide_magical_lightbloom.jpg"/>Infused Scalewoven Hide</a>, 1x <a class="epic" href="https://www.wowhead.com/item=245345" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_nature_wispsplodegreen.jpg"/>Fused Vitality</a>, 1x <a class="epic" href="https://www.wowhead.com/item=238529" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_skinning_stormchargedleather1.jpg"/>Majestic Hide</a></td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=1237568" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cape_special_skinning_c_01.jpg"/>Thalassian Wildseeker's Workbag</a></td>
+<td>Leatherworking</td>
+<td>40x <a class="rare" href="https://www.wowhead.com/item=236951" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofwildmadic_lightgreen.jpg"/>Mote of Wild Magic</a>, 1x <a class="rare" href="https://www.wowhead.com/item=244633" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_leatherworking_combo_hide_magical_lightbloom.jpg"/>Infused Scalewoven Hide</a>, 1x <a class="epic" href="https://www.wowhead.com/item=245345" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_nature_wispsplodegreen.jpg"/>Fused Vitality</a>, 1x <a class="epic" href="https://www.wowhead.com/item=238530" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_icon_wing01b.jpg"/>Majestic Fin</a></td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=1262905" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_knife_1h_skinningbloodelf_b_01.jpg"/>Sunforged Skinning Knife</a></td>
+<td>Blacksmithing</td>
+<td>5x <a class="zold" href="https://www.wowhead.com/item=238204" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_blacksmithing_blacksmithingalloys_dazzling.jpg"/>Sterling Alloy</a>, 2x <a class="rare" href="https://www.wowhead.com/item=237366" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_mining_dazzlingthorium-.jpg"/>Dazzling Thorium</a>, 2x <a class="epic" href="https://www.wowhead.com/item=238528" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_animalparts_claws.jpg"/>Majestic Claw</a>, 1x <a class="epic" href="https://www.wowhead.com/item=245345" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_nature_wispsplodegreen.jpg"/>Fused Vitality</a></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3>Finesse, Deftness, or Perception for Skinning?</h3>
+<p>It's probably best to have two Tools, one with <b>Finesse</b> and one with <b>Perception</b>, and swap them based on what you are doing.</p>
+<p>When farming mobs normally, just use the Finesse Tool, when using your Sharpen Knife, killing Rare mobs or Renowed Beasts use the perception one.</p>
+<h2 class="line-header" id="knowledge">Knowledge Points</h2>
+<p>You can collect around <b>59 Knowledge Points</b> in week one from these sources:</p>
+<div class="table-container">
+<table class="tbl-data">
+<thead>
+<tr>
+<th>Source</th>
+<th>KP</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><b>Amani Book</b></td>
+<td>10</td>
+<td><a class="rare" href="https://www.wowhead.com/item=250923" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_professionbook_skinning_orig.jpg"/>Whisper of the Loa: Skinning</a> sold by Magovu in Zul'Aman. (Amani Tribe renown)</td>
+</tr>
+<tr>
+<td><b>Abundance Book</b></td>
+<td>10</td>
+<td><a class="rare" href="https://www.wowhead.com/item=250360" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_professionbook_skinning_orig.jpg"/>Echo of Abundance: Skinning</a> from the Abundance event.</td>
+</tr>
+<tr>
+<td><b>8 Skinning Treasures</b></td>
+<td>24</td>
+<td>3 KP each, scattered across all zones.</td>
+</tr>
+<tr>
+<td><b>Treatise</b></td>
+<td>1</td>
+<td><a class="rare" href="https://www.wowhead.com/item=245828" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_professionbook_skinning_color1.jpg"/>Thalassian Treatise on Skinning</a> from Inscription Crafting Order.</td>
+</tr>
+<tr>
+<td><b>Weekly Trainer Quest</b></td>
+<td>3</td>
+<td>Weekly quest from the profession trainer. Rewards <a class="rare" href="https://www.wowhead.com/item=263461" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_professionbook_skinning_color1.jpg"/>Thalassian Skinner's Notes</a>.</td>
+</tr>
+<tr>
+<td><b>Weekly Gathering Drops</b></td>
+<td>~8</td>
+<td>Knowledge items that randomly drop while skinning. You'll loot 5x <a class="rare" href="https://www.wowhead.com/item=238625" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_skinning_stormchargedleather1.jpg"/>Fine Void-Tempered Hide</a> or <a class="rare" href="https://www.wowhead.com/item=238627" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/artifactability_guardiandruid_adaptivefur.jpg"/>Manafused Sample</a> (1 KP each), then a <a class="epic" href="https://www.wowhead.com/item=238626" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_skinning_80_calcifiedbone.jpg"/>Mana-Infused Bone</a> (3 KP) as the final drop for the week.</td>
+</tr>
+<tr>
+<td><b>Darkmoon Faire</b></td>
+<td>3</td>
+<td>Monthly, not weekly. A quick <a href="../../wowguides/darkmoon-faire-profession-quests/index.html">profession quest</a> for +3 Knowledge Points and +2 Profession Skill when the Faire is in town. The Faire starts on the Sunday before the first Monday of each month.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3>Weekly Sources (~12 KP/week)</h3>
+<p>After the first week, your recurring weekly sources are:</p>
+<ul>
+<li><b>Trainer Quest:</b> 3 KP per week</li>
+<li><b>Gathering Drops:</b> ~8 KP per week (keep skinning and they'll drop naturally)</li>
+<li><b>Inscription Treatise:</b> 1 KP per week (submit a public crafting order since they're BoP, or craft on an Inscription alt)</li>
+<li><b><a href="../../wowguides/darkmoon-faire-profession-quests/index.html">Darkmoon Faire</a>:</b> 3 KP per month (not weekly, but grab it when the Faire is up)</li>
+</ul>
+<p>Unlike crafting professions, Skinning does <b>not</b> get weekly chest drops. Your main weekly source is just skinning beasts and the trainer quest.</p>
+<h3>Treasure Locations</h3>
+<p>There are 8 skinning treasures across the Midnight zones. Each gives 3 Knowledge Points. You should be able to find most of them while leveling.</p>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Treasure</th>
+<th>Zone</th>
+<th>Map</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://www.wowhead.com/beta/object=525892" rel="nofollow noopener noreferrer" target="_blank">Sin'dorei Tanning Oil</a></td>
+<td>Silvermoon City</td>
+<td><button class="btn-map" data-coords="43.2, 55.7" data-map-img="/images/maps/normal/silvermoon-city.jpg" data-title="Sin'dorei Tanning Oil" data-zone="2393" data-zone-name="Silvermoon City">Map</button></td>
+</tr>
+<tr>
+<td><a href="https://www.wowhead.com/beta/object=525890" rel="nofollow noopener noreferrer" target="_blank">Thalassian Skinning Knife</a></td>
+<td>Eversong Woods</td>
+<td><button class="btn-map" data-coords="48.4, 76.26" data-map-img="/images/maps/normal/eversong-woods.jpg" data-title="Thalassian Skinning Knife" data-zone="2395" data-zone-name="Eversong Woods">Map</button></td>
+</tr>
+<tr>
+<td><a href="https://www.wowhead.com/beta/object=525896" rel="nofollow noopener noreferrer" target="_blank">Cadre Skinning Knife</a></td>
+<td>Zul'Aman, Atal'Aman</td>
+<td><button class="btn-map" data-coords="44.91, 45.17" data-map-img="/images/maps/normal/atalaman.jpg" data-title="Cadre Skinning Knife" data-zone="2536" data-zone-name="Zul'Aman, Atal'Aman">Map</button></td>
+</tr>
+<tr>
+<td><a href="https://www.wowhead.com/beta/object=525891" rel="nofollow noopener noreferrer" target="_blank">Amani Skinning Knife</a></td>
+<td>Zul'Aman</td>
+<td><button class="btn-map" data-coords="33.08, 79.07" data-map-img="/images/maps/normal/zulaman.jpg" data-title="Amani Skinning Knife" data-zone="2437" data-zone-name="Zul'Aman">Map</button></td>
+</tr>
+<tr>
+<td><a href="https://www.wowhead.com/beta/object=525893" rel="nofollow noopener noreferrer" target="_blank">Amani Tanning Oil</a></td>
+<td>Zul'Aman</td>
+<td><button class="btn-map" data-coords="40.39, 36.01" data-map-img="/images/maps/normal/zulaman.jpg" data-title="Amani Tanning Oil" data-zone="2437" data-zone-name="Zul'Aman">Map</button></td>
+</tr>
+<tr>
+<td><a href="https://www.wowhead.com/beta/object=525895" rel="nofollow noopener noreferrer" target="_blank">Primal Hide</a></td>
+<td>Harandar</td>
+<td><button class="btn-map" data-coords="69.52, 49.18" data-map-img="/images/maps/normal/harandar.jpg" data-title="Primal Hide" data-zone="2413" data-zone-name="Harandar">Map</button></td>
+</tr>
+<tr>
+<td><a href="https://www.wowhead.com/beta/object=525897" rel="nofollow noopener noreferrer" target="_blank">Lightbloom Afflicted Hide</a></td>
+<td>Harandar</td>
+<td><button class="btn-map" data-coords="76, 51" data-map-img="/images/maps/normal/harandar.jpg" data-title="Lightbloom Afflicted Hide" data-zone="2413" data-zone-name="Harandar">Map</button></td>
+</tr>
+<tr>
+<td>Voidstorm Leather Sample</td>
+<td>Voidstorm, Slayer's Rise</td>
+<td><button class="btn-map" data-coords="45.5, 42.3" data-map-img="/images/maps/normal/slayers-rise.jpg" data-title="Voidstorm Leather Sample" data-zone="2444" data-zone-name="Voidstorm, Slayer's Rise">Map</button></td>
+</tr>
+</tbody>
+</table>
+</div>
+<details class="details-macro">
+<summary>TomTom Waypoints &amp; Treasure Check Macro</summary>
+<div class="details-macro-content">
+<h4>TomTom Waypoints</h4>
+<div class="code-copy">
+<div class="code-header">Copy all, then type <code>/ttpaste</code> in-game</div>
+<button class="btn-copy" data-clipboard-text="/way #2393 43.2, 55.7 Sin'dorei Tanning Oil (Skinning)
+/way #2395 48.40, 76.26 Thalassian Skinning Knife (Skinning)
+/way #2536 44.91, 45.17 Cadre Skinning Knife (Skinning)
+/way #2437 33.08, 79.07 Amani Skinning Knife (Skinning)
+/way #2437 40.39, 36.01 Amani Tanning Oil (Skinning)
+/way #2413 69.52, 49.18 Primal Hide (Skinning)
+/way #2413 76.0, 51.0 Lightbloom Afflicted Hide (Skinning)
+/way #2444 45.5, 42.3 Voidstorm Leather Sample (Skinning)"><svg viewbox="0 0 24 24"><rect height="13" rx="2" width="13" x="9" y="9"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+<pre>/way #2393 43.2, 55.7 Sin'dorei Tanning Oil (Skinning)
+/way #2395 48.40, 76.26 Thalassian Skinning Knife (Skinning)
+/way #2536 44.91, 45.17 Cadre Skinning Knife (Skinning)
+/way #2437 33.08, 79.07 Amani Skinning Knife (Skinning)
+/way #2437 40.39, 36.01 Amani Tanning Oil (Skinning)
+/way #2413 69.52, 49.18 Primal Hide (Skinning)
+/way #2413 76.0, 51.0 Lightbloom Afflicted Hide (Skinning)
+/way #2444 45.5, 42.3 Voidstorm Leather Sample (Skinning)</pre>
+</div>
+<h4>Treasure Check Macro</h4>
+<div class="code-copy">
+<div class="code-header">Paste into chat - <code>true</code> = collected</div>
+<button class="btn-copy" data-clipboard-text="/run local f,p=C_QuestLog.IsQuestFlaggedCompleted,print p(&quot;Sin'dorei:&quot;,f(89171)) p(&quot;Thalassian:&quot;,f(89173)) p(&quot;Cadre:&quot;,f(89167)) p(&quot;Amani Skin:&quot;,f(89172)) p(&quot;Amani Tanning:&quot;,f(89170)) p(&quot;Primal:&quot;,f(89168)) p(&quot;Lightbloom:&quot;,f(89166)) p(&quot;Voidstorm:&quot;,f(89169))"><svg viewbox="0 0 24 24"><rect height="13" rx="2" width="13" x="9" y="9"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+<div class="code-wrap">/run local f,p=C_QuestLog.IsQuestFlaggedCompleted,print p("Sin'dorei:",f(89171)) p("Thalassian:",f(89173)) p("Cadre:",f(89167)) p("Amani Skin:",f(89172)) p("Amani Tanning:",f(89170)) p("Primal:",f(89168)) p("Lightbloom:",f(89166)) p("Voidstorm:",f(89169))</div>
+</div>
+</div>
+</details>
+<h2 class="line-header" id="specializations">Specializations</h2>
+<p>Skinning has three specialization trees. I'll explain what each tree does and give you a few build options for your first week.</p>
+<ul class="guide-list">
+<li><b>Thorough Tanning</b> - Focuses on standard leather and scale gathering. This tree gives you more base materials and unlocks extra charges for your Sharpen Your Knife cooldown to guarantee hide drops.</li>
+<li><b>Gainful Gathering</b> - Focuses on unique materials like Motes, meat, and species-specific drops (fur, teeth, feathers). This is where you unlock Diffusers.</li>
+<li><b>Talented Tracker</b> - Focuses entirely on the lure system and Renowned Beasts. You need this tree to craft Majestic Lures and to increase your drop chance for Majestic Materials.</li>
+</ul>
+<div class="tab-container build-tabs">
+<div class="tabs">
+<div class="tab-button active" data-tab="farming">
+<span class="tab-title">Pure Farming Build</span>
+<span class="tab-sub">Max Leather or Scales</span>
+</div>
+<div class="tab-button" data-tab="daily">
+<span class="tab-title">Lures &amp; Renowned Beasts</span>
+<span class="tab-sub">Majestic Materials</span>
+</div>
+</div>
+<div class="tab-content active" id="farming">
+<h3>Pure Farming Build</h3>
+<p>This build focuses on maximizing your skill and finesse for one specific material type (leather or scales). It's the best choice if you plan to spend hours grinding mobs for base materials.</p><h3 class="line-header">0-80 Points</h3>
+<ol class="step-list">
+<li>Invest <b>10 points</b> into the base <b>Thorough Tanning</b> node to unlock your first sub-specialization.</li>
+<li>Learn <b>Lasting Leather</b> (if you want to farm leather) OR <b>Superb Scales</b> (if you want to farm scales) </li>
+<li>Put <b>40 points</b> into it. This maximizes your skill for that specific creature type.</li>
+<li><b>30 points</b> into <b>Thorough Tanning</b> to get all the possible extra skill you can get. This will increase the number of Gold Quality leathers you get.</li>
+</ol><p class="text-align-center"><img alt="Thorough Tanning skill tree in the Midnight Skinning Specializations guide" class="lightbox guide-img" height="882" src="../../images/midnight/skinning-spec-farming-1.jpg" width="1138"/></p><h3 class="line-header">80-130 Points</h3>
+<ol class="step-list">
+<li>Put <b>10 points</b> into the base <b>Gainful Gathering</b> node to unlock a sub-specialization.</li>
+<li>Learn <b>Careful Carving</b> (Finesse) or <b>Trophy Taker</b> (Perception). Which one to take? If species-specific drops worth a lot, go for Trophy Taker, if base leathers are more gold, go for Careful Carving.</li>
+<li>Put <b>40 points</b> into your chosen sub-spec.</li>
+</ol><p>The meat Carving ability is useless basically, so we only want the finesse in Careful Carving.</p><div class="dual-img">
+<div><p class="img-label"><b>Careful Carving</b> (Finesse)</p>
+<img alt="Careful Carving node" class="lightbox guide-img" height="882" src="../../images/midnight/skinning-spec-farming-3.jpg" width="1138"/>
+</div>
+<div><p class="img-label"><b>Trophy Taker</b> (Perception)</p>
+<img alt="Trophy Taker talent tree" class="lightbox guide-img" height="882" src="../../images/midnight/skinning-spec-farming-2.jpg" width="1138"/>
+</div>
+</div><h3 class="line-header">Next steps</h3><p>At this point, you have most of the important talents. If you picked Careful Carving, now unlock Trophy Taker and put points into it, and if you picked Trophy Taker, unlock Careful Carving and put points into it.</p><p>After that, you can start putting points into Talented Tracker to unlock the lures and get some extra gold from Renowned Beasts while you farm, or you can max out the other leather type in Thorough Tanning to get more options for farming different mobs.</p></div>
+<div class="tab-content" id="daily">
+<h3>Lures &amp; Renowned Beasts Build</h3>
+<p>This build focuses entirely on the lure system. You will unlock all the zone-specific lures and maximize your chances of getting Epic-quality Majestic Materials from Renowned Beasts.</p><h3 class="line-header">0-80 Points</h3>
+<ol class="step-list">
+<li>Invest <b>40 points</b> into the base <b>Talented Tracker</b> node. This unlocks every single lure recipe in the game, including the Grand Beast Lure.</li>
+<li>Learn the <b>Majestic Materials</b> sub-specialization and put <b>40 points</b> into it. This increases your drop chance for Majestic Materials when skinning Renowned Beasts.</li>
+</ol><p class="text-align-center"><img alt="Talented Tracker build" class="lightbox guide-img" height="882" src="../../images/midnight/skinning-spec-lure-1.jpg" width="1138"/></p><h3 class="line-header">80-120 Points</h3><ol class="step-list">
+<li>Put 40 points into <b>Thorough Tanning</b> to get the extra Sharpen Your Knife charges and increase your overall skinning skill.</li>
+<li>Put <b>10 points</b> into the base <b>Gainful Gathering</b> node to unlock a sub-specialization.</li>
+<li>Learn <b>Trophy Taker</b>.</li>
+<li>Put 40 points into <b>Trophy Taker</b> to get more Perception.</li>
+</ol><div class="dual-img">
+<div>
+<p class="img-label"><b>Thorough Tanning</b></p>
+<img alt="Thorough Tanning node" class="lightbox guide-img" height="882" src="../../images/midnight/skinning-spec-lure-2.jpg" width="1138"/>
+</div>
+<div>
+<p class="img-label"><b>Trophy Taker</b></p>
+<img alt="Trophy Taker talent tree" class="lightbox guide-img" height="882" src="../../images/midnight/skinning-spec-farming-2.jpg" width="1138"/>
+</div></div><h3 class="line-header">Next Steps</h3><p>At this point, you have most of the important talents. You can pick whatever you want from here, it's probably best to get more skill from the Thorough Tanning tanning tree first, then some Finesse from Careful Carving in Gainful Gathering, then just put points into Component Collector in Talented Tracker.</p></div>
+<h2 class="line-header" id="where-to-farm">Where to Farm</h2>
+<p>Honestly, Blizzard made it pretty hard to find good Leather farming spots. Just like in The War Within, it's very hard to find solo farming spots where you can stay in one place without moving. This expansion is basically the same.</p>
+<h3>Void-Tempered Leather</h3>
+<p>This is not really one spot, but an area where you can find a lot of mobs that drop Void-Tempered Leather. You can just do a loop around the marked area.</p>
+<p>I'll keep searching for better spots once the expansion is out and more people are farming, but for now this is the best spot I found.</p>
+<img alt="Best Void-Tempered Leather farming spot - Midnight Skinning Guide" class="lightbox guide-img" height="1066" src="../../images/midnight/midnight-void-tempered-leather-farming.jpg" width="1600"/>
+<h3>Void-Tempered Scales</h3>
+<p>For Void-Tempered Scales, the best spot I found is in Zul'Aman around the marked area. You can consistently pull 4-5 <a href="https://www.wowhead.com/npc=236169" rel="nofollow noopener noreferrer" target="_blank">Cinderscale Amazard</a> together and they respawn quickly. They aren't grouped very tightly, so it's much easier to pull them if you have a ranged ability, but this is still the only place I found where you can farm without running around the whole zone.</p>
+<p>I couldn't find any spots with good respawns in the other zones, so for now, this is the best place for Void-Tempered Scales.</p>
+<img alt="Void-Tempered Scales farming route for the Midnight Skinning Guide" class="lightbox guide-img" height="1066" src="../../images/midnight/midnight-void-tempered-scales-farming.jpg" width="1600"/>
+</div></article>
+</main>
+<aside class="left-sidebar-menu sidebar-sticky">
+<nav>
+<h4>Quick Links</h4>
+<ul>
+<li><a href="../../guides/wow-alchemy-leveling-guide/index.html">Alchemy</a></li>
+<li><a href="../../guides/wow-blacksmithing-leveling-guide/index.html">Blacksmithing</a></li>
+<li><a href="../../guides/wow-enchanting-leveling-guide/index.html">Enchanting</a></li>
+<li><a href="../../guides/wow-inscription-leveling-guide/index.html">Inscription</a></li>
+<li><a href="../../guides/wow-jewelcrafting-leveling-guide/index.html">Jewelcrafting</a></li>
+<li><a href="../../guides/wow-leatherworking-leveling-guide/index.html">Leatherworking</a></li>
+<li><a href="../../guides/wow-tailoring-leveling-guide/index.html">Tailoring</a></li>
+<li><a href="../../guides/wow-herbalism-leveling-guide/index.html">Herbalism</a></li>
+<li><a href="../../guides/wow-mining-leveling-guide/index.html">Mining</a></li>
+<li><a href="../../guides/wow-skinning-leveling-guide/index.html">Skinning</a></li>
+<li><a href="../../guides/wow-cooking-leveling-guide/index.html">Cooking</a></li>
+</ul>
+</nav>
+</aside>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

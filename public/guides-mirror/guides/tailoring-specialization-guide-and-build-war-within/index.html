@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="This guide is designed to help you explore the various Tailoring specializations in War Within, ensuring you get the most out of your Tailoring experience." name="description"/>
+<meta content="The War Within Tailoring Specialization Guide and Builds" property="og:title"/>
+<meta content="This guide is designed to help you explore the various Tailoring specializations in War Within, ensuring you get the most out of your Tailoring experience." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/guides/tailoring-specialization-guide-and-build-war-within" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>The War Within Tailoring Specialization Guide and Builds</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=HUCmtmpFJT4X7CmtAHQQJHlC.d5DEcx14ttUnuQYnGQ-1771996844.3950799-1.0.1.1-w5ugEe3I9BCQo96QhsxhxCD07po2hokRdslYE7.c4hE" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--3">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#1st">Tailoring Specializations</a></li>
+<li><a href="#max">Max Quality and Concentration</a></li>
+<li><a href="#crafting">Crafting Orders</a></li>
+<li><a href="#build">Choosing a Specialization Build</a></li>
+<li><a href="#build1">Build 1: Crafting Cloth Armor</a></li>
+<li><a href="#build2">Build 2: Daily CD and Embellished Gear</a></li>
+<li><a href="#build3">Build 3: Farming Cloth</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">The War Within Tailoring Specialization Guide and Builds</h1>
+<article>
+<p>This guide is designed to help you explore the various Tailoring specializations in War Within, ensuring you get the most out of your Tailoring experience.</p>
+<p>I'll walk you through each specialization, suggesting the best ways to allocate your points and pointing out which paths might be less beneficial. By the end, you'll have a solid foundation to begin crafting your own build.</p>
+<div class="old-toc">
+<h4>Table of contents</h4>
+<ul>
+<li><a href="#1st">Tailoring Specializations</a></li>
+<li><a href="#max">Max Quality and Concentration</a></li>
+<li><a href="#crafting">Crafting Orders</a></li>
+<li><a href="#build">Choosing a Specialization Build</a></li>
+<li><a href="#build1">Build 1: Crafting Cloth Armor</a></li>
+<li><a href="#build2">Build 2: Daily CD and Embellished Gear</a></li>
+<li><a href="#build3">Build 3: Farming Cloth</a></li>
+</ul>
+</div>
+<h2 class="gtitle" id="1st">Tailoring Specializations</h2>
+<p>War Within introduces four new Tailoring specializations, unlocked at levels 25, 50, 60 and 75. Each one offers unique perks that can significantly impact how you approach Tailoring.</p>
+<p>Here's a quick look at the four main Tailoring specializations. Each one hones in on a specific aspect of Tailoring</p>
+<h3>1. Threads of Devotion</h3>
+<p>This is the basic gear tree, and it's very similar to the one from Dragonflight. It's important for anything to do with crafting gear. Whether you want to sell embellished or unembellished gear, you'll need to put points into this tree.</p>
+<h3>2. From Dawn Until Dusk</h3>
+<p>This specialization is where you'll learn the two daily Tailoring cooldowns: <a class="epic" href="https://www.wowhead.com/spell=446928" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_tailoring_rare_cloth_orange-_rare-cloth.jpg"/>Dawnweave Bolt</a> and <a class="epic" href="https://www.wowhead.com/spell=446927" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_tailoring_rare_cloth_violet_rare-cloth.jpg"/>Duskweave Bolt</a>. By focusing on one of the sub-specializations, you'll also unlock the ability to loot <a class="zold" href="https://www.wowhead.com/item=228233" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_tailoring_silkrare_color1.jpg"/>Duskweave</a> or <a class="zold" href="https://www.wowhead.com/item=224826" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_tailoring_silkrare_color2.jpg"/>Dawnweave</a> from humanoids.</p>
+<p>Investing points into the center node will teach you two new bag recipes:</p>
+<ul>
+<li><a class="rare" href="https://www.wowhead.com/spell=446979" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tailoring_reagent_bag_violet_reagent_bag.jpg"/>Duskweave Bag</a> - 36 slot bag</li>
+<li><a class="rare" href="https://www.wowhead.com/spell=446977" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tailoring_reagent_bag_orange_reagent_bag.jpg"/>Dawnweave Reagent Bag</a> - 38 Slot Reagent Bag</li>
+</ul>
+<p>Each of the two sub-specializations will also teach you two Embellished recipes and one recipe with a unique effect.</p>
+<p><b>Dawnwave</b></p>
+<ul>
+<li><a class="epic" href="https://www.wowhead.com/spell=446934" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cloth_outdoorarathor_d_01_bracer.jpg"/>Warm Sunrise Bracers</a> - Wrist</li>
+<li><a class="epic" href="https://www.wowhead.com/spell=446930" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cloth_outdoorarathor_d_01_glove.jpg"/>Grips of the Woven Dawn</a> - Hands</li>
+<li><a class="epic" href="https://www.wowhead.com/spell=446931" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cloth_outdoorarathor_d_01_boot.jpg"/>Treads of the Woven Dawn</a> - Feet</li>
+</ul>
+<p><b>Duskweave</b></p>
+<ul>
+<li><a class="epic" href="https://www.wowhead.com/spell=446935" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cloth_outdoorarathor_d_01_bracer.jpg"/>Cool Sunset Bracers</a> - Wrist</li>
+<li><a class="epic" href="https://www.wowhead.com/spell=446932" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cloth_outdoorarathor_d_01_glove.jpg"/>Gloves of the Woven Dusk</a> - Hands</li>
+<li><a class="epic" href="https://www.wowhead.com/spell=446933" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cloth_outdoorarathor_d_01_boot.jpg"/>Slippers of the Woven Dusk</a> - Feet</li>
+</ul>
+<h3>3. Quality Fabric</h3>
+<p>This specialization is quite important for Tailors, although it might not be worth picking for everyone. War Within introduces two major changes that will likely alter how players approach tailoring. The first is that <b>cloth will only drop for tailors</b>, and the second significant change is that <b>cloths now come with quality levels</b>, similar to Herbs and Ores. The only way to get Quality 3 (Q3) cloth is by investing points into <a class="white" href="https://www.wowhead.com/profession-trait/100907" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_tailoring2_textiles_color2.jpg"/>Quality Fabric</a> (30). Otherwise, you'll only receive Q1 cloth.</p>
+<p>This specialization also focuses on getting higher quality cloth from <a class="white" href="https://www.wowhead.com/spell=446926" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_tailoring.jpg"/>Unraveling</a> and crafting higher quality bolts, reagents, and leg enchants.</p>
+<p>This is the list of recipes that you can learn from this specialization:</p>
+<ul>
+<li><a class="epic" href="https://www.wowhead.com/spell=454431" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_backpack_wrathion_c_01.jpg"/>The Severed Satchel</a> - <a class="white" href="https://www.wowhead.com/profession-trait/100907" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_tailoring2_textiles_color2.jpg"/>Quality Fabric</a> (25)</li>
+<li><a class="rare" href="https://www.wowhead.com/spell=446999" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_tailoring_craftingoptionalreagent_enhancedspellthread_color3.jpg"/>Weavercloth Spellthread</a> - Quality Fabric -&gt; Spellthread</li>
+<li><a class="zold" href="https://www.wowhead.com/spell=446995" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_tailoring_purchasedthread_color1.jpg"/>Preserving Embroidery Thread</a> - Quality Fabric -&gt; Additional Embroidery</li>
+</ul>
+<h3>4. Textile Treasures</h3>
+<p>This specialization focuses on gathering more cloth from mobs and boosting your Ingenuity, Resourcefulness, or Multicraft. It also enhances your Ingenuity to refund more Concentration, up to a maximum of 100%.</p>
+<p>Basically, this is the specialization you'd start investing in after you've already built a solid foundation in the other specializations. It allows you to optimize your build even further. I'd recommend putting points here only after you've spent some points in the other specialization.</p>
+<h2 class="gtitle" id="max">Max Quality and Concentration</h2>
+<p>Before diving into how to spend your knowledge points, it's important to understand the role of Concentration, so you understand why I believe it's important to specialize in one recipe and prioritize boosting your Tailoring skill first.</p>
+<p>Concentration lets you craft an item at a quality one tier higher than your base skill would normally allow. The amount of Concentration required depends on how much skill you're missing, but there is always a minimum amount of Concentration that you have to spend.</p>
+<p>For instance, even if you're only short by 1 skill point, you'd still need around 150-300 Concentration to craft max rank item (depends on if it's gear or consumable). Since Concentration regenerates at about 240 points daily, you're limited to crafting 1-2 item per day at max quality until you max out your build. (unless you get lucky with Ingenuity procs).</p>
+<h4>Dedicated Crafters</h4>
+<p>If crafting is your main focus, aim to master at least one recipe to the point where you don't need to use Concentration. This will allow you to craft more efficiently and handle larger orders without waiting for cooldowns.</p>
+<h4>Casual Crafters</h4>
+<p>If crafting is more of a leisurely activity for you and you're not planning to produce large quantities, it's okay to diversify and learn a variety of recipes. However, even for casual crafters, starting with a strong foundation in one area is generally more effective before expanding into others.</p>
+<h2 class="gtitle" id="crafting">Crafting Orders</h2>
+<p>One important thing to keep in mind is that <b>all high-end gear crafted through Tailoring is Bind on Pickup (BoP)</b>.</p>
+<p>Unfortunately, public crafting orders haven't gained much popularity among players in Dragonflight, and I don't expect this to change in The War Within. Many players prefer guild or personal crafting orders for better control over item quality. The unpredictability of public orders deters players from using this system, resulting in very few available public orders.</p>
+<p>This means that if you want to craft gear for others and not just for yourself, you'll need to use the Personal Crafting Order system. This involves interacting with other players through the trade channel.</p>
+<h2 class="gtitle" id="build">Choosing a Specialization Build</h2>
+<p>Below are a few sample builds tailored to common playstyles. Pick the one that fits your playstyle best, and feel free to tweak it to suit your needs.</p>
+<p>The numbers below aren't a ranking of how good each build is; they're just there to help you navigate the guide more easily.</p>
+<h4>1. Crafting Cloth Armor</h4>
+<p>This build focuses on maximizing your skill in crafting high-quality cloth armor. It's ideal for tailors who want to craft armor for themselves or their alts, or if you plan to fulfill Crafting Orders for others.</p>
+<h4>2. Daily CD and Embellished Gear</h4>
+<p>This build is all about the daily CDs and crafting Embellished gear. It's perfect for players who want to consistently produce Dawnweave and Duskweave Bolts, unlock bag recipes and craft gear with unique bonuses.</p>
+<h4>3. Farming Cloth</h4>
+<p>This build is designed for players who want to maximize cloth drops from humanoids. It focuses on specializations that increase cloth yield from mobs and optimize your overall farming efficiency.</p>
+<h2 class="gtitle" id="build1">Build 1: Crafting Cloth Armor</h2>
+<p>This build focuses on maximizing your skill in crafting high-quality cloth armor. It's ideal for tailors who want to craft armor for themselves or their alts, or if you plan to fulfill Crafting Orders for others.</p>
+<h3>Choosing an armor Slot</h3>
+<p>First, decide which armor slots you want to focus on. Each sub-specialization tree will teach you an epic armor recipe for its specific slot. There are three main sub-specializations, each branching out into 2-4 different armor slot.</p>
+<ul>
+<li><b>Weathering Wear (Left) </b>: Hands, Feet, Head, Back</li>
+<li><b>Weighted Garments (Middle) </b>: Chest, Leg</li>
+<li><b>Making a Statement (Right) </b>: Shoulder, Wrists, Waist</li>
+</ul>
+<p>You can't really go wrong with any sub-specialization, but some of them have unique benefits that might help you choose where to focus first.</p>
+<h4>Profession Accessories</h4>
+<p>There's no specific tree in tailoring for Profession Accessories; you gain extra skill points for them from the armor slot they occupy. This could be a factor in deciding which slot you want to focus on, as you'll be hitting two birds with one stone. You'll get extra skill points for both armor and Profession Accessories in the Head and Chest slots. Below, you'll find the full list of Profession Accessories you can craft.</p>
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<th>Item</th>
+<th>Slot</th>
+<th>Profession</th>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=446971" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_armor_fishing_b_01.jpg"/>Artisan Fishing Cap</a>
+</td><td>Head
+                </td><td>Fishing
+</td></tr><tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=446974" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_armor_chefhat_b_01.jpg"/>Artisan Chef's Hat</a>
+</td><td>Head
+</td><td>Cooking</td></tr><tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=446970" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_armor_herbalism_b_01.jpg"/>Artisan Gardening Hat</a></td><td>Head
+</td><td>Herbalism				
+</td></tr><tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=446972" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_armor_enchantinghat_b_01.jpg"/>Artisan Enchanter's Hat</a>
+</td><td>Head
+</td><td>Enchanting
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=446973" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_armor_alchemy_b_01.jpg"/>Artisan Alchemist's Robe</a>
+</td><td>Chest
+</td><td>Alchemy
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=446975" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_chest_armor_tailoringrobe_b_01.jpg"/>Artisan Tailor's Coat</a>
+</td><td>Chest
+</td><td>Tailoring
+</td></tr> </tbody></table>
+</div>
+<h3>Example Cloth Crafting Build</h3>
+<p>Once you've chosen the armor slot you want to focus on, the build becomes very straightforward. To achieve maximum skill for a specific armor slot, you simply need to max out everything that leads to that category. There are no hidden skill points in other specializations.</p>
+<p>Let's say you wanted to focus on crafting Head armor; your build would look like this:</p>
+<ol>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/101801" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_tailoring2_draconicneedlework_color1.jpg"/>Threads of Devotion</a> (30) - This will unlock all sub-specializations and teach you three new recipes. It also allows you to use optional reagents in every armor slot, which is a big advantage for fulfilling Patron Crafting Orders, as optional reagents are often required to complete them.</li>
+<li><b>Learn the Sub-Specializations</b> - Once Threads of Devotion is maxed, learn the three sub-specializations. Then, pick three slots you prefer.</li>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/101797" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_cloth_arathor_b_01.jpg"/>Hats</a> - Since you're focusing on the Head slot, make sure to choose the sub-specialization to learn the recipe. You'll eventually learn all the recipes in the sub-specialization, so you're not limited to just one.</li>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/101800" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_tailoring2_outerwear_color2.jpg"/>Weathering Wear</a> (30) - Max out the sub-specialization that contains your chosen armor slot. In this example, it's Weathering Wear. This will teach you more recipes and grant skill points to all of them.</li>
+</ol>
+<h3>Crafting Gear for Personal Use or Personal Crafting Orders</h3>
+<p>At this stage, you have two different paths to choose from based on your goals:</p>
+<h4>Crafting Gear for Personal Use</h4>
+<p>If your goal is to craft gear at max quality for yourself or your alts, and you're not planning on crafting a large number of items, you can already achieve this. By using Concentration and Q3 materials, and assuming you have some profession equipment and have leveled Tailoring close to 100, you're set. </p>
+<h4>Personal Crafting Orders</h4>
+<p>If you aim to fulfill personal crafting orders, your goal should be to reach a point where you can craft a maximum quality piece of gear without using Concentration.</p>
+<p>To achieve maximum skill for a specific item, you'll need to:</p>
+<ul>
+<li>Level Tailoring to 100.</li>
+<li>Max out everything that leads to that specialization category.</li>
+<li>Equip all three blue profession tools.</li>
+</ul>
+<h3>Spending the rest of your points</h3>
+<p>From here, you can branch into other sub-specializations to learn recipes for every slot or start investing points into other specializations. You can also pick another build in the guide and start exploring different directions.</p>
+<p>For most players, the best option is to go for the Daily CD build and start investing points into the <b>From Dawn Until Dusk</b> specialization to get some passive income. For the more dedicated crafters, it might be better to focus on the <b>Textile Treasures</b> specialization to further optimize your build.  </p>
+<h2 class="gtitle" id="build2">Build 2: Daily CD and Embellished Gear</h2>
+This build is all about the daily CDs and crafting Embellished gear. It's perfect for players who want to consistently produce Dawnweave and Duskweave Bolts, unlock bag recipes and craft gear with unique bonuses.<h3>Duskweave or Dawnweave?</h3>
+<p>First, decide whether to follow the Duskweave or Dawnweave path. To help with this decision, I've put together a list of all the recipes available from each specialization. This should make it easier to choose the path that best fits your goals.</p>
+<p>Overall, there isn't a huge difference between the two, unless one leg enchant becomes significantly more popular than the other.</p>
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<th>Dawnweave</th>
+<th>Duskweave</th>
+</tr>
+<tr>
+<td>
+<ul>
+<li><a class="epic" href="https://www.wowhead.com/spell=446934" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cloth_outdoorarathor_d_01_bracer.jpg"/>Warm Sunrise Bracers</a> - Wrist</li>
+<li><a class="epic" href="https://www.wowhead.com/spell=446930" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cloth_outdoorarathor_d_01_glove.jpg"/>Grips of the Woven Dawn</a> - Hands (Mastery Proc)</li>
+<li><a class="epic" href="https://www.wowhead.com/spell=446931" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cloth_outdoorarathor_d_01_boot.jpg"/>Treads of the Woven Dawn</a> - Feet (Mastery Proc)</li>
+<li><a class="epic" href="https://www.wowhead.com/spell=447001" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_tailoring_craftingoptionalreagent_enhancedspellthread_color3.jpg"/>Daybreak Spellthread</a> - Leg Enchant (Intellect and Max Mana)</li>
+</ul>
+</td><td>
+<ul>
+<li><a class="epic" href="https://www.wowhead.com/spell=446935" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cloth_outdoorarathor_d_01_bracer.jpg"/>Cool Sunset Bracers</a> - Wrist</li>
+<li><a class="epic" href="https://www.wowhead.com/spell=446932" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cloth_outdoorarathor_d_01_glove.jpg"/>Gloves of the Woven Dusk</a> - Hands (Haste Proc)</li>
+<li><a class="epic" href="https://www.wowhead.com/spell=446933" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cloth_outdoorarathor_d_01_boot.jpg"/>Slippers of the Woven Dusk</a> - Feet (Haste Proc)</li>
+<li><a class="epic" href="https://www.wowhead.com/spell=447000" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_tailoring_craftingoptionalreagent_enhancedspellthread_color3.jpg"/>Sunset Spellthread</a> - Leg Enchant (Intellect and Stamina)</li>
+</ul></td></tr></tbody></table>
+</div>
+<h3>Build Example for the first 90 points</h3>
+<p>Here's an example build for choosing the Duskweave route. If you decide to go with Dawnweave instead, just mirror these steps, the process is exactly the same for both.</p>
+<p>This build is pretty flexible. For example, if you want to get the bag recipes sooner, you could start with the center node. However, I think lowering the cooldown on your main bolt is a better move to start with.</p>
+<ol>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/100303" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tailoring_spellthread_violet_spellthread.jpg"/>Duskweave Tailoring</a> (20 points) - This unlocks the next sub-specialization and teaches you the leg enchant recipe, which is great for leveling. I recommend picking it up early.</li>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/100302" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tailoring_rare_cloth_violet_rare-cloth.jpg"/>Duskweaving</a> (20 points) - Maxing this out reduces the cooldown of the <a class="epic" href="https://www.wowhead.com/spell=446927" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_tailoring_rare_cloth_violet_rare-cloth.jpg"/>Duskweave Bolt</a> from 17 hours to 8.5 hours.</li>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/100303" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tailoring_spellthread_violet_spellthread.jpg"/>Duskweave Tailoring</a> (+10 points) - Invest ten more points to max out the sub-specialization. This unlocks the final armor recipe.</li>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/100306" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_shadowflames_wave.jpg"/>From Dawn Until Dusk</a> (30 points) - Finally, invest 30 more points in the center node to unlock the bag recipes and your second cooldown.</li>
+</ol>
+<h3>Different Paths to Take</h3>
+<p>At this point, I think there are two worthwhile paths you can pursue:</p>
+<h4>1. Higher Quality Bolts</h4>
+<p>With 90 points invested in the specialization, you should have enough skill points to craft maximum quality gear using Concentration and Q3 materials. This uses a lot of Concentration, but if you're crafting gear just for yourself, that's not a problem.</p>
+<p>You can then focus on reaching a point where you can craft higher-quality bolts with less Concentration, eventually aiming to craft them without needing any Concentration at all. Producing more Q3 bolts will help you generate passive gold more efficiently.</p>
+<h4>2. Personal Crafting Orders for Embellished Gear</h4>
+<p>This path is all about getting to the point where you can craft Embellished gear without using concentration, allowing you to fulfill a large number of crafting orders.</p>
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<th>1. Higher Quality Bolts</th>
+<th>2. Personal Crafting Orders</th>
+</tr>
+<tr>
+<td>
+<ol>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/100907" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_tailoring2_textiles_color2.jpg"/>Quality Fabric</a> (30)</li>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/100904" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_tailoring_silkrare_color1.jpg"/>Weaving and Unraveling</a> (30). </li>
+<li>Now you can either go back and max out the other bolt type to increase your chances of getting more Q3 bolts, or you can start investing points into Textile Treasures to further optimize your build.</li>
+</ol>
+</td><td><p>Fortunately, both gear slots are in the same category, so your build would look like this:</p><ol>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/101801" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_tailoring2_draconicneedlework_color1.jpg"/>Threads of Devotion</a> (30)
+</li><li><a class="white" href="https://www.wowhead.com/profession-trait/101800" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_tailoring2_outerwear_color2.jpg"/>Weathering Wear</a> (30)</li>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/101799" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cloth_outdoorarathor_d_01_glove.jpg"/>Gloves</a> (30) and <a class="white" href="https://www.wowhead.com/profession-trait/101798" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cloth_outdoorarathor_d_01_boot.jpg"/>Footwear</a> (30)</li>
+</ol><p>After this you can focus on other armors, or invest points into Textile Treasures to further optimize your build.</p></td></tr></tbody></table>
+</div>
+<h2 class="gtitle" id="build3">Build 3: Farming Cloth</h2>
+<p>Unlike past expansions, only Tailors can gather cloth in War Within, including both low-end and high-end cloth. This build is all about maximizing your cloth farming efficiency.</p>
+<p>Keep in mind that cloth prices usually drop significantly after the first few weeks. This happens because, in the past, everyone got cloth drops, and also due to bots and 2x4 farming groups. While prices will be higher at the start, they might still fall sooner than other materials, especially if these farming groups level up their Tailors. To make the most out of this build, focus on farming early in the expansion.</p>
+<p>If you rarely engage in content that drops cloth, this build might not be for you.</p>
+<h3>Example Build</h3>
+<p>Here's how to invest your Knowledge Points to get the most out of farming cloth:</p>
+<ol>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/100907" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_tailoring2_textiles_color2.jpg"/>Quality Fabric</a> (30) - Start by unlocking the ability to loot Q3 cloths.</li>
+<li>If you haven't already, level Tailoring until you can learn the <a class="white" href="https://www.wowhead.com/profession-trait/100306" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_shadowflames_wave.jpg"/>From Dawn Until Dusk</a> specialization.</li>
+<li>Pick <a class="white" href="https://www.wowhead.com/profession-trait/100303" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tailoring_spellthread_violet_spellthread.jpg"/>Duskweave Tailoring</a> or <a class="white" href="https://www.wowhead.com/profession-trait/100305" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tailoring_spellthread_orange_spellthread.jpg"/>Dawnweave Tailoring</a> - This will allow you to gather <a class="zold" href="https://www.wowhead.com/item=224824" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_tailoring_silkrare_color1.jpg"/>Duskweave</a> or <a class="zold" href="https://www.wowhead.com/item=224826" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_tailoring_silkrare_color2.jpg"/>Dawnweave</a> from humanoids.</li>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/100939" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tailoring_80_needle.jpg"/>Textile Treasures</a> (30) - Invest here to get more cloth from humanoids.</li>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/100306" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_shadowflames_wave.jpg"/>From Dawn Until Dusk</a> (30) - Finally, unlock the other sub-specialization to get both types of cloth drops.</li>
+</ol>
+<p>Your farming build is now complete. You can spend your points as you wish or follow another build in the guide. I recommend following the 2nd build since you've already invested points in related specializations, which will help you generate even more gold passively.</p>
+</article>
+</main>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

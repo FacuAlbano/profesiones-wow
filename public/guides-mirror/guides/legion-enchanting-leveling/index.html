@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="This Legion Enchanting leveling guide will show you the fastest and easiest way how to level your Legion Enchanting skill up from 1 to 100." name="description"/>
+<meta content="Legion Enchanting Leveling Guide 1-100" property="og:title"/>
+<meta content="This Legion Enchanting leveling guide will show you the fastest and easiest way how to level your Legion Enchanting skill up from 1 to 100." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/guides/legion-enchanting-leveling" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>Legion Enchanting Leveling Guide 1-100</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=6u.EXCvMPxYyB.Y1Jpp7a56jFpBCzhT034W8E80UjyE-1771997068.1456888-1.0.1.1-Fd4O4avelPK9FVY6SiwraJ7IfecNDKIMU7y2bEPfTCY" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--3">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<!-- Related links -->
+<div class="related-guides" data-pagefind-ignore="all">
+<h4 class="sidebar-header">Enchanting Guides</h4>
+<ul>
+<li>
+<a href="../../guides/vanilla-enchanting-leveling/index.html">
+                        Vanilla 1-300
+                      </a>
+</li>
+<li>
+<a href="../../guides/outland-enchanting-leveling/index.html">
+                        Outland 1-75
+                      </a>
+</li>
+<li>
+<a href="../../guides/northrend-enchanting-leveling/index.html">
+                        Northrend 1-75
+                      </a>
+</li>
+<li>
+<a href="../../guides/cataclysm-enchanting-leveling/index.html">
+                        Cataclysm 1-75
+                      </a>
+</li>
+<li>
+<a href="../../guides/pandaria-enchanting-leveling/index.html">
+                        Pandaria 1-75
+                      </a>
+</li>
+<li>
+<a href="../../guides/draenor-enchanting-leveling/index.html">
+                        Draenor 1-100
+                      </a>
+</li>
+<li class="active">
+<a class="active" href="../../guides/legion-enchanting-leveling/index.html">
+                        Legion 1-100
+                      </a>
+</li>
+<li>
+<a href="../../guides/zandalari-kul-tiran-bfa-enchanting-leveling-guide/index.html">
+                        BfA 1-175
+                      </a>
+</li>
+<li>
+<a href="../../guides/shadowlands-enchanting-leveling-guide/index.html">
+                        Shadowlands 1-115
+                      </a>
+</li>
+<li>
+<a href="../../guides/dragon-isles-enchanting-leveling-guide-dragonflight/index.html">
+                        Dragonflight 1-100
+                      </a>
+</li>
+<li>
+<a href="../../the-war-within/khaz-algar-enchanting-leveling-guide/index.html">
+                        The War Within 1-100
+                      </a>
+</li>
+<li>
+<a href="../../guides/wow-enchanting-leveling-guide/index.html">
+                        Midnight 1-100
+                      </a>
+</li>
+</ul>
+</div>
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">Legion Enchanting Leveling Guide 1-100</h1>
+<article>
+<p><a name="top"><img align="left" height="64" src="../../images/icons/professions/enchanting.png" style="margin-right: 8px;" width="64"/></a>This Legion Enchanting leveling guide will show you the fastest and easiest way how to level your Legion Enchanting skill up from 1 to 100.</p>
+<p>Enchanting goes well with Tailoring because you don't need a gathering profession to support either of these. But you will spend a lot of gold on this profession if you want to buy everything from the Auction House. It depends on the realm economy but can cost up to tens of thousands of gold.</p>
+<h2 class="gtitle">Learning Legion Enchanting</h2>
+<p>You can learn Legion Enchanting by completing the <a href="https://www.wowhead.com/quest=39874" rel="nofollow"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Some Enchanted Evening</a> quest (requires level 10) for <a href="https://www.wowhead.com/npc=93531" rel="nofollow">Enchanter Nalthanis</a> at Dalaran (Broken Isle).</p>
+<p>If you have trouble finding the trainer, just walk up to any guard in the city and ask where the Enchanting trainer is located. Asking the guard will place a red marker on your map at the trainer's location.</p>
+<h3>Recipe ranks</h3>
+<p>Most Legion recipes have 3 ranks. Higher rank recipes stay orange longer, and they need fewer materials to craft. The recipes come from different sources like Vendors, World Quests, Reputation, dungeon drops, and even rated battleground win.</p>
+<p>If you hover over the little stars on the right side of your spellbook, you can see the source of the next rank for the selected recipe.</p>
+<h3>Unlocking recipes</h3>
+<p>Most Enchanting recipes are unlocked by completing a long quest chain. These quests are given to you by various NPCs around the Broken Isle.</p>
+<p>You can get the first quest from <a href="https://www.wowhead.com/npc=93530" rel="nofollow" target="_blank">Ildine Sorrowspear</a>, she is right next to the Enchanting Trainer.</p>
+<p>It's possible that you already started these quests at one point, but you forgot what the quest was and abandoned it, thinking it was a useless quest. Unfortunately, if you remove Enchanting quests from your quest log, it's hard to find where you left off with the quest chain, so check each of these NPCs below if they have any quests for you:</p>
+<ul>
+<li><a href="https://www.wowhead.com/npc=93531" rel="nofollow" target="_blank">Enchanter Nalthanis</a> - Dalaran</li>
+<li><a href="https://www.wowhead.com/npc=93530" rel="nofollow" target="_blank">Ildine Sorrowspear</a> - Dalaran</li>
+<li><a href="https://www.wowhead.com/npc=90317" rel="nofollow" target="_blank">Jace Darkweaver</a> - Azuna</li>
+<li><a href="https://www.wowhead.com/npc=107139" rel="nofollow" target="_blank">Enchantress Ilanya</a> - Azuna</li>
+<li><a href="https://www.wowhead.com/npc=98675" rel="nofollow" target="_blank">Fallen Priestess</a> - Asuna</li>
+<li><a href="https://www.wowhead.com/npc=98698" rel="nofollow" target="_blank">Priestess Driana</a> - Asuna</li>
+<li><a href="https://www.wowhead.com/npc=99420" rel="nofollow" target="_blank">Kharmeera</a> - Asuna</li>
+<li><a href="https://www.wowhead.com/npc=98017" rel="nofollow" target="_blank">Guron Twaintail</a> - Highmountain</li>
+<li><a href="https://www.wowhead.com/npc=98156" rel="nofollow" target="_blank">Nalamya</a> - Val'sharah</li>
+<li><a href="https://www.wowhead.com/npc=98367" rel="nofollow" target="_blank">Tigrid the Charmer</a> - Stormheim</li>
+</ul>
+<p>Turn on the tracking of trivial quests to make it easier to spot the quest giver NPCs while you are doing the quests.</p>
+<img class="maps" height="337" src="../../images/general/low-level-quests.png" width="383"/>
+<h3>List of Legion Enchanting Quests</h3>
+<p>There are 29 Enchanting quests in total. They are pretty straightforward, and the in-game quest tracking tool does a good job of showing where to go and what to do. I will not write down the details of every quest, but below, you can find the full list of the quests and some notes/tips for some of the quests. You can finish every quest easily in a few hours if you start them at 50.</p>
+<p><b>Materials needed to complete the quests:</b></p>
+<ul>
+<li>54 x <a class="white" href="https://www.wowhead.com/item=124440" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_70_arkhana.jpg"/>Arkhana</a></li>
+<li>15 x <a class="rare" href="https://www.wowhead.com/item=124441" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_70_leylightcrystal.jpg"/>Leylight Shard</a></li>
+<li>5 x <a class="white" href="https://www.wowhead.com/item=38682" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_inscription_armorscroll01.jpg"/>Enchanting Vellum</a> - Sold by <a href="https://www.wowhead.com/npc=93530" rel="nofollow" target="_blank">Ildine Sorrowspear</a>. (she is near your trainer).</li>
+</ul>
+<p> </p>
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<th>#</th>
+<th>Quest</th>
+<th>Note</th>
+</tr>
+<tr>
+<td>1
+			</td><td><a href="https://www.wowhead.com/quest=39874" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Some Enchanted Evening</a>
+</td><td> 
+		</td></tr>
+<tr>
+<td>2
+			</td><td><a href="https://www.wowhead.com/quest=39875" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>The Last Few</a>
+</td><td>Buy and learn <a class="white" href="https://www.wowhead.com/item=128582" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_recipe_70_-scroll2star.jpg"/>Formula: Enchant Ring - Word of Versatility</a> from the quest giver before you make these.
+		</td></tr>
+<tr>
+<td>3
+			</td><td><a href="https://www.wowhead.com/quest=39876" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Helping the Hunters</a>
+</td><td>Use the Orgrimmar / Stormwind portal in Dalaran, then portal back to Azsuna to get there faster.
+		</td></tr>
+<tr>
+<td>4
+			</td><td><a href="https://www.wowhead.com/quest=39877" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>In the Loop</a>
+</td><td> 
+		</td></tr>
+<tr>
+<td>5
+			</td><td><a href="https://www.wowhead.com/quest=40048" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Strings of the Puppet Masters</a>
+</td><td> 
+		</td></tr>
+<tr>
+<td>6
+			</td><td><a href="https://www.wowhead.com/quest=39905" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Ringing True</a>
+</td><td> 
+		</td></tr>
+<tr>
+<td>7
+			</td><td><a href="https://www.wowhead.com/quest=39878" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Thunder Struck</a>
+</td><td>The upper part of Thunder Totem.
+		</td></tr>
+<tr>
+<td>8
+			</td><td><a href="https://www.wowhead.com/quest=39879" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Strong Like the Earth</a>
+</td><td> 
+		</td></tr>
+<tr>
+<td>9
+			</td><td><a href="https://www.wowhead.com/quest=39880" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Waste Not</a>
+</td><td>Collect <a class="zold" href="https://www.wowhead.com/item=137195" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_priest_atonement.jpg"/>Highmountain Armor</a> from the ground and disenchant them to get the dust for the quest.
+		</td></tr>
+<tr>
+<td>10
+			</td><td><a href="https://www.wowhead.com/quest=39883" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Cloaked in Tradition</a>
+</td><td> 
+		</td></tr>
+<tr>
+<td>11
+			</td><td><a href="https://www.wowhead.com/quest=39881" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Fey Enchantments</a>
+</td><td> 
+		</td></tr>
+<tr>
+<td>12
+			</td><td><a href="https://www.wowhead.com/quest=39884" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>No Longer Worthy</a>
+</td><td>Collect <a class="zold" href="https://www.wowhead.com/item=137221" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_shoulder_plate_lordravencrest_b_01.jpg"/>Enchanted Raven Sigil</a> from mobs around Black Rook Hold, then use your Disenchant skill on to them to obtain Raven Dust.
+		</td></tr>
+<tr>
+<td>13
+			</td><td><a href="https://www.wowhead.com/quest=39889" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Led Astray</a>
+</td><td> 
+		</td></tr>
+<tr>
+<td>14
+			</td><td><a href="https://www.wowhead.com/quest=39882" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Darkheart Thicket: The Glamour Has Faded</a>
+</td><td>You can use your mount inside the instance, so you can just quickly rush to the bosses, but you only have to kill the first and the last boss, you can skip the rest. Wait a bit at the end until you can talk to the NPC there because he can teleport you out.
+		</td></tr>
+<tr>
+<td>15
+			</td><td><a href="https://www.wowhead.com/quest=39903" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>An Enchanting Home</a>
+</td><td> 
+		</td></tr>
+<tr>
+<td>16
+			</td><td><a href="https://www.wowhead.com/quest=40265" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>A Touch of Magic</a>
+</td><td> 
+		</td></tr>
+<tr>
+<td>17
+			</td><td><a href="https://www.wowhead.com/quest=39904" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Halls of Valor: Revenge of the Enchantress</a>
+</td><td>Talk to Odyn at the end to teleport out.
+		</td></tr>
+<tr>
+<td>18
+			</td><td><a href="https://www.wowhead.com/quest=39891" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Cursed, But Convenient</a>
+</td><td>You have to pick this up in Dalaran, you won't get a follow-up in Stormheim. Make sure to buy the <a class="white" href="https://www.wowhead.com/item=128587" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_recipe_70_-scroll2star.jpg"/>Rank 2 - Formula: Enchant Cloak - Word of Strength</a> from <a href="https://www.wowhead.com/npc=93530" rel="nofollow" target="_blank">Ildine Sorrowspear</a> near your trainer.
+		</td></tr>
+<tr>
+<td>19
+			</td><td><a href="https://www.wowhead.com/quest=39906" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Prepping For Battle</a>
+</td><td>Learn <a class="white" href="https://www.wowhead.com/item=128587" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_recipe_70_-scroll2star.jpg"/>Rank 2 - Formula: Enchant Cloak - Word of Strength</a> before you craft the cloak enchant.
+		</td></tr>
+<tr>
+<td>20
+			</td><td><a href="https://www.wowhead.com/quest=39910" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>The Druid's Debt</a>
+</td><td>Make sure to also pick up <a href="https://www.wowhead.com/quest=39914" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Sentinel's Final Duty</a> and <a href="https://www.wowhead.com/quest=40169" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Crossroads Rendezvous</a> before you leave.
+		</td></tr>
+<tr>
+<td>21
+			</td><td><a href="https://www.wowhead.com/quest=39914" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Sentinel's Final Duty</a>
+</td><td>Don't deliver this and The Druid's Debt yet, you will go back there a few steps later.
+		</td></tr>
+<tr>
+<td>22
+			</td><td><a href="https://www.wowhead.com/quest=40169" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Crossroads Rendezvous</a>
+</td><td> 
+		</td></tr>
+<tr>
+<td>23
+			</td><td><a href="https://www.wowhead.com/quest=39916" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Turnabout Betrayal</a>
+</td><td>Collect 5 <a class="zold" href="https://www.wowhead.com/item=137286" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_fire_felfireward.jpg"/>Fel-Crusted Rune</a> from mobs around the area then disenchant them.
+		</td></tr>
+<tr>
+<td>24
+			</td><td><a href="https://www.wowhead.com/quest=40130" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Washed Clean</a>
+</td><td> 
+		</td></tr>
+<tr>
+<td>25
+			</td><td><a href="https://www.wowhead.com/quest=39918" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>The Absent Priestess</a>
+</td><td>You should also turn in <a href="https://www.wowhead.com/quest=39910" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>The Druid's Debt</a> and <a href="https://www.wowhead.com/quest=39914" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Sentinel's Final Duty</a>.
+		</td></tr>
+<tr>
+<td>26
+			</td><td><a href="https://www.wowhead.com/quest=39907" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Elven Enchantments</a>
+</td><td> 
+		</td></tr>
+<tr>
+<td>27
+			</td><td><a href="https://www.wowhead.com/quest=39920" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>On Azure Wings</a>
+</td><td> 
+		</td></tr>
+<tr>
+<td>28
+			</td><td><a href="https://www.wowhead.com/quest=39921" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Neltharion's Lair: Rod of Azure</a>
+</td><td>You have to clear these three instances: Neltharion's Lair, The Stonecore, and Scholomance. You can't skip the first few packs in Stonecore because Millhouse is needed to trigger the first boss.
+		</td></tr>
+<tr>
+<td>29
+			</td><td><a href="https://www.wowhead.com/quest=39923" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Down to the Core</a>
+</td><td>You have to find and loot four Arcane defenders across Suramar city. They patrol a small area, so if you don't see them, just look around or wait for the respawn.
+		</td></tr>
+</tbody>
+</table>
+</div>
+<p> </p>
+<h2 class="gtitle">6 - 25</h2>
+<p><b>Blood Elf </b>characters have +5 Enchanting skill because of their passive <a class="white" href="https://www.wowhead.com/spell=28877" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_shardglimmeringlarge.jpg"/>[Arcane Affinity]</a>. An extra 5 Enchanting skill means recipes stay orange for 5 more points, so you can save a lot of gold by doing lower level recipes for 5 more points.</p>
+<p>You can get 19 easy skill points by Disenchanting any item that is from the Broken Isle. These are not guaranteed skill points, so you should get around 40-50 items.</p>
+<p>Legacy loot is enabled now for Legion raids, which means every raid boss drops 5 items, so you can get the 50 items in 20-30 minutes by soloing raid bosses. Find <a href="https://www.wowhead.com/npc=111246" rel="nofollow" target="_blank">Archmage Timear</a> at Dalaran and queue for the first 4 raid finder wing. (7 Emerald Nightmare bosses, 3 Nighthold Bosses).</p>
+<p>If you don't want to solo the raids, then you can skip this part, but you have to make more from the next recipes. I recommend leveling this way because you will also get 50 <a class="epic" href="https://www.wowhead.com/item=124442" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_70_chaosshard.jpg"/>Chaos Crystal</a> from disenchanting the items and you can use the crystals to level Enchanting.</p>
+<h2 class="gtitle">The Enchanting Shuffle</h2>
+<p>Leveling Legion Enchanting is a bit different compared to the other expansions because you can craft every recipe from skill 1. Choosing the best recipes comes down to which enchanting material is the cheapest.</p>
+<p>Enchanters can turn crystals into shards and shards into dust, so you should consider this when you buy them from the Auction House.</p>
+<ul>
+<li><a class="rare" href="https://www.wowhead.com/spell=252106" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_70_leylightcrystal.jpg"/>Chaos Shatter</a> - Shatters 1 x <a class="epic" href="https://www.wowhead.com/item=124442" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_70_chaosshard.jpg"/>Chaos Crystal</a> into 2 x <a class="rare" href="https://www.wowhead.com/item=124441" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_70_leylightcrystal.jpg"/>Leylight Shard</a>.</li>
+<li><a class="white" href="https://www.wowhead.com/spell=224199" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_70_arkhana.jpg"/>Ley Shatter</a> - Shatters 1 x <a class="rare" href="https://www.wowhead.com/item=124441" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_70_leylightcrystal.jpg"/>Leylight Shard</a> into 3 x <a class="white" href="https://www.wowhead.com/item=124440" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_70_arkhana.jpg"/>Arkhana</a>.</li>
+</ul>
+<p><a class="white" href="https://www.wowhead.com/item=140634" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/70_professions_scroll_02.jpg"/>Formula: Ley Shatter</a> is sold by <a href="https://www.wowhead.com/npc=93530" rel="nofollow" target="_blank">Ildine Sorrowspear</a>.</p>
+<p><a class="white" href="https://www.wowhead.com/item=152658" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/70_professions_scroll_02.jpg"/>Formula: Chaos Shatter</a> is sold by <a href="https://www.wowhead.com/npc=127151" rel="nofollow" target="_blank">Toraan the Revered</a>, but you have to reach Friendly reputation with the Argussian Reach faction before you can buy the recipe. Follow <a href="https://www.icy-veins.com/wow/argussian-reach-reputation-farming-guide" rel="nofollow" target="_blank">this guide</a> if you are not friendly yet, and if you have never been to Argus before, then follow <a href="https://www.wowhead.com/comprehensive-argus-guide#getting-to-argus" rel="nofollow" target="_blank">this guide</a> and complete the Argus storyline quests. (can be done in around 1-2 hours)</p>
+<h2 class="gtitle">25 - 70</h2>
+<p>If you are farming the Crystals, I recommend doing Emerald Nightmare and Nighthold on Raid Finder, Normal and Heroic difficulty before you clear other instances. Tomb of Sargeras takes a lot longer to clear, even on Raid Finder, and you shouldn't go to Antorus unless you cleared everything else. You can also clear Trial of Valor, but the first boss is a bit tricky and slow since you have to kite the bosses around and try to nuke them when they are casting. (you can't kill them if they are close to each other)</p>
+<ul>
+<li>55 x <a class="rare" href="https://www.wowhead.com/spell=252106" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_70_leylightcrystal.jpg"/>Chaos Shatter</a> - 55 Chaos Crystal</li>
+</ul>
+<p>The Chaos Shatter recipe will be yellow for the last 10 points, so you might have to make a few more.</p>
+<h4>Alternative recipes</h4>
+<p>There are 4 enchants that you can make:</p>
+<p>55 x <a class="white" href="https://www.wowhead.com/spell=191009" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_note_01.jpg"/>Rank 3 - Word of Critical Strike</a> - 550 x <a class="white" href="https://www.wowhead.com/item=124440" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_70_arkhana.jpg"/>Arkhana</a><br/>
+55 x <a class="white" href="https://www.wowhead.com/spell=191010" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_note_01.jpg"/>Rank 3 - Word of Haste</a> - 550 x <a class="white" href="https://www.wowhead.com/item=124440" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_70_arkhana.jpg"/>Arkhana</a><br/>
+55 x <a class="white" href="https://www.wowhead.com/spell=191011" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_note_01.jpg"/>Rank 3 - Word of Mastery</a> - 550 x <a class="white" href="https://www.wowhead.com/item=124440" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_70_arkhana.jpg"/>Arkhana</a><br/>
+55 x <a class="white" href="https://www.wowhead.com/spell=191012" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_note_01.jpg"/>Rank 3 - Word of Versatility</a> - 550 x <a class="white" href="https://www.wowhead.com/item=124440" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_70_arkhana.jpg"/>Arkhana</a></p>
+<p>The <b>Rank 2</b> recipes are sold by <a href="https://www.wowhead.com/npc=93530" rel="nofollow">Ildine Sorrowspear</a> at Dalaran near your trainer.</p>
+<p>Three of the <b>Rank 3</b> recipes come from World Quests. The World quests you get are randomly generated, so you probably won't get one right away and have to wait a few days until one pops up.</p>
+<p>You can unlock these quests by completing <a href="https://www.wowhead.com/quest=43341" rel="nofollow"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Uniting the Isles</a> for <a href="https://www.wowhead.com/npc=90417" rel="nofollow">Archmage Khadgar</a> (requires level 45). The reputation requirement for the quest was removed, so you can just complete the quest without any Friendly reputation with the Legion factions.</p>
+<p>You can get the <a class="white" href="https://www.wowhead.com/item=128599" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_recipe_70_-scroll3star.jpg"/>Formula: Enchant Ring - Word of Versatility - Rank 3</a> recipe from <a href="https://www.wowhead.com/npc=106901" rel="nofollow">Sylvia Hartshorn</a> if you are honored with the Dreamweavers.</p>
+<h2 class="gtitle">70 - 100</h2>
+<p>Make 30 from these:</p>
+<p>30 x <a class="white" href="https://www.wowhead.com/spell=191013" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_note_01.jpg"/>Rank 3 - Binding of Critical Strike</a> - 120 x <a class="epic" href="https://www.wowhead.com/item=124442" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_70_chaosshard.jpg"/>Chaos Crystal</a>, 1050 x <a class="white" href="https://www.wowhead.com/item=124440" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_70_arkhana.jpg"/>Arkhana</a><br/>
+30 x <a class="white" href="https://www.wowhead.com/spell=191014" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_note_01.jpg"/>Rank 3 - Binding of Haste</a> - 120 x <a class="epic" href="https://www.wowhead.com/item=124442" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_70_chaosshard.jpg"/>Chaos Crystal</a>, 1050 x <a class="white" href="https://www.wowhead.com/item=124440" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_70_arkhana.jpg"/>Arkhana</a><br/>
+30 x <a class="white" href="https://www.wowhead.com/spell=191015" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_note_01.jpg"/>Rank 3 - Binding of Mastery</a> - 120 x <a class="epic" href="https://www.wowhead.com/item=124442" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_70_chaosshard.jpg"/>Chaos Crystal</a>, 1050 x <a class="white" href="https://www.wowhead.com/item=124440" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_70_arkhana.jpg"/>Arkhana</a><br/>
+30 x <a class="white" href="https://www.wowhead.com/spell=191016" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_note_01.jpg"/>Rank 3 - Binding of Versatility</a> - 120 x <a class="epic" href="https://www.wowhead.com/item=124442" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_70_chaosshard.jpg"/>Chaos Crystal</a>, 1050 x <a class="white" href="https://www.wowhead.com/item=124440" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_70_arkhana.jpg"/>Arkhana</a></p>
+<p>You can buy the <b>Rank 2</b> recipes from <a href="https://www.wowhead.com/npc=93530" rel="nofollow">Ildine Sorrowspear</a> at Dalaran near your Trainer.</p>
+<p><b>Rank 3 recipes:</b></p>
+<ul class="gd">
+<li><a class="white" href="https://www.wowhead.com/item=128600" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_recipe_70_-scroll3star.jpg"/>Formula: Enchant Ring - Binding of Critical Strike</a> - The Nightfallen - Exalted - Sold by <a href="https://www.wowhead.com/npc=97140" rel="nofollow">First Arcanist Thalyssra</a> at Suramar.</li>
+<li><a class="white" href="https://www.wowhead.com/item=128601" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_recipe_70_-scroll3star.jpg"/>Formula: Enchant Ring - Binding of Haste</a> - Dreamweavers - Exalted - Sold by <a href="https://www.wowhead.com/npc=106901" rel="nofollow">Sylvia Hartshorn</a> at Val'sharah.</li>
+<li><a class="white" href="https://www.wowhead.com/item=128602" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_recipe_70_-scroll3star.jpg"/>Formula: Enchant Ring - Binding of Mastery</a> - The Nightfallen - Exalted - Sold by <a href="https://www.wowhead.com/npc=97140" rel="nofollow">First Arcanist Thalyssra</a> at Suramar.</li>
+<li><a class="white" href="https://www.wowhead.com/item=128603" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_recipe_70_-scroll3star.jpg"/>Formula: Enchant Ring - Binding of Versatility</a> - The Nightfallen - Exalted - Sold by <a href="https://www.wowhead.com/npc=97140" rel="nofollow">First Arcanist Thalyssra</a> at Suramar.</li>
+</ul>
+<h4>Alternative recipes</h4>
+<p>You can skip getting the rank 3, and just simply make the rank 2 recipes, but the rank 2 recipe will be green for the last 10 points so you will have to make a LOT more, probably around 50-60 in total.</p>
+<p>Another alternative is to just make one of the rank 2 neck recipes until 90, then just level enchanting slowly over 2-3 weeks with the Enchanting World Quests. These quests show up every 2-3 days and give you 1 skill point.</p>
+<p>I hope you liked this Enchanting guide, congratulations on reaching 100!</p>
+<p class="text-align-center"><a href="#top">(Return to Top)</a></p>
+</article>
+</main>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

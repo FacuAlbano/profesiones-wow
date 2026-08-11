@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="Leatherworking Specializations in Midnight can be confusing at first. This guide will give you a solid, all-around build that works well for most playstyles, so you don't waste your Knowledge Points." name="description"/>
+<meta content="Midnight Leatherworking Specialization Guide &amp; Best Builds" property="og:title"/>
+<meta content="Leatherworking Specializations in Midnight can be confusing at first. This guide will give you a solid, all-around build that works well for most playstyles, so you don't waste your Knowledge Points." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/midnight/leatherworking-specialization-guide-and-builds" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>Midnight Leatherworking Specialization Guide &amp; Best Builds</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=pVHz6NUjw_Bfl_UKezE9.egS5Yj..55y100c3xc_jN8-1771996649.0481532-1.0.1.1-TjrlTdkY7D7GHYnzQm16OVnnjoS26.8BnbnQdtJrOHc" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--3">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#knowledge">Getting Knowledge Points</a></li>
+<li><a href="#timeline">Timeline &amp; Unlock Pace</a></li>
+<li><a href="#specs">Specialization Overview</a></li>
+<li><a href="#builds">Builds &amp; Talent Trees</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">Midnight Leatherworking Specialization Guide &amp; Best Builds</h1>
+<article>
+<p>This guide will help you with the new Leatherworking specialization trees in Midnight. If you want to craft high-end gear, make gold with minimal effort, or play the Auction House, I have a build for you.</p>
+<h2 class="line-header" id="knowledge">Getting Knowledge Points</h2>
+<p>This guide focuses purely on builds and where to put your points once you have them. If you need help finding points, check out my main guide:</p>
+<p class="text-align-center">
+<a class="gblock" href="../../midnight/leatherworking-guide/index.html">
+        Midnight Leatherworking Recipes &amp; Knowledge Points
+    </a>
+</p>
+<h2 class="line-header" id="timeline">Timeline &amp; Unlock Pace</h2>
+<p>You can get around 40-50 Knowledge Points on the first day from first crafts and one-time treasures. After that, you will earn roughly 25-30 points per week from patron orders, weekly quests, treasure drops, and treatises. So in your first week, you can expect around 60 points, maybe 70 if you also have enough renown to buy books.</p>
+<p>I wrote this guide based on that first 60-70 point mark, with suggestions for what to do as you gain more points over time.</p>
+<h2 class="line-header" id="specs">Specialization Overview</h2>
+<div class="table-container">
+<table class="tbl-desc">
+<thead>
+<tr>
+<th>Specialization</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><b>Learned Leatherworker</b></td>
+<td>Crafting stat boosts: Multicraft, Resourcefulness, and Concentration refund from Ingenuity breakthroughs.</td>
+</tr>
+<tr>
+<td><b>Lasting Leather</b></td>
+<td>Leather armor recipes for all 8 slots. Unlocks the epic Silvermoon Agent's set.</td>
+</tr>
+<tr>
+<td><b>Safeguarding Scales</b></td>
+<td>Mail armor recipes for all 8 slots. Unlocks the epic Farstrider's set.</td>
+</tr>
+<tr>
+<td><b>Flawless Fortes</b></td>
+<td>Armor Kits, profession tools and accessories for other crafters, and optional reagents.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 class="line-header" id="builds">Builds &amp; Talent Trees</h2>
+<h3>Which Build Should You Choose?</h3>
+<p>I made 3 different builds for you to choose from. Each one is for a different playstyle, so you don't have to worry about wasting your points. Check the list below to see which one fits you the best, whether you want to raid, make gold, or just help your guild:</p>
+<ul class="minimal-list">
+<li><b>Standard:</b> This is the standard build for most players. Best for personal power and flexible crafting.</li>
+<li><b>Crafting Orders:</b> Focuses on crafting armor for other players through the Crafting Order system. Not recommended for beginners.</li>
+<li><b>Auction House focused:</b> This build is for players who want to make gold by crafting consumables, reagents, or optional reagents in bulk and listing them on the Auction House.</li>
+</ul>
+<p>Click on the tabs below to see the detailed guides. I will explain exactly where to spend your points step-by-step. I also included a picture of the talent tree so you can follow along easily.</p>
+<div class="tab-container build-tabs">
+<div class="tabs">
+<div class="tab-button active" data-tab="rec">
+<span class="tab-title">Standard Build</span>
+<span class="tab-sub">Raiding / Mythic+ / All-Rounder</span>
+</div>
+<div class="tab-button" data-tab="orders">
+<span class="tab-title">Crafting Orders</span>
+<span class="tab-sub">Trade Chat</span>
+</div>
+<div class="tab-button" data-tab="adv">
+<span class="tab-title">Auction House</span>
+<span class="tab-sub">Mass Production</span>
+</div>
+</div>
+<!-- 1. RECOMMENDED / STANDARD BUILD -->
+<div class="tab-content active" id="rec">
+<h3>Standard Build</h3>
+<p>With this build, you can craft your own max rank gear for your chosen slot, or even all slots. It is the safest choice for most players.</p>
+<p><b>You don't have to look for other players to craft for you or worry about tipping.</b> You are self-sufficient. With this build you are basically set for the whole expansion, and with each season you will be able to craft max rank gear.</p><!-- Phase 1 -->
+<h3 class="line-header">0-90 Points</h3>
+<ol class="step-list">
+<li>Invest <b>30 points</b> into the main Root node.</li>
+<li>Decide between <b>Left</b> (Head, Chest, Shoulder, Wrist) or <b>Right</b> (Legs, Hands, Waist, Feet). Put <b>30 points</b> into your chosen node to unlock 4 recipes.</li><li>Spend <b>30 points</b> on the other side to unlock the rest of the recipes.</li>
+</ol><div class="alert-box notice"><p>I only include the picture of one specialization because <b>Lasting Leather (Leather Armor)</b> and <b>Safeguarding Scales (Mail Armor)</b> specializations are <b>identical</b> in structure.</p></div><!-- Image -->
+<p class="text-align-center">
+<img alt="midnight leatherworking specialization personal gear armor slots tree" class="lightbox guide-img" height="882" src="../../images/midnight/lw-midnight-spec-1.jpg" width="1138"/>
+</p><!-- Phase 2 -->
+<h3 class="line-header">Next Steps</h3>
+<p>You have your foundation. Now choose a path:</p><h4>Unlock more Armor types</h4>
+<p>You can go to the other specialization to unlock the other armor type (Mail if you did Leather first, or vice versa). This will let you craft for alts or friends.</p>
+<h4>Optimize Concentration use</h4>
+<p>You can start investing points into the Learned Leatherworking specialization to get more Ingenuity, Multicraft, and Resourcefulness. </p>
+<p>If you mainly use your concentration for crafting items with silver materials to create gold quality items, then focus on multicraft and ingenuity first.</p>
+<p>If you mainly use your concentration for crafting armors for yourself or others, then focus on Resourcefulness and then ingenuity first.</p>
+</div>
+<!-- 3. ORDERS -->
+<div class="tab-content" id="orders">
+<h3>Personal Crafting Orders</h3>
+<p>To craft Rank 5 gear without relying on Concentration, you need to specialize. If you try to learn everything at once, you won't have enough skill to craft anything at max rank.</p><h3 class="line-header">Choose Your Path</h3><p>You have two choices for your early points:</p><ul class="minimal-list">
+<li><b>Profession Equipment:</b> This is a "one-time" investment. You spend 50 points in a separate specialization, and you are done. It unlocks max rank crafting for <b>all</b> profession tools at once.</li>
+<li><b>Armor:</b> This requires constant investment. You need roughly 60 points to open the armor tree, and then 20 points for <b>each</b> specific slot. You can usually max out one new armor slot every week.</li>
+</ul><h4>Which one is better?</h4><p>I recommend choosing <b>Armor</b>.</p><p>Profession Equipment is risky. It relies on your realm's population, and demand drops fast once everyone has their tools. If you start late, don't pick this.</p><p>Armor is safer. Players need gear updates all season long, so the demand is consistent.</p><h3 class="line-header">Where to Spend Points</h3><div class="tab-container">
+<div class="pill-tabs">
+<button class="pill-btn tab-button active" data-tab="tab-armor">Armor Specs</button>
+<button class="pill-btn tab-button" data-tab="tab-prof">Profession Equipment</button>
+</div><div class="tab-content active" id="tab-armor">
+<h3>Armor Specializations</h3><div class="alert-box notice"><p>I only include the picture of one specialization because <b>Lasting Leather (Leather Armor)</b> and <b>Safeguarding Scales (Mail Armor)</b> specializations are <b>identical</b> in structure.</p></div><ol class="step-list">
+<li><b>0-30 Points:</b> Max out the "Root" node for base skill.</li>
+<li><b>30-60 Points:</b> Pick the left or right path for your chosen slot.</li>
+<li><b>60-80 Points:</b> Invest 20 points to fully max out your chosen slot. I'm using the <b>Wrist slot as an example</b>, but you can apply this to any slot.</li>
+</ol><p class="text-align-center"><img alt="Leatherworking crafting orders armor specialization tree" class="lightbox guide-img" height="882" src="../../images/midnight/lw-midnight-spec-2-1.jpg" width="1138"/></p>
+</div><div class="tab-content" id="tab-prof">
+<h3>Profession Equipment</h3>
+<p>This path is much simpler. You don't need to unlock individual slots. One specialization covers everything.</p><ol class="step-list">
+<li><b>0-30 Points:</b> Invest 30 points into the starting node.</li>
+<li><b>30-60 Points:</b> Invest 30 points into the next node.</li>
+<li><b>Done!</b> You can now craft all profession tools at max rank.</li>
+</ol><p class="text-align-center"><img alt="Leatherworking crafting orders profession equipment tree" class="lightbox guide-img" height="882" src="../../images/midnight/lw-midnight-spec-2-2.jpg" width="1138"/></p>
+</div>
+</div><h3 class="line-header">Next Steps</h3><p>Depending on which path you started with, here is what you should do next:</p><p><b>If you picked Profession Equipment:</b></p>
+<p>You can either finish this build by maxing out <b>Resourcefulness</b> in the <i>Learned Leatherworker</i> tree, or swap over to Armor Slots if you aren't getting enough orders.</p><p><b>If you picked Armor Slots:</b></p>
+<p>I recommend maxing out the 4 slots in your current sub-category first. After that, check the Crafting Orders on your realm:</p>
+<ul>
+<li><b>High Volume:</b> If you see lots of orders for slots you don't have, unlock recipe nodes for the rest of your armor type.</li>
+<li><b>Low Volume:</b> If you are happy with your current recipes, grab the <b>Resourcefulness</b> node in <i>Learned Leatherworker</i> to get more materials back from your crafts.</li>
+</ul><p>Once you are fully maxed out, you can start unlocking the other armor type (Leather -&gt; Mail or Mail -&gt; Leather).</p></div>
+<!-- 4. ADVANCED -->
+<div class="tab-content" id="adv">
+<h3>Auction House Build</h3>
+<p>This build is for players who want to make gold by crafting consumables, reagents, or optional reagents in bulk and listing them on the Auction House.</p>
+<h3 class="line-header">What to craft</h3><p>In the table below you can see which specialization affects which items. All three can be good for making money, but Brimming Basics (Reagents) and Crucial Consumables are probably more consistent for high-volume crafting.</p><p>Overwhelming Optionals will really depend on how good the optional reagents are for the current season, so keep an eye on that. If the optional reagents are in high demand, that specialization can be very profitable.</p><table class="tbl-minimal">
+<thead>
+<tr>
+<th>Crucial Consumables</th>
+<th>Brimming Basics (Reagents)</th>
+<th>Overwhelming Optionals</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1237544" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_leatherworking_amani_armor_kit.jpg"/>Forest Hunter's Armor Kit</a></td>
+<td><a class="rare" href="https://www.wowhead.com/spell=1237573" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_leatherworking_combo_hide_magical_lightbloom.jpg"/>Infused Scalewoven Hide</a></td>
+<td><a class="rare" href="https://www.wowhead.com/spell=1237579" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_leatherworking_armor_banding_brown.jpg"/>Devouring Banding</a></td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1237545" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_leatherworking_thalassian_amor_kit.jpg"/>Blood Knight's Armor Kit</a></td>
+<td><a class="rare" href="https://www.wowhead.com/spell=1237572" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_leatherworking_combo_hide_purple.jpg"/>Scalewoven Hide</a></td>
+<td><a class="rare" href="https://www.wowhead.com/spell=1237577" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_necklace_139.jpg"/>Blessed Pango Charm</a></td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1237546" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_leatherworking_standart_armor_kit.jpg"/>Thalassian Scout Armor Kit</a></td>
+<td><a class="zold" href="https://www.wowhead.com/spell=1237574" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_leatherworking_armor_banding_red.jpg"/>Sin'dorei Armor Banding</a></td>
+<td><a class="rare" href="https://www.wowhead.com/spell=1237578" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_leatherworking_armor_banding_green.jpg"/>Primal Spore Binding</a></td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1237547" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_leatherworking_leather_drums_green_purple.jpg"/>Void-touched Drums</a></td>
+<td><a class="zold" href="https://www.wowhead.com/spell=1237575" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_leatherworking_weapon_wraps_red.jpg"/>Silvermoon Weapon Wrap</a></td>
+<td>-</td>
+</tr>
+</tbody>
+</table><h3 class="line-header">Where to Spend Points</h3><div class="tab-container">
+<div class="pill-tabs">
+<button class="pill-btn tab-button active" data-tab="tab-consumables">Armor Kits</button>
+<button class="pill-btn tab-button" data-tab="tab-reagents">Reagents</button>
+<button class="pill-btn tab-button" data-tab="tab-optionals">Optional Reagents</button>
+</div><div class="tab-content active" id="tab-consumables">
+<h3>Crucial Consumables (Armor Kits, Drums)</h3>
+<p>This is the most consistent market. Armor Kits sell steadily all season, and Drums spike on progression weeks.</p>
+<ol class="step-list">
+<li>10 points into <b>Flawless Fortes</b> to unlock a sub-spec, pick <b>Commanding Commodities</b> then <b>Crucial Consumables</b>.</li>
+<li>5 points into the <b>Learned Leatherworker</b> root node to unlock a sub-spec.</li>
+<li>30 points into <b>Mastering Multicraft</b>.</li>
+<li>10 points into <b>Learned Leatherworker</b> to unlock second sub-spec.</li>
+<li>30 points into <b>Waning Waste</b>.</li></ol><div class="dual-img">
+<div>
+<p class="img-label"><b>Leg armor recipe</b></p>
+<img alt="Leatherworking Leg Armor Recipe" class="lightbox guide-img" height="882" src="../../images/midnight/leatherworking-spec-consumable-1.jpg" width="1138"/>
+</div>
+<div>
+<p class="img-label"><b>Multicraft &amp; Resourcefulness</b></p>
+<img alt="Leatherworking Multicraft &amp; Resourcefulness" class="lightbox guide-img" height="882" src="../../images/midnight/leatherworking-spec-multi-resi.jpg" width="1138"/>
+</div></div>
+<h4>Getting more skill</h4>
+<p>Now go back to Flawless Fortress and get every single point leading up to <b>Crucial Consumables</b>.</p>
+<p class="text-align-center"><img alt="Tailoring Textile Utilization Resourcefulness specialization tree" class="lightbox guide-img" height="882" src="../../images/midnight/leatherworking-spec-consumable-2.jpg" width="1138"/></p>
+</div><div class="tab-content" id="tab-reagents">
+<h3>Brimming Basics (Reagents)</h3>
+<p>Processed reagents like Scalewoven Hide sell to other crafters every day. Stable demand make this the safest pick.</p><ol class="step-list"><li>5 points into the <b>Learned Leatherworker</b> root node to unlock a sub-spec.</li>
+<li>30 points into <b>Mastering Multicraft</b>.</li>
+<li>10 points into <b>Learned Leatherworker</b> to unlock second sub-spec.</li>
+<li>30 points into <b>Waning Waste</b>.</li></ol><p class="text-align-center"><img alt="Tailoring Textile Utilization Resourcefulness specialization tree" class="lightbox guide-img" height="882" src="../../images/midnight/leatherworking-spec-multi-resi.jpg" width="1138"/></p>
+<h4>Getting more skill</h4>
+<p>Now go back to Flawless Fortress and get every single point leading up to <b>Brimming Basics</b>.</p>
+<p class="text-align-center"><img alt="Tailoring Textile Utilization Resourcefulness specialization tree" class="lightbox guide-img" height="882" src="../../images/midnight/leatherworking-spec-reagents-1.jpg" width="1138"/></p>
+</div><div class="tab-content" id="tab-optionals">
+<h3>Overwhelming Optionals (Optional Reagents)</h3>
+<p>Items like Devouring Banding can be very profitable during gearing weeks, but demand is seasonal. Check your AH before committing here.</p>
+<ol class="step-list">
+<li>10 points into <b>Flawless Fortes</b> to unlock a sub-spec, pick <b>Commanding Commodities</b> then <b>Overwhelming Optionals</b>.</li>
+<li>5 points into the <b>Learned Leatherworker</b> root node to unlock a sub-spec.</li>
+<li>30 points into <b>Mastering Multicraft</b>.</li>
+<li>10 points into <b>Learned Leatherworker</b> to unlock second sub-spec.</li>
+<li>30 points into <b>Waning Waste</b>.</li></ol><div class="dual-img">
+<div>
+<p class="img-label"><b>Recipe unlock</b></p>
+<img alt="Leatherworking Leg Armor Recipe" class="lightbox guide-img" height="882" src="../../images/midnight/leatherworking-spec-optional-1.jpg" width="1138"/>
+</div>
+<div>
+<p class="img-label"><b>Multicraft &amp; Resourcefulness</b></p>
+<img alt="Leatherworking Multicraft &amp; Resourcefulness" class="lightbox guide-img" height="882" src="../../images/midnight/leatherworking-spec-multi-resi.jpg" width="1138"/>
+</div>
+</div><h4>Getting more skill</h4><p>Now go back to Flawless Fortress and get every single point leading up to <b>Overwhelming Optionals</b>.</p>
+<p class="text-align-center"><img alt="Tailoring Textile Utilization Resourcefulness specialization tree" class="lightbox guide-img" height="882" src="../../images/midnight/leatherworking-spec-optional-2.jpg" width="1138"/></p>
+</div>
+</div>
+</div>
+<!-- End Wrapper -->
+</div></article>
+</main>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

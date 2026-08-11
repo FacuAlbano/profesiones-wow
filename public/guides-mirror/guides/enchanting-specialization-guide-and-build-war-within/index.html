@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="This guide is here to help you navigate the different Enchanting specializations in War Within, so you can make the most out of Enchanting." name="description"/>
+<meta content="TWW Enchanting Specialization Guide and Builds" property="og:title"/>
+<meta content="This guide is here to help you navigate the different Enchanting specializations in War Within, so you can make the most out of Enchanting." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/guides/enchanting-specialization-guide-and-build-war-within" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>TWW Enchanting Specialization Guide and Builds</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=6oiK9p5cjBQI7pCNfRp4.Zeo2u_vrI9Rb54zxdmgaFQ-1771996839.196897-1.0.1.1-7u7rZvRwMLLIdSOSWZnhE8iawj890gjMwSG7.ayCT94" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--3">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#specializations">Enchanting Specializations</a></li>
+<li><a href="#build">Choosing a Specialization Build</a></li>
+<li><a href="#build1">Build 1. Designated Disenchanter</a></li>
+<li><a href="#build2">Build 2. Crafting High Quality Enchants</a></li>
+<li><a href="#build3">Build 3. Selling temporary illusions, reagents, equipment and mana oils</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">TWW Enchanting Specialization Guide and Builds</h1>
+<article>
+<p>This guide is here to help you navigate the different Enchanting specializations in War Within, so you can make the most out of Enchanting.</p>
+<p>War Within introduces four new Enchanting specializations, unlocked at levels 25, 50, 60, and 75. Each one offers unique perks that can significantly impact how you approach Enchanting.</p>
+<p>I'll break down each specialization, show you the best ways to spend your points, and highlight which paths might not be worth your time. By the end, you'll have a few example builds to jumpstart your own talent choices. If you're playing Midnight, check out the <a href="../../midnight/enchanting-specialization-guide-and-builds/index.html">Midnight Enchanting Specialization Guide</a> instead.</p>
+<h2 class="gtitle" id="1st">#Supplementary Shattering</h2>
+<p>The <a class="white" href="https://www.wowhead.com/profession-trait/100040" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/10prof_table_enchanting01.jpg"/>Supplementary Shattering</a> specialization focuses on boosting your Ingenuity, Multicraft, and Resourcefulness. However, since it doesn't offer any direct skill bonuses, <b>it's best to hold off on investing points here until you've fully developed your other specializations</b>. Once your main build is maxed out, you can focus on this specialization to fine-tune and optimize your overall setup.</p>
+<p>Upon unlocking the specialization, you'll gain access to the <a class="white" href="https://www.wowhead.com/spell=445466" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_enchanting_dust_color3.jpg"/>Shatter Essence</a> ability. This buff boosts your Ingenuity, Multicraft, and Resourcefulness for 15 minutes, but the benefits are directly tied to how many points you've invested in the Shatter Essence specializations. Without investing points, this recipe won't have any effect.</p>
+<p>Investing points into the center node will give you more more Ingenuity, Multicraft, and Resourcefulness, and your Ingenuity will refund additional Concentration, with a 100% refund when fully maxed out.</p>
+<h4>Sub-specialization</h4>
+<p>Each sub-specialization is straightforward, you get even more Ingenuity, Multicraft, or Resourcefulness.</p>
+<h2 class="gtitle" id="2nd">#Designated Disenchanter</h2>
+<p>One major change in War Within is that enchanting materials now come with quality levels, similar to Herbs and Ores. The Designated Disenchanter specialization is exactly what it sounds like, a focus on disenchanting to get higher quality enchanting materials.</p>
+<p>This specialization will help you get a lot more Q3 enchanting materials.</p>
+<p>The three sub-specializations are centered around different armor rarities: Uncommon, Rare, and Epic.</p>
+<h2 class="gtitle" id="3rd">#Everlasting Enchantments</h2>
+<p>This is the specialization where you will find all the new War Within enchants.</p>
+<p>There are three main enchant categories: Earthen Enhancements, Arathor Alterations, and Nerubian Novelties. It can be a bit tricky to navigate the profession UI since enchants are sorted by slot type rather than category. To make it easier, I've put together a table below to help you decide which specialization to focus on.</p>
+<p>The lower level enchants are not on this list because you basically don't need anyting special to get them to max quality, they require very low skill.</p>
+<h3>Earthen Enhancements</h3>
+<div class="table-container">
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<th>Enchant</th>
+<th>Description</th>
+<th>Slot</th>
+<th>Recipe Source</th>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445322" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Council's Intellect</a>
+</td>
+<td>Intellect and mana pool
+                    </td>
+<td>Chest
+                    </td>
+<td>Vendor: <a href="https://www.wowhead.com/npc=223728" rel="nofollow noopener noreferrer" target="_blank">Auditor Balwurz</a> <br/> Cost: 150x <a class="rare" href="https://www.wowhead.com/item=210814" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color3.jpg"/>Artisan's Acuity</a>
+</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445333" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Crystalline Radiance</a>
+</td>
+<td>Primary Stat
+                    </td>
+<td>Chest
+                    </td>
+<td>Everlasting Enchantments - Bolstered Breastplates
+                    </td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445321" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Oathsworn's Strength</a>
+</td>
+<td>Strength and Stamina
+                    </td>
+<td>Chest
+                    </td>
+<td>Drop: Awakening the Machine
+                    </td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445322" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Council's Intellect</a>
+</td>
+<td>Haste proc (12sec)
+                    </td>
+<td>Chest
+                    </td>
+<td>Trainer
+                    </td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445364" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Algari Deftness</a>
+</td>
+<td>Deftness
+                    </td>
+<td>Profession Tool
+                    </td>
+<td>Vendor: <a href="https://www.wowhead.com/npc=219051" rel="nofollow noopener noreferrer" target="_blank">Lyrendal</a> <br/> Cost: 150x <a class="rare" href="https://www.wowhead.com/item=210814" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color3.jpg"/>Artisan's Acuity</a>
+</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445328" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Algari Finesse</a>
+</td>
+<td>Finesse
+                    </td>
+<td>Profession Tool
+                    </td>
+<td>Vendor: <a href="https://www.wowhead.com/npc=219051" rel="nofollow noopener noreferrer" target="_blank">Lyrendal</a> <br/> Cost: 150x <a class="rare" href="https://www.wowhead.com/item=210814" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color3.jpg"/>Artisan's Acuity</a>
+</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445378" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Algari Ingenuity</a>
+</td>
+<td>Ingenuity
+                    </td>
+<td>Profession Tool
+                    </td>
+<td>Everlasting Enchantments - Terrific Tools
+                    </td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445380" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Algari Perception</a>
+</td>
+<td>Perception
+                    </td>
+<td>Profession Tool
+                    </td>
+<td>Vendor: <a href="https://www.wowhead.com/npc=219051" rel="nofollow noopener noreferrer" target="_blank">Lyrendal</a> <br/> Cost: 150x <a class="rare" href="https://www.wowhead.com/item=210814" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color3.jpg"/>Artisan's Acuity</a>
+</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445398" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Algari Resourcefulness</a>
+</td>
+<td>Resourcefulness
+                    </td>
+<td>Profession Tool
+                    </td>
+<td>Vendor: <a href="https://www.wowhead.com/npc=219051" rel="nofollow noopener noreferrer" target="_blank">Lyrendal</a> <br/> Cost: 150x <a class="rare" href="https://www.wowhead.com/item=210814" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color3.jpg"/>Artisan's Acuity</a>
+</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445379" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Council's Guile</a>
+</td>
+<td>Critical Strike proc (12 sec)
+                    </td>
+<td>Weapon
+                    </td>
+<td>Trainer
+                    </td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445351" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Oathsworn's Tenacity</a>
+</td>
+<td>Versatility proc (12 sec)
+                    </td>
+<td>Weapon
+                    </td>
+<td>Trainer
+                    </td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445385" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Stonebound Artistry</a>
+</td>
+<td>Mastery proc (12 sec)
+                    </td>
+<td>Weapon
+                    </td>
+<td>Trainer
+                    </td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445317" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Stormrider's Fury</a>
+</td>
+<td>Haste proc (12 sec)
+                    </td>
+<td>Weapon
+                    </td>
+<td>Trainer
+                    </td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445336" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Authority of Storms</a>
+</td>
+<td>AoE Lightning damage proc
+                    </td>
+<td>Weapon
+                    </td>
+<td>Everlasting Enchantments - Wondrous Weapons
+                    </td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<h3>Arathor Alterations</h3>
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<th>Enchant</th>
+<th>Description</th>
+<th>Slot</th>
+<th>Recipe Source</th>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445368" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Scout's March</a>
+</td>
+<td>Speed
+                </td>
+<td>Boot
+                </td>
+<td>Vendor: <a href="https://www.wowhead.com/npc=213145" rel="nofollow noopener noreferrer" target="_blank">Auralia Steelstrike</a> <br/> Cost: 150x <a class="rare" href="https://www.wowhead.com/item=210814" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color3.jpg"/>Artisan's Acuity</a>
+</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445396" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Defender's March</a>
+</td>
+<td>Stamina
+                </td>
+<td>Boot
+                </td>
+<td>Everlasting Enchantments - Accentuated Accessories
+                </td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445335" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Cavalry's March</a>
+</td>
+<td>Mount speed
+                </td>
+<td>Boot
+                </td>
+<td>Vendor: <a href="https://www.wowhead.com/npc=219051" rel="nofollow noopener noreferrer" target="_blank">Lyrendal</a> <br/> Cost: 150x <a class="rare" href="https://www.wowhead.com/item=210814" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color3.jpg"/>Artisan's Acuity</a>
+</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445320" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Radiant Haste</a>
+</td>
+<td>Haste
+                </td>
+<td>Ring
+                </td>
+<td>Can be looted from the Challenger's Cache in the The Dawnbreaker dungeon.
+                </td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445349" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Radiant Versatility</a>
+</td>
+<td>Versatility
+                </td>
+<td>Ring
+                </td>
+<td>Can be looted from the Challenger's Cache in the The Dawnbreaker dungeon.
+                </td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445387" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Radiant Critical Strike</a>
+</td>
+<td>Critical Strike
+                </td>
+<td>Ring
+                </td>
+<td>Can be looted from the Challenger's Cache in the The Dawnbreaker dungeon.
+                </td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445375" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Radiant Mastery</a>
+</td>
+<td>Mastery
+                </td>
+<td>Ring
+                </td>
+<td>Can be looted from the Challenger's Cache in the The Dawnbreaker dungeon.
+                </td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445331" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Authority of Air</a>
+</td>
+<td>Damage absorb proc
+                </td>
+<td>Weapon
+                </td>
+<td>Can be looted from the Challenger's Cache in the The Dawnbreaker dungeon.
+                </td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445403" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Authority of Fiery Resolve</a>
+</td>
+<td>Extra Healing proc
+                </td>
+<td>Weapon
+                </td>
+<td>Everlasting Enchantments - Fortified Flames
+                </td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445339" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Authority of Radiant Power</a>
+</td>
+<td>Extra Damage proc
+                </td>
+<td>Weapon
+                </td>
+<td>Drops from <a href="https://www.wowhead.com/npc=207940" rel="nofollow noopener noreferrer" target="_blank">Prioress Murrpray</a> in Priory of the Sacred Flame dungeon.
+                </td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3>Nerubian Novelties</h3>
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<th>Enchant</th>
+<th>Description</th>
+<th>Slot</th>
+<th>Recipe Source</th>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445334" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Chant of Armored Avoidance</a>
+</td>
+<td>Avoidance
+                </td>
+<td>Bracers
+                </td>
+<td>Vendor: <a href="https://www.wowhead.com/npc=218193" rel="nofollow noopener noreferrer" target="_blank">Iliani</a><br/> <b>Cost:</b> 150x <a class="rare" href="https://www.wowhead.com/item=210814" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color3.jpg"/>Artisan's Acuity</a>, 1500x <a class="white" href="https://www.wowhead.com/currency=3056" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_tailoring_silkrare_color3.jpg"/>Kej</a>
+</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445325" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Chant of Armored Leech</a>
+</td>
+<td>Leech
+                </td>
+<td>Bracers
+                </td>
+<td>Vendor: <a href="https://www.wowhead.com/npc=218193" rel="nofollow noopener noreferrer" target="_blank">Iliani</a><br/> <b>Cost:</b> 150x <a class="rare" href="https://www.wowhead.com/item=210814" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color3.jpg"/>Artisan's Acuity</a>, 1500x <a class="white" href="https://www.wowhead.com/currency=3056" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_tailoring_silkrare_color3.jpg"/>Kej</a>
+</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445330" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Chant of Armored Speed</a>
+</td>
+<td>Speed
+                </td>
+<td>Bracers
+                </td>
+<td>Everlasting Enchantments - Tertiary Trivialities
+                </td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445389" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Chant of Burrowing Rapidity</a>
+</td>
+<td>Speed and Hearthstone CD
+                </td>
+<td>Cloak
+                </td>
+<td>Drop: World Creatures
+                </td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445393" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Chant of Leeching Fangs</a>
+</td>
+<td>Leech and Health Regen out of combat
+                </td>
+<td>Cloak
+                </td>
+<td>Delves: Heavy Trunk
+                </td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445386" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Chant of Winged Grace</a>
+</td>
+<td>Avoidance and Fall damage
+                </td>
+<td>Cloak
+                </td>
+<td>Drop: Severed Threads Pact
+                </td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445394" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Cursed Critical Strike</a>
+</td>
+<td>-Haste +Critical Strike
+                </td>
+<td>Ring
+                </td>
+<td>Drop: <a href="https://www.wowhead.com/npc=216658" rel="nofollow noopener noreferrer" target="_blank">Izo, the Grand Splicer</a> <br/>
+                    Dungeon: City of Threads
+                </td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445388" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Cursed Haste</a>
+</td>
+<td>-Versatility +Haste
+                </td>
+<td>Ring
+                </td>
+<td>Everlasting Enchantments - Cursed Chants
+                </td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445359" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Cursed Mastery</a>
+</td>
+<td>-Critical Strike +Mastery
+                </td>
+<td>Ring
+                </td>
+<td>Drop: <a href="https://www.wowhead.com/npc=216658" rel="nofollow noopener noreferrer" target="_blank">Izo, the Grand Splicer</a> <br/>
+                    Dungeon: City of Threads
+                </td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445383" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Cursed Versatility</a>
+</td>
+<td>-Mastery +Versatility
+                </td>
+<td>Ring
+                </td>
+<td>Drop: <a href="https://www.wowhead.com/npc=216658" rel="nofollow noopener noreferrer" target="_blank">Izo, the Grand Splicer</a> <br/>
+                    Dungeon: City of Threads
+                </td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=445341" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Authority of the Depths</a>
+</td>
+<td>Periodically inflicts Shadow damage (Proc)
+                </td>
+<td>Weapon
+                </td>
+<td>Drop: <a href="https://www.wowhead.com/npc=227323" rel="nofollow noopener noreferrer" target="_blank">Queen Ansurek</a><br/>
+                    Raid: Nerub-ar Palace
+                </td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 class="gtitle" id="4th">#Ephemerals, Enrichments, and Equipment</h2>
+<p>This specialization focuses on temporary illusions, equipment, reagents, and mana oils. Below is a complete list of items you can focus on within this specialization.</p>
+<h4>Mana Oils</h4>
+<ul>
+<li><a class="zold" href="https://www.wowhead.com/spell=445338" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_alchemy_potiond1.jpg"/>Algari Mana Oil</a> - Crit Haste</li>
+<li><a class="zold" href="https://www.wowhead.com/spell=445346" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_alchemy_potiond6.jpg"/>Oil of Deep Toxins</a> - Nature Damage</li>
+<li><a class="zold" href="https://www.wowhead.com/spell=445318" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_alchemy_potiond5.jpg"/>Oil of Beledar's Grace</a> - Healing</li>
+</ul>
+<h4>Equipment</h4>
+<ul>
+<li><a class="rare" href="https://www.wowhead.com/spell=445372" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_1h_enchantingrod_b_01.jpg"/>Runed Ironclaw Rod</a> - Enchanting Profession Tool</li>
+<li><a class="epic" href="https://www.wowhead.com/spell=445323" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_1h_enchantingrod_b_01.jpg"/>Runed Null Stone Rod</a> - Enchanting Profession Tool</li>
+<li><a class="epic" href="https://www.wowhead.com/spell=445355" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_wand_1h_arathoroutdoor_d_01.jpg"/>Scepter of Radiant Magics</a> - Wand</li>
+</ul>
+<h4>Temporary illusions</h4>
+<p>Gleeful Glamours are consumable items that transform you into another race, such as the <a class="white" href="https://www.wowhead.com/spell=445397" rel="noflilow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_mask_fittedalpha_b_01_nightborne_02.jpg"/>Gleeful Glamour - Worgen</a>, which changes you into a Worgen. There is a lot of these, one for each race.</p>
+<p>The 4 shoulder illusions also fit into this category: <a class="rare" href="https://www.wowhead.com/spell=445360" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Illusory Adornment: Runes</a>, <a class="rare" href="https://www.wowhead.com/spell=445337" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Illusory Adornment: Shadow</a>, <a class="rare" href="https://www.wowhead.com/spell=445327" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Illusory Adornment: Crystal</a>, <a class="rare" href="https://www.wowhead.com/spell=445401" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedscroll.jpg"/>Illusory Adornment: Radiance</a></p>
+<h4>Finishing Reagents</h4>
+<ul>
+<li><a class="zold" href="https://www.wowhead.com/spell=445371" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_powder_thorium.jpg"/>Mirror Powder</a> - Multicraft</li>
+<li><a class="zold" href="https://www.wowhead.com/spell=445395" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_dustspirit.jpg"/>Concentration Concentrate</a> - Less Concentration</li>
+</ul>
+<h2 class="gtitle" id="build">Choosing a Specialization Build</h2>
+<p>Below are some builds tailored to common playstyles. Pick one that fits your playstyle the most then feel free to adjust it to better fit your preferences.</p>
+<p><b>The numbers below aren't a ranking of how good each build is</b>; they're just there to help you navigate the guide more easily.</p>
+<h4>1. Designated Disenchanter</h4>
+<p>This is the simplest enchanting build, and it's pretty straightforward. The focus of this build is getting higher quality items from Disenchanting. It's perfect for players who keep enchanting as a side profession for some easy, passive income.</p>
+<h4>2. Crafting High Quality Enchants</h4>
+<p>If your goal is to produce and sell large quantities of Enchants at the Auction House, or if you just want to craft high-quality enchants for yourself or your alts, then this build is perfect for you.</p>
+<h4>3. Selling temporary illusions, reagents, equipment and mana oils</h4>
+<p>This build is ideal for players looking to sell items on the Auction House but who prefer to focus on a less competitive market. These items tend to have lower demand than enchants, making this a bit riskier. I'd recommend this build to more experienced players. If you're new to making gold, it's probably safer to stick to crafting enchants.</p>
+<p>You might also choose this build if you want to craft wands or profession equipment for others through the Personal Crafting Order system.</p>
+<h2 class="gtitle" id="build1">Build 1. Designated Disenchanter</h2>
+<p>If you're focusing on Disenchanting, your choice of sub-specialization should align with the types of content you frequently engage in. If you seldom encounter content that yields epic items, it's wise not to focus on that category initially. Instead, invest your points into <a class="white" href="https://www.wowhead.com/profession-trait/99889" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_enchanting2_disenchant_color3.jpg"/>Uncommon Utilitarian</a> and <a class="white" href="https://www.wowhead.com/profession-trait/99888" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_enchanting2_disenchant_color2.jpg"/>Rare Resourcing</a> first. However, if you're primarily running Mythic Plus dungeons where most loot is epic, then putting your points into <a class="white" href="https://www.wowhead.com/profession-trait/99887" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_enchanting2_disenchant_color5.jpg"/>Epic Escalations</a> would be more beneficial.</p>
+<p>Start by putting 10 points into <a class="white" href="https://www.wowhead.com/profession-trait/99890" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_disenchant.jpg"/>Designated Disenchanter</a>. After that, max out the sub-specialization that aligns with what you expect to disenchant the most. For example, if you run a lot of Mythic and Mythic Plus dungeons, I'd definitely recommend focusing on the Epic sub-specialization first.</p>
+<p>If you engage in a balanced mix of content, you can max out <a class="white" href="https://www.wowhead.com/profession-trait/99890" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_disenchant.jpg"/>Designated Disenchanter</a> (30) first, and then start investing points into the sub-specializations.</p>
+<h2 class="gtitle" id="build2">Build 2. Crafting High Quality Enchants</h2>
+<p>This build focuses on crafting high-quality enchants. All talents that provide +skill to enchants are within the <a class="white" href="https://www.wowhead.com/profession-trait/100008" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_dualwieldspecialization.jpg"/>Everlasting Enchantments</a> specialization, so there's no need to branch out into other trees.</p>
+<h3>Choosing an Enchant Tree to Focus on</h3>
+<p>It's tough to say which enchants will be the most profitable, but each of the three sub-specializations can craft at least one best-in-slot enchant for an armor slot, so you can't really go wrong with any of them.</p>
+<p>I recommend scrolling back through the guide to check out the table with all the available high-end enchants, then pick the one that appeals to you.</p>
+<h3>Two Example builds</h3>
+<p>Below, you can find two example builds, I would recommend the first build for most people. However, if you're a dedicated crafter aiming for best results, the second build might be better for you.</p>
+<ol>
+<li><b>Focusing on getting More recipes:</b> This build prioritizes unlocking more enchanting recipes first, giving you a broader range of options before honing in on maxing out specific enchants.</li>
+<li><b>Max Quality Enchant Focus:</b> This build is all about maxing out one enchant tree to achieve the highest quality possible without using Concentration.</li>
+</ol>
+<h4>Example Build 1: Focusing on getting More recipes</h4>
+<p>If you're not too concerned about getting guaranteed Q3 recipes early and just want to unlock every available enchanting recipe in this specialization, your build would look like this:</p>
+<ol>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/100008" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_dualwieldspecialization.jpg"/>Everlasting Enchantments</a> (5) - to unlock the sub-specialization.</li>
+<li>Pick any of the 3 sub-specialization, then put 20 points into it.</li>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/100008" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_dualwieldspecialization.jpg"/>Everlasting Enchantments</a> (+10) - Put ten more points into this specialization unlock the sub-specialization at 15.</li>
+<li>Pick any of the 2 sub-specialization, then put 20 points into it.</li>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/100008" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_dualwieldspecialization.jpg"/>Everlasting Enchantments</a> (+15) - Fifteen more points to max out the at 30.</li>
+<li>Pick the last sub-specialization, then put 20 points into it.</li>
+</ol>
+<p>You will learn 7 new enchanting recipes for a total of 90 Knowledge points.</p>
+<h4>Example Build 2: Max Quality Enchant Focus</h4>
+<p>Let's say you want to focus on Nerubian Bracer enchants. Your build would look like this:</p>
+<ol>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/100008" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_dualwieldspecialization.jpg"/>Everlasting Enchantments</a> (5) - to unlock the sub-specialization.</li>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/100000" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_mote_shadow01.jpg"/>Nerubian Novelties</a> (10) - to unlock the two sub-specialization.</li>
+<li>Pick <a class="white" href="https://www.wowhead.com/profession-trait/99998" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_dungeonjewelry_dragon_trinket_1arcanemagical_black.jpg"/>Tertiary Trivialities</a>. Make sure to read the description carefully so you pick the right one, as the names can be a bit confusing. The description will specify what the sub-spec is for. For example, if it says "Polish your skills surrounding Nerubian Bracer and Cloak formulas," then that's what this sub-spec focuses on.</li>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/99998" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_dungeonjewelry_dragon_trinket_1arcanemagical_black.jpg"/>Tertiary Trivialities</a> (20)</li>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/100000" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_mote_shadow01.jpg"/>Nerubian Novelties</a> (+10) - Ten more points to max it out at 20.</li>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/100008" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_dualwieldspecialization.jpg"/>Everlasting Enchantments</a> (+25) - Twenty-five more points to max out the at 30.</li>
+</ol>
+<p>Every other tree in the specialization works similarly. You'll need a total of 70 Knowledge points to max out any enchant.</p>
+<p>Now, you just need to get the three blue profession tools, level your enchanting to 100, and you're set! You'll be able to craft Nerubian Bracer enchants without relying on Concentration. Just remember, you'll need all Q3 materials to do it.</p>
+<h3>Spending the Rest of Your Points</h3>
+<p>At this stage, you can either focus on maxing out each sub-specialization or start investing points into the Supplementary Shattering specialization to further optimize your build. </p>
+<p>Keep in mind that <b>enchants don't benefit from the multicraft</b> stat. So, you should focus on Resourcefulness and Ingenuity.</p>
+<h2 class="gtitle" id="build3">Build 3. Selling illusions, reagents, equipment and mana oils</h2>
+<p>This build is more of an experiment. As I mentioned earlier, it doesn't have as much potential as focusing on straight Enchanting, but there could still be some gold-making opportunities in these markets as well.</p>
+<h4>Mana Oils</h4>
+<p>Among the items you can craft in this specialization, I think Mana Oils have the highest potential. <a class="zold" href="https://www.wowhead.com/spell=445338" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_alchemy_potiond1.jpg"/>Algari Mana Oil</a> is the best weapon rune for most classes.</p>
+<h4>Finishing Reagents</h4>
+<p>These could have some potential. But, if Q3 materials are expensive, a lot of players might opt for Q2 finishing reagents instead.</p>
+<h4>Temporary Illusions</h4>
+<p>Gleeful Glamours will definitely be used. I know I'll be buying them and use them on cooldown, that's for sure. The issue here is the low barrier to entry for this market. If you follow my Enchanting leveling guide, you'll see I already recommend putting 15 points into this, so most people will already have these recipes, and it doesn't take many points to max out this specialization.</p>
+<h4>Equipment</h4>
+<p>These three pieces of equipment are the only ones you can craft as an enchanter. Wands aren't very popular, and many players will likely skip the blue profession tools in favor of the epic ones since they only cost a bit more. There's limited gold-making potential in this area, but if you decide to focus on crafting equipment, be aware of this.</p>
+<ul>
+<li><a class="rare" href="https://www.wowhead.com/spell=445372" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_1h_enchantingrod_b_01.jpg"/>Runed Ironclaw Rod</a> - Enchanting Profession Tool</li>
+<li><a class="epic" href="https://www.wowhead.com/spell=445323" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_1h_enchantingrod_b_01.jpg"/>Runed Null Stone Rod</a> - Enchanting Profession Tool</li>
+<li><a class="epic" href="https://www.wowhead.com/spell=445355" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_wand_1h_arathoroutdoor_d_01.jpg"/>Scepter of Radiant Magics</a> - Wand</li>
+</ul>
+<p>These items are all <b>Bind on Pickup (BoP)</b>, so if you want to craft them for other players, you'll need to use the crafting order system. You'll also need to advertise your services in the trade channel or look for people who are interested in having these items crafted.</p>
+<h3>Example Build</h3>
+<p>I'd prioritize maxing out Mana Oils first. After that, move on to Illusions and finally Finishing Reagents.</p>
+<h4>Crafting Orders</h4>
+<p>If you want to craft wands or profession equipment for others through the Personal Crafting Order system, then your build is pretty straight forward. I'd probably always max out the the Profession Equipment first and then Wands, so your build would look like this:</p>
+<ol>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/99940" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_optionalreagent_01.jpg"/>Ephemerals, Enrichments, and Equipment</a> (5)</li>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/99938" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchanting_815_drustrod.jpg"/>Exquisite Equipment</a> (20) to learn both recipes.</li>
+<li><a class="white" href="https://www.wowhead.com/profession-trait/99940" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_optionalreagent_01.jpg"/>Ephemerals, Enrichments, and Equipment</a> (+25) - Twenty five more points to fully max out the tree at 30.</li>
+<li>Then max out both <a class="white" href="https://www.wowhead.com/profession-trait/99937" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_1h_enchantingrod_b_01.jpg"/>Professional Production</a> (20) and <a class="white" href="https://www.wowhead.com/profession-trait/99936" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_wand_1h_arathoroutdoor_d_01.jpg"/>Combat Crafts</a> (20)</li>
+</ol>
+<p>The total knowledge cost to is 90 or 70 if you only want to focus on one item.</p>
+</article>
+</main>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

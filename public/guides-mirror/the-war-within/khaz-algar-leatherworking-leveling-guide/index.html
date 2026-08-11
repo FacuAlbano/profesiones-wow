@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="This War Within Leatherworking leveling guide will show you the fastest and cheapest way to level your War Within Leatherworking skill up from 1 to 100." name="description"/>
+<meta content="TWW Leatherworking Leveling Guide 1 - 100" property="og:title"/>
+<meta content="This War Within Leatherworking leveling guide will show you the fastest and cheapest way to level your War Within Leatherworking skill up from 1 to 100." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/the-war-within/khaz-algar-leatherworking-leveling-guide" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>TWW Leatherworking Leveling Guide 1 - 100</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=mQr8xUVYGsmQvRVjM_JbF6XbBp1t7BoMbW6UbwKTcNw-1771996863.0049782-1.0.1.1-OOIuE8j6gy04oPskjTOEiP4w8Adf9wFOjTQ2YBoYrgM" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--4">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#leatherworking-trainers">Leatherworking Trainers</a></li>
+<li><a href="#mats">Shopping List</a></li>
+<li><a href="#1-25">Leveling to 25</a></li>
+<li><a href="#specializations">Specializations</a></li>
+<li><a href="#25-70">25-70</a></li>
+<li><a href="#70-85">70-91</a></li>
+<li><a href="#85-100">91-100</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+<div class="related-guides" data-pagefind-ignore="all">
+<h4 class="sidebar-header">Leatherworking Guides</h4>
+<ul>
+<li>
+<a href="../../guides/vanilla-leatherworking-leveling/index.html">
+                        Vanilla 1-300
+                      </a>
+</li>
+<li>
+<a href="../../guides/outland-leatherworking-leveling/index.html">
+                        Outland 1-75
+                      </a>
+</li>
+<li>
+<a href="../../guides/northrend-leatherworking-leveling/index.html">
+                        Northrend 1-75
+                      </a>
+</li>
+<li>
+<a href="../../guides/cataclysm-leatherworking-leveling/index.html">
+                        Cataclysm 1-75
+                      </a>
+</li>
+<li>
+<a href="../../guides/pandaria-leatherworking-leveling/index.html">
+                        Pandaria 1-75
+                      </a>
+</li>
+<li>
+<a href="../../guides/draenor-leatherworking-leveling/index.html">
+                        Draenor 1-100
+                      </a>
+</li>
+<li>
+<a href="../../guides/legion-leatherworking-leveling/index.html">
+                        Legion 1-100
+                      </a>
+</li>
+<li>
+<a href="../../guides/zandalari-kul-tiran-bfa-leatherworking-leveling-guide/index.html">
+                        BfA 1-175
+                      </a>
+</li>
+<li>
+<a href="../../guides/shadowlands-leatherworking-leveling-guide/index.html">
+                        Shadowlands 1-100
+                      </a>
+</li>
+<li>
+<a href="../../guides/dragon-isles-leatherworking-leveling-guide-dragonflight/index.html">
+                        Dragonflight 1-100
+                      </a>
+</li>
+<li class="active">
+<a class="active" href="../../the-war-within/khaz-algar-leatherworking-leveling-guide/index.html">
+                        The War Within 1-100
+                      </a>
+</li>
+<li>
+<a href="../../guides/wow-leatherworking-leveling-guide/index.html">
+                        Midnight 1-100
+                      </a>
+</li>
+</ul>
+</div>
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">TWW Leatherworking Leveling Guide 1 - 100</h1>
+<article>
+<p><img align="left" height="64" src="../../images/icons/professions/leatherworking.png" style="margin-right: 8px;" width="64"/><a name="top"></a>This War Within Leatherworking leveling guide will show you the fastest and cheapest way to level your War Within Leatherworking skill up from 1 to 100.</p>
+<p>Leatherworking is best combined with skinning, and I highly recommend leveling these professions together because it will be easier to get the needed materials if you have skinning. So, check out my <a href="../../guides/wow-skinning-leveling-guide/index.html">Skinning Leveling Guide</a> if you want to level skinning. You can also buy the leathers at the Auction House, but you will need a lot of gold.</p>
+<h2 class="gtitle" id="leatherworking-trainers">Leatherworking Trainer and Crafting Table</h2>
+<p>You can learn the War Within Leatherworking skill from the Leatherworking trainer in Dornogal.</p>
+<img class="maps" height="420" src="../../images/general/tww-leatherworking-trainer-small.jpg" width="630"/>
+<h2 class="gtitle" id="mats">Shopping list</h2>
+<p>This is the total list of materials required to reach 62. The 62-100 part is not included here because there are multiple recipes you can use you can use.</p>
+<p>The <b>quality doesn't matter</b> for leveling. <b>Buy the cheapest</b>.</p>
+<ul>
+<li>340x <a class="white" href="https://www.wowhead.com/item=212664" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_skinning_stormchargedleather2.jpg"/>Stormcharged Leather</a></li>
+<li>305x <a class="white" href="https://www.wowhead.com/item=212667" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_skinning_gloomchitin.jpg"/>Gloom Chitin</a></li>
+<li>4x <a class="rare" href="https://www.wowhead.com/item=212674" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_skinning_sunlesscarapace1.jpg"/>Sunless Carapace</a></li>
+<li>6x <a class="rare" href="https://www.wowhead.com/item=212670" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_skinning_thunderoushide1.jpg"/>Thunderous Hide</a></li>
+</ul>
+<h2 class="gtitle" id="1-25">Leveling Khaz Algar Leatherworking</h2>
+<h3>First Craft Bonus</h3>
+<p>You will earn 1 Khaz Algar Leatherworking Knowledge talent point each time you craft an item for the first time. This knowledge is highly valuable and has a weekly cap from other sources.</p>
+<p>Due to the "First Craft Bonus," I suggest crafting one mail piece and one leather piece whenever possible. It's better to receive your First Craft Bonus while also gaining skill points from them.</p>
+<h3 class="gdskill">1 - 7</h3>
+<p>
+     1x <a class="rare" href="https://www.wowhead.com/spell=443702" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_bracer_leather_undergroundquest_b_01.jpg"/>Spelunker's Leather Bands</a> - 15x Stormcharged Leather, 5x Gloom Chitin<br/>
+     1x <a class="rare" href="https://www.wowhead.com/spell=443710" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_bracer_mail_undergroundquest_b_01.jpg"/>Tracker's Chitin Cuffs</a> - 5x Stormcharged Leather, 15x Gloom Chitin
+ </p>
+<h3 class="gdskill">7 - 16</h3>
+<p>
+    1x <a class="zold" href="https://www.wowhead.com/spell=444120" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_armor_skinning_a_01.jpg"/>Hideseeker's Hat</a> - 40x Stormcharged Leather, 40x Gloom Chitin<br/>
+    1x <a class="rare" href="https://www.wowhead.com/spell=443696" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_boot_leather_undergroundquest_b_01.jpg"/>Spelunker's Leather Footpads</a> - 20x Stormcharged Leather, 10x Gloom Chitin<br/>
+    1x <a class="rare" href="https://www.wowhead.com/spell=443704" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_boot_mail_undergroundquest_b_01.jpg"/>Tracker's Chitin Galoshes</a> - 10x Stormcharged Leather, 20x Gloom Chitin
+</p>
+<h3 class="gdskill">16 - 25</h3>
+<p>
+    1x <a class="rare" href="https://www.wowhead.com/spell=443695" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_chest_leather_undergroundquest_b_01.jpg"/>Spelunker's Leather Jerkin</a> - 30x Stormcharged Leather, 15x Gloom Chitin<br/>
+    1x <a class="rare" href="https://www.wowhead.com/spell=443703" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_chest_mail_undergroundquest_b_01.jpg"/>Tracker's Chitin Hauberk</a> - 15x Stormcharged Leather, 30x Gloom Chitin<br/>
+    1x <a class="zold" href="https://www.wowhead.com/spell=444118" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cape_special_skinning_c_01.jpg"/>Hideseeker's Pack</a> - 10x Stormcharged Leather, 1x Thunderous Hide
+</p>
+<h2 class="gtitle" id="specializations">Leatherworking Specializations</h2>
+<p>When you hit 25, you will unlock Leatherworking specializations.</p>
+<p>You'll eventually be able to learn all four specializations, so there's no need to worry about your initial choice. You'll need 50 skill points to unlock the second specialization, 60 for the third and 75 for the fourth.</p>
+<p>I suggest checking out my War Within Leatherworking Specialization Guide if you want some example builds to help you get started.</p>
+<p class="text-align-center"><a class="gblock" href="../../guides/the-war-within/leatherworking-specialization-guide-and-builds/index.html">TWW Leatherworking Specialization Guide and Builds</a></p>
+<h3 class="gdskill" id="25-70">25 - 35</h3>
+<p>Make these first because they turn yellow at 30.</p>
+<p>
+    1x <a class="rare" href="https://www.wowhead.com/spell=443701" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_belt_leather_undergroundquest_b_01.jpg"/>Spelunker's Practiced Sash</a> - 30x Stormcharged Leather, 10x Gloom Chitin<br/>
+    1x <a class="rare" href="https://www.wowhead.com/spell=443709" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_belt_mail_undergroundquest_b_01.jpg"/>Tracker's Toughened Girdle</a> - 10x Stormcharged Leather, 30x Gloom Chitin
+</p>
+<p>Then make this one:</p>
+<p>
+    1x <a class="rare" href="https://www.wowhead.com/spell=443697" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_glove_leather_undergroundquest_b_01.jpg"/>Spelunker's Practiced Mitts</a> - 25x Stormcharged Leather, 20x Gloom Chitin
+</p>
+<h3 class="gdskill">35 - 44</h3>
+<p>
+    1x <a class="zold" href="https://www.wowhead.com/spell=444114" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tabard_jewelcrafting_b_01.jpg"/>Gemcutter's Apron</a> - 20x Stormcharged Leather, 1x Thunderous Hide<br/>
+    1x <a class="zold" href="https://www.wowhead.com/spell=444105" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_armor_helm_alchemy_b_01.jpg"/>Apothecary's Cap</a> - 20x Stormcharged Leather, 1x Sunless Carapace<br/>
+    1x <a class="zold" href="https://www.wowhead.com/spell=444107" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tabard_blacksmithing_b_01_brown.jpg"/>Steelsmith's Apron</a> - 20x Gloom Chitin, 1x Thunderous Hide
+</p>
+<h3 class="gdskill">44 - 50</h3>
+<p>Make sure to make the <a class="rare" href="https://www.wowhead.com/spell=443708" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_shoulder_mail_undergroundquest_b_01.jpg"/>Tracker's Toughened Shoulderguards</a> first.</p>
+<p>    
+    1x <a class="rare" href="https://www.wowhead.com/spell=443708" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_shoulder_mail_undergroundquest_b_01.jpg"/>Tracker's Toughened Shoulderguards</a> - 30x Gloom Chitin, 1x Sunless Carapace<br/>
+    1x <a class="rare" href="https://www.wowhead.com/spell=443700" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_shoulder_leather_undergroundquest_b_01.jpg"/>Spelunker's Practiced Shoulders</a> - 30x Stormcharged Leather, 1x Thunderous Hide
+</p>
+<h3 class="gdskill">50 - 56</h3>
+<p>
+    1x <a class="rare" href="https://www.wowhead.com/spell=443707" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_pant_mail_undergroundquest_b_01.jpg"/>Tracker's Toughened Links</a> - 30x Gloom Chitin, 1x Sunless Carapace<br/>
+    1x <a class="rare" href="https://www.wowhead.com/spell=443699" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_pant_leather_undergroundquest_b_01.jpg"/>Spelunker's Practiced Britches</a> - 30x Stormcharged Leather, 1x Thunderous Hide
+</p>
+<h3 class="gdskill">56 - 62</h3>
+<p>
+    1x <a class="rare" href="https://www.wowhead.com/spell=443698" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_leather_undergroundquest_b_01.jpg"/>Spelunker's Practiced Hat</a> - 30x Stormcharged Leather, 1x Thunderous Hide<br/>
+    1x <a class="rare" href="https://www.wowhead.com/spell=443706" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_mail_undergroundquest_b_01.jpg"/>Tracker's Toughened Headgear</a> - 30x Gloom Chitin, 1x Sunless Carapace
+</p>
+<h3 class="gdskill">62 - 70</h3>
+<p>Check the prices which one is cheaper and make around 11 from one of them:</p>
+<p>
+    11x <a class="rare" href="https://www.wowhead.com/spell=443706" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_mail_undergroundquest_b_01.jpg"/>Tracker's Toughened Headgear</a> - 330x Gloom Chitin, 11x Sunless Carapace<br/>
+    11x <a class="rare" href="https://www.wowhead.com/spell=443698" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_leather_undergroundquest_b_01.jpg"/>Spelunker's Practiced Hat</a> - 330x Stormcharged Leather, 11x Thunderous Hide
+</p>
+<p>Both recipe will be green for the last 3 points, so you may need to craft more.</p>
+<h3 class="gdskill" id="70-85">70 - 91</h3>
+<p>If you don't have access to any of the recipes in this section, you can skip ahead to the 91-100 section. However, if you do have the recipes, I recommend crafting these items first to reach level 100 faster.</p>
+<p>Optional Reagents and Leg Armor Kits are not Bind on Pickup (BoP), so you can sell some to recoup some of your gold. Since they don't require any BoP materials, you can easily reach level 91 if you have the necessary gold.</p>
+<p>If you're making a profit by selling these items, feel free to craft more. Every recipe remains green until level 100.</p>
+<h3>Leg Armor Kits</h3>
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<th>Item</th>
+<th>Reagents</th>
+<th>Recipe Source</th>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=444102" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_armorkit_lightning_imbued.jpg"/>Stormbound Armor Kit</a></td><td> 1x <a class="rare" href="https://www.wowhead.com/item=221757" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_skinning_80_snakescales.jpg"/>Gloomfathom Hide</a> <br/> 2x <a class="rare" href="https://www.wowhead.com/item=219883" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_craftedhides_crystalline-powder.jpg"/>Crystalfused Hide</a> <br/> 60x <a class="white" href="https://www.wowhead.com/item=212664" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_skinning_stormchargedleather2.jpg"/>Stormcharged Leather</a>
+</td><td>Sold by <a href="https://www.wowhead.com/npc=223728" rel="nofollow noopener noreferrer" target="_blank">Auditor Balwurz</a> in Dornogal. <br/> Cost: 150x <a class="rare" href="https://www.wowhead.com/item=210814" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color3.jpg"/>Artisan's Acuity</a>
+</td></tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/spell=444103" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_armorkit_arathi.jpg"/>Defender's Armor Kit</a></td><td> 1x <a class="rare" href="https://www.wowhead.com/item=221758" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_tinderboxclosed01.jpg"/>Profaned Tinderbox</a> <br/> 2x <a class="rare" href="https://www.wowhead.com/item=219883" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_craftedhides_crystalline-powder.jpg"/>Crystalfused Hide</a> <br/> 60x <a class="white" href="https://www.wowhead.com/item=212667" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_skinning_gloomchitin.jpg"/>Gloom Chitin</a>
+</td><td>Sold by <a href="https://www.wowhead.com/npc=219051" rel="nofollow noopener noreferrer" target="_blank">Lyrendal</a> in Dornogal. <br/>Cost: 150x <a class="rare" href="https://www.wowhead.com/item=210814" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color3.jpg"/>Artisan's Acuity</a>
+</td></tr>
+</tbody>
+</table>
+</div>
+<h3>Optional Reagents</h3>
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<th>Item</th>
+<th>Reagents</th>
+<th>Recipe Source</th>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=441461" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_skinning_craftedoptionalreagent_studdedleatherswatch_color2.jpg"/>Writhing Armor Banding</a></td><td> 1x <a class="rare" href="https://www.wowhead.com/item=221756" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_alchemy_dpotion_c15.jpg"/>Vial of Kaheti Oils</a> <br/> 1x <a class="zold" href="https://www.wowhead.com/item=219898" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_skinning_gloomchitin2.jpg"/>Chitin Armor Banding</a>
+</td><td>Specialization: Flawless Fortes - Nerubian Nous
+            </td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=441460" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_emberweavebandage.jpg"/>Blessed Weapon Grip</a></td><td> 1x <a class="rare" href="https://www.wowhead.com/item=221758" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_tinderboxclosed01.jpg"/>Profaned Tinderbox</a><br/> 1x <a class="zold" href="https://www.wowhead.com/item=219901" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_bandages_stormtouched.jpg"/>Storm-Touched Weapon Wrap</a>
+</td><td>Specialization: Flawless Fortes - Arathi Armorer
+            </td></tr>
+</tbody>
+</table>
+</div>
+<h3>Profession Equipment</h3>
+<p>Every profession equipment gives 2 skill points until you reach level 90. Since all of them require <a class="rare" href="https://www.wowhead.com/item=210814" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color3.jpg"/>Artisan's Acuity</a> to craft, you'll need to use Patron, Public, or Personal crafting orders to get skill points. It would be a huge waste to use your own Artisan's Acuity for any tools you won't use.</p>
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<th>Item</th>
+<th>Recipe Source</th>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=444117" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_armor_leatherworking_b_01.jpg"/>Arathi Leatherworker's Smock</a>
+</td><td>Sold by <a href="https://www.wowhead.com/npc=219051" rel="nofollow noopener noreferrer" target="_blank">Lyrendal</a> in Dornogal. <br/>Cost: 150x <a class="rare" href="https://www.wowhead.com/item=210814" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color3.jpg"/>Artisan's Acuity</a>
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=444113" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cape_special_herbalism_b_01.jpg"/>Stonebound Herbalist's Pack</a>
+</td><td>Sold by <a href="https://www.wowhead.com/npc=219051" rel="nofollow noopener noreferrer" target="_blank">Lyrendal</a> in Dornogal. <br/>Cost: 150x <a class="rare" href="https://www.wowhead.com/item=210814" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color3.jpg"/>Artisan's Acuity</a>
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=444108" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tabard_blacksmithing_b_01_black.jpg"/>Earthen Forgemaster's Apron</a>
+</td><td>Sold by <a href="https://www.wowhead.com/npc=219051" rel="nofollow noopener noreferrer" target="_blank">Lyrendal</a> in Dornogal. <br/>Cost: 150x <a class="rare" href="https://www.wowhead.com/item=210814" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color3.jpg"/>Artisan's Acuity</a>
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=444111" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_armor_engineering_b_01_orange.jpg"/>Charged Scrapmaster's Gauntlets</a>
+</td><td>Sold by <a href="https://www.wowhead.com/npc=219051" rel="nofollow noopener noreferrer" target="_blank">Lyrendal</a> in Dornogal. <br/>Cost: 150x <a class="rare" href="https://www.wowhead.com/item=210814" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color3.jpg"/>Artisan's Acuity</a>
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=444115" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tabard_jewelcrafting_b_01.jpg"/>Earthen Jeweler's Cover</a>
+</td><td>Sold by <a href="https://www.wowhead.com/npc=219051" rel="nofollow noopener noreferrer" target="_blank">Lyrendal</a> in Dornogal. <br/>Cost: 150x <a class="rare" href="https://www.wowhead.com/item=210814" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color3.jpg"/>Artisan's Acuity</a>
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=444106" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_armor_helm_alchemy_b_01.jpg"/>Nerubian Alchemist's Hat</a>
+</td><td>Sold by <a href="https://www.wowhead.com/npc=218165" rel="nofollow noopener noreferrer" target="_blank">Kama</a> in City of Threads. <br/> Cost: 150x <a class="rare" href="https://www.wowhead.com/item=210814" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color3.jpg"/>Artisan's Acuity</a> 1500x <a class="white" href="https://www.wowhead.com/currency=3056" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_tailoring_silkrare_color3.jpg"/>Kej</a>
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=444121" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_armor_skinning_a_01.jpg"/>Deep Tracker's Cap</a>
+</td><td>Sold by <a href="https://www.wowhead.com/npc=218165" rel="nofollow noopener noreferrer" target="_blank">Kama</a> in City of Threads. <br/> Cost: 150x <a class="rare" href="https://www.wowhead.com/item=210814" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color3.jpg"/>Artisan's Acuity</a> 1500x <a class="white" href="https://www.wowhead.com/currency=3056" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_tailoring_silkrare_color3.jpg"/>Kej</a></td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=444119" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cape_special_skinning_c_01.jpg"/>Deep Tracker's Pack</a>
+</td><td>Sold by <a href="https://www.wowhead.com/npc=218165" rel="nofollow noopener noreferrer" target="_blank">Kama</a> in City of Threads. <br/> Cost: 150x <a class="rare" href="https://www.wowhead.com/item=210814" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color3.jpg"/>Artisan's Acuity</a> 1500x <a class="white" href="https://www.wowhead.com/currency=3056" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_tailoring_silkrare_color3.jpg"/>Kej</a></td></tr>
+</tbody></table>
+</div>
+<h3 class="gdskill" id="85-100">91 - 100</h3>
+<p><b>The Optional Reagents and Leg Armors give skill points up to 100.</b> But, the last few point could be a bit slow if you are unlucky with the skill gains. So, if you have any of the epic armor recipes unlocked, you can try completing a few crafting orders. I'd recommend stopping at 91, 94 or 97. Each armor recipe give 3 skill points, so you would only have to complete 1-3 of them.</p>
+<p>If you plan to craft at least one armor for yourself, you should definitely stop at 97.</p>
+<p>Every epic armor recipe requires a Spark of Omen, a Bind on Pickup (BoP) crafting reagent that cannot be purchased from the Auction House. Since you can only obtain one Spark of Omen every two weeks, you should use the crafting order system for these last few points to level Leatherworking up to 100.</p>
+<h3>Specializations</h3>
+<p>Every recipe you can learn inside the <a class="white" href="https://www.wowhead.com/profession-trait/97712" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_leatherworking_leathercrafting_color1.jpg"/>Luxurious Leathers</a> and <a class="white" href="https://www.wowhead.com/profession-trait/96828" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_skinning_gloomchitin.jpg"/>Concrete Chitin</a> specialization is will teach you an epic armor recipe that you can use for leveling.</p>
+<p>However, in the <a class="white" href="https://www.wowhead.com/profession-trait/97560" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_leatherworking_primordialleatherworking_color1.jpg"/>Flawless Fortes</a> specialization, only the <a class="white" href="https://www.wowhead.com/profession-trait/97557" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_nativebeastfur.jpg"/>Beastly Bulwarks</a> will teach you leveling recipes. (<a class="epic" href="https://www.wowhead.com/spell=443961" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_mail_outdoorarathor_d_01_robe.jpg"/>Smoldering Pollen Hauberk</a> and <a class="epic" href="https://www.wowhead.com/spell=443951" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_leather_outdoorarathor_d_01_robe.jpg"/>Weathered Stormfront Vest</a>)</p>
+<h3>Recipes from Drops</h3>
+<p>These are the only recipes that give skill points without requiring a specific specialization. All other recipes are unlocked by putting points into specializations.</p>
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<th>Item</th>
+<th>Recipe Source</th>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=444070" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_belt_leather_undergroundquest_b_01.jpg"/>Adrenal Surge Clasp</a>
+</td><td>Drop: Sikran, Captain of the Sureki<br/>
+                    Raid: Nerub-ar Palace
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=443958" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_mail_outdoorarathor_d_01_belt.jpg"/>Busy Bee's Buckle</a>
+</td><td>Drop: <a href="https://www.wowhead.com/npc=218523" rel="nofollow noopener noreferrer" target="_blank">Goldie Baronbottom</a><br/>
+Dungeon: Cinderbrew Meadery
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=444068" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_mail_outdoorarathor_d_01_bracer.jpg"/>Vambraces of Deepening Darkness</a>
+</td><td>Drop: World Creatures
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=443950" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_leather_outdoorarathor_d_01_glove.jpg"/>Roiling Thunderstrike Talons</a>
+</td><td>Drop: <a href="https://www.wowhead.com/npc=207207" rel="nofollow noopener noreferrer" target="_blank">Voidstone Monstrosity</a><br/>
+Dungeon: The Rookery
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=444073" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_mail_outdoorarathor_d_01_glove.jpg"/>Sanctified Torchbearer's Grips</a>
+</td><td>Quest: <a href="https://www.wowhead.com/quest=76586" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Spreading the Light</a>
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=443960" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_mail_outdoorarathor_d_01_boot.jpg"/>Reinforced Setae Flyers</a>
+</td><td>Delves: Heavy Trunk
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=443949" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_leather_outdoorarathor_d_01_bracer.jpg"/>Rook Feather Wristwraps</a>
+</td><td>Drop: <a href="https://www.wowhead.com/quest=83240" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>The Theater Troupe</a>
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=444071" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_leather_outdoorarathor_d_01_boot.jpg"/>Waders of the Unifying Flame</a>
+</td><td>Drop: <a href="https://www.wowhead.com/npc=207940" rel="nofollow noopener noreferrer" target="_blank">Prioress Murrpray</a><br/>
+Dungeon: Priory of the Sacred Flame
+</td></tr>
+</tbody></table>
+</div>
+<h3>Completing Crafting Orders for skill points</h3>
+<p>Once you get recipes from specializations, vendors or drops, you can start looking for Crafting Orders.</p>
+<h4>Public Orders</h4>
+<p>When you open the Crafting Orders tab, <b>make sure to hit "Search"</b> in the top left corner on the Public Orders tab, <b>they won't load automatically</b>. You probably won't see many crafting orders because players immediately complete them when they are posted. </p>
+<p>Unfortunately, public crafting orders haven't gained much popularity among players in Dragonflight, and I don't expect this to change in The War Within. Many players prefer guild or personal crafting orders for better control over item quality and materials. The unpredictability of public orders deters players from using this system, resulting in very few available public orders.</p>
+<p>To make matters worse, Public Orders are not cross-realm. You will only see orders from players on the same realm, so if you're on a low-population realm, there may be very few or no Public Orders available.</p>
+<h4>NPC Orders</h4>
+<p>Fortunately, the new NPC crafting orders make leveling a bit easier. You will frequently receive epic armor crafting orders, though you may not be able to complete some of them until you acquire more knowledge points.</p>
+<p>These orders are player-specific, so other players can't claim them. Consider them like Personal Orders sent to you by NPCs. However, they are randomly generated, so <b>it's not guaranteed that you will receive orders for recipes you can currently craft</b>.</p>
+<h4>Personal Orders</h4>
+<p>To level up with Personal Orders, you need to advertise your services on the trade channel. Most players seeking personal orders want a guaranteed rank 5 item, so focus on promoting the recipes you can craft at that quality level.</p>
+<p>Additionally, keep an eye on the trade channel in Dornogal to see if any players are looking for items you can craft.</p>
+</article>
+</main>
+<aside class="left-sidebar-menu sidebar-sticky">
+<nav>
+<h4>Quick Links</h4>
+<ul>
+<li><a href="../../the-war-within/khaz-algar-alchemy-leveling-guide/index.html">Alchemy</a></li>
+<li><a href="../../the-war-within/khaz-algar-blacksmithing-leveling-guide/index.html">Blacksmithing</a></li>
+<li><a href="../../the-war-within/khaz-algar-enchanting-leveling-guide/index.html">Enchanting</a></li>
+<li><a href="../../guides/wow-engineering-leveling-guide/index.html">Engineering</a></li>
+<li><a href="../../the-war-within/khaz-algar-inscription-leveling-guide/index.html">Inscription</a></li>
+<li><a href="../../the-war-within/khaz-algar-jewelcrafting-leveling-guide/index.html">Jewelcrafting</a></li>
+<li><a href="../../the-war-within/khaz-algar-leatherworking-leveling-guide/index.html">Leatherworking</a></li>
+<li><a href="../../the-war-within/khaz-algar-tailoring-leveling-guide/index.html">Tailoring</a></li>
+<li><a href="../../the-war-within/khaz-algar-herbalism-leveling-guide/index.html">Herbalism</a></li>
+<li><a href="../../the-war-within/khaz-algar-mining-leveling-guide/index.html">Mining</a></li>
+<li><a href="../../the-war-within/khaz-algar-skinning-leveling-guide/index.html">Skinning</a></li>
+<li><a href="../../the-war-within/khaz-algar-cooking-leveling-guide/index.html">Cooking</a></li>
+<li><a href="../../guides/wow-fishing-leveling-guide/index.html">Fishing</a></li>
+</ul>
+</nav>
+</aside>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

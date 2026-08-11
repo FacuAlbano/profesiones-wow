@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="This guide provides an overview of the additions and changes to Jewelcrafting in World of Warcraft Battle for Azeroth." name="description"/>
+<meta content="Battle for Azeroth Jewelcrafting Guide" property="og:title"/>
+<meta content="This guide provides an overview of the additions and changes to Jewelcrafting in World of Warcraft Battle for Azeroth." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/guides/bfa-jewelcrafting" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>Battle for Azeroth Jewelcrafting Guide</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=wX.fVM.SvOQ0cl9MWWVuYvBagl6kaYD8Dy7Va7WQSTo-1771997383.1900928-1.0.1.1-IzMhgJcey8jedKRWmvjFAsG46KpkWUyU2XWa.Pa17BY" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--3">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#learning-bfa-jewelcrafting">Learning BfA Jewelcrafting</a></li>
+<li><a href="#leveling-bfa-jewelcrafting">Leveling Jewelcrafting</a></li>
+<li><a href="#recipes">Acquiring Recipes</a></li>
+<li><a href="#jewelcrafting-perks">Jewelcrafting Perks</a></li>
+<li><a href="#crafting-materials">Crafting Materials</a></li>
+<li><a href="#gems">Gems</a></li>
+<li><a href="#rings">Rings</a></li>
+<li><a href="#staves">Staves</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">Battle for Azeroth Jewelcrafting Guide</h1>
+<article>
+<p><img align="right" alt="BfA Jewelcrafting" height="161" src="../../images/general/bfa-jewelcrafting.jpg" style="margin-left: 10px; border: 4px solid #eee;" width="300"/>This guide provides an overview of the additions and changes to Jewelcrafting in World of Warcraft Battle for Azeroth.</p>
+<div class="old-toc">
+<h3>Table of contents</h3>
+<ul>
+<li><a href="#learning-bfa-jewelcrafting">Learning BfA Jewelcrafting</a></li>
+<li><a href="#leveling-bfa-jewelcrafting">Leveling Jewelcrafting</a></li>
+<li><a href="#recipes">Acquiring Recipes</a></li>
+<li><a href="#jewelcrafting-perks">Jewelcrafting Perks</a></li>
+<li><a href="#crafting-materials">Crafting Materials</a></li>
+<li><a href="#gems">Gems</a></li>
+<li><a href="#rings">Rings</a></li>
+<li><a href="#staves">Staves</a></li>
+</ul>
+</div>
+<h2 class="gtitle">New in Patch 8.3</h2>
+<h3>Void Focus</h3>
+<p>The Void Focus is a new crafting station that is used to craft the new raid gear.</p>
+<p>Check out my guide on <a href="../../guides/void-focus-how-to-unlock/index.html">How to Unlock the Void Focus</a>. (It works exactly the same as the Abyssal Focus worked in patch 8.2.)</p>
+<h3>New items</h3>
+<ul>
+<li><a class="epic" href="https://ptr.wowhead.com/item=171077" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_83_ring01.jpg"/>Unbound Leviathan's Eye Loop</a> - ilvl 440 ring</li>
+<li><a class="epic" href="https://ptr.wowhead.com/item=171076" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_83_ring01.jpg"/>Awakened Leviathan's Eye Loop</a> - ilvl 455 ring</li>
+<li><a class="epic" href="https://ptr.wowhead.com/item=171075" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_83_ring01.jpg"/>Peerless Leviathan's Eye Loop</a> - ilvl 470 ring</li>
+<li><a class="epic" href="https://ptr.wowhead.com/item=170318" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_2h_jcprofession_c_01.jpg"/>Uncanny Combatant's Intuitive Staff</a> ilvl 400 Staff</li>
+</ul>
+<p>You can get the recipes for the rings from Faceless, K'thir, Aqir, and Cultists mobs that worship N'Zoth (random drop). You can find these mobs at the new Vale of Eternal Blossom Assauls, Uldum Assaults and inside Lesser Visions. (Not available on week 1 of patch 8.3)</p>
+<p>You will discover the recipe for the ilvl 455 ring by crafting the ilvl 440 one. And you need to craft the ilvl 455 ring to discover the ilvl 470 ring recipe.</p>
+<h2 class="gtitle">New in Patch 8.2</h2>
+<ul>
+<li><a class="epic" href="https://ptr.wowhead.com/spell=298800" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_metagem_b.jpg"/>Leviathan's Eye of Agility</a> - 120 Agility</li>
+<li><a class="epic" href="https://ptr.wowhead.com/spell=298799" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_metagem_b.jpg"/>Leviathan's Eye of Strength</a> - 120 Strength</li>
+<li><a class="epic" href="https://ptr.wowhead.com/spell=298801" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_metagem_b.jpg"/>Leviathan's Eye of Intellect</a> - 120 Intellect</li>
+<li><a class="epic" href="https://ptr.wowhead.com/spell=298794" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_uncommon_perfectcut_blue.jpg"/>Versatile Dark Opal</a> - 60 Versatility</li>
+<li><a class="epic" href="https://ptr.wowhead.com/spell=298798" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_uncommon_perfectcut_orange.jpg"/>Deadly Lava Lazuli</a> - 60 Critical Strike</li>
+<li><a class="epic" href="https://ptr.wowhead.com/spell=298797" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_uncommon_perfectcut_purple.jpg"/>Masterful Sea Currant</a> - 60 Mastery</li>
+<li><a class="epic" href="https://ptr.wowhead.com/spell=298796" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_uncommon_perfectcut_yellow.jpg"/>Quick Sand Spinel</a> - 60 Haste</li>
+<li><a class="rare" href="https://ptr.wowhead.com/spell=300756" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_uncommon_perfectcut_green.jpg"/>Straddling Sage Agate</a> - 5% movement speed</li>
+<li><a class="epic" href="https://ptr.wowhead.com/spell=294793" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_2h_jcprofession_c_01.jpg"/>Notorious Combatant's Intuitive Staff</a> - ilvl 370 Staff</li>
+<li><a class="epic" href="https://ptr.wowhead.com/spell=299016" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_70_raid_ring8c.jpg"/>Leviathan's Eye Loop</a> - ilvl 410 ring</li>
+<li><a class="epic" href="https://ptr.wowhead.com/spell=299017" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_70_raid_ring8c.jpg"/>Crushing Leviathan's Eye Loop</a> - ilvl 425 ring</li>
+<li><a class="epic" href="https://ptr.wowhead.com/spell=299018" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_70_raid_ring8c.jpg"/>Ascended Leviathan's Eye Loop</a> - ilvl 440 ring</li>
+</ul>
+<h2 class="gtitle" id="learning-bfa-jewelcrafting">Learning BfA Jewelcrafting</h2>
+<p>The new BfA Jewelcrafting skill is named differently for the two factions, but the name is the only difference between them.</p>
+<p><a class="white" href="https://www.wowhead.com/spell=264548" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_01.jpg"/>Kul Tiran Jewelcrafting</a> is the Alliance version and <a class="white" href="https://www.wowhead.com/spell=265811" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_01.jpg"/>Zandalari Jewelcrafting</a> is the Horde version.</p>
+<p>Jewelcrafting Trainers:</p>
+<ul>
+<li><b>Horde:</b> You can find <a href="../../images/general/bfa-jewelcrafting-trainer-horde.jpg">Seshuli</a> in Dazar'alor at the Terrace of Crafters.</li>
+<li><b>Alliance:</b> <a href="../../images/general/bfa-jewelcrafting-trainer-alliance.jpg">Samuel D. Colton III</a> is located in Boralus at the Tradewinds Market.</li>
+</ul>
+<p>If you are having trouble finding the trainers, you can walk up to a guard in Dazar'alor or Boralus then ask where the Jewelcrafting trainer is. Asking the guard will place a red marker on your map at the trainer's location.</p>
+<h2 class="gtitle" id="leveling-bfa-jewelcrafting">Leveling Jewelcrafting</h2>
+<p>Professions skills are split between expansions now, you'll have a separate skill bar for each expansion. There are still 950 profession levels in total, just that there is no one single progress bar with 1 to 950 for it anymore. Instead, there are 8 separate progress bars, one for each expansion.</p>
+<p>You can level the new Battle for Azeroth progress bar without putting any point into any of the previous expansions tiers, you don't have to level Jewelcrafting with older materials if you want to craft the new BfA items. The new Battle for Azeroth Jewelcrafting has a maximum of 175 skill points. </p>
+<p>Every BfA recipe will require different Jewelcrafting skill levels, so it's very different from what we had in Legion where you could craft most high items with Jewelcrafting skill 1. You will have to level your BfA Jewelcrafting skill up if you want to craft high-level items.</p>
+<p>Check out my <a href="../../guides/zandalari-kul-tiran-bfa-jewelcrafting-leveling-guide/index.html">BfA Jewelcrafting leveling guide</a>, if you are looking for an in-depth leveling guide with exact numbers and reagents needed.</p>
+<h2 class="gtitle" id="recipes">Acquiring Recipes</h2>
+<p>Most recipes still have ranks just like in Legion, but there are no profession quests for crafting profession in BfA, you will learn most rank 1 and rank 2 recipes from your trainer. They are gated by profession skill, so you have to level your Jewelcrafting up to get every recipe.</p>
+<ul>
+<li><b>Rank 1:</b> Allows you to craft a recipe.</li>
+<li><b>Rank 2:</b> Reduce the materials required to create a recipe.</li>
+<li><b>Rank 3:</b> Greatly reduces the materials required to craft an item.</li>
+</ul>
+<h3 class="gd3">Reputation Vendors</h3>
+<p>You can buy most Rank 3 recipes from vendors, but none of them require Exalted reputation, only Revered, so it's pretty easy to get them. (A few rank 3 recipes come from World Quests)</p>
+<p><b>Horde:</b></p>
+<ul>
+<li>Zandalari Empire - <a href="https://www.wowhead.com/npc=131287" rel="nofollow">Natal'hakata</a> in Zuldazar.</li>
+<li>Voldunai recipes - <a href="https://www.wowhead.com/npc=135804" rel="nofollow">Hoarder Jena</a> in Vol'dun.</li>
+<li>Talanji's Expedition - <a href="https://www.wowhead.com/npc=135459" rel="nofollow">Provisioner Lija</a> in Nazmir.</li>
+<li>The Honorbound - <a href="https://www.wowhead.com/npc=135447" rel="nofollow">Ransa Greyfeather</a> in Zuldazar.</li>
+</ul>
+<p><b>Alliance:</b></p>
+<ul>
+<li>Storm's Wake - <a href="https://www.wowhead.com/npc=135800/sister-lilyana" rel="nofollow=">Sister Lilyana</a> in Stormsong Valley.</li>
+<li>Order of Embers - <a href="https://www.wowhead.com/npc=135815" rel="nofollow">Quartermaster Alcorn</a> in Drustvar.</li>
+<li>Proudmoore Admiralty - <a href="https://www.wowhead.com/npc=135808" rel="nofollow">Provisioner Fray</a> in Tiragarde Sound.</li>
+<li>7th Legion - <a href="https://www.wowhead.com/npc=135446" rel="nofollow">Vindicator Jaelaana</a> in Tiragarde Sound.</li>
+</ul>
+<p><b>Neutral:</b></p>
+<ul>
+<li>Tortollan Seekers - <a href="https://www.wowhead.com/npc=134345" rel="nofollow">Collector Kojo</a> at Scaletrader Post in Zuldazar, or by <a href="https://www.wowhead.com/npc=135793" rel="nofollow">Collector Kojo</a> at Seeker's Vista in Stormsong Valley.</li>
+</ul>
+<h2 class="gtitle" id="jewelcrafting-perks">Jewelcrafting Perks</h2>
+<h3 class="gd3">Tools of the Trade</h3>
+<p>If you level your character to level 120 and your Battle for Azeroth Jewelcrafting to 150, then you can unlock a special questline to craft <a class="epic" href="https://ptr.wowhead.com/spell=256703" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_815_focusinglens.jpg"/>Jewelhammer's Focus</a>. This item allows you to unsocket gems without destroying them, and mine special geodes in each zone for free uncommon and rare gems.</p>
+<p>The questline will take you through the process of creating your tool and give you some backstory on where the recipe comes from. Most of the quests are really straightforward and easy, so I'll skip explaining each quest. Just follow your quest log and check the markers on your map.</p>
+<p>To get started on your profession quest line, speak with your profession trainer <a href="../../images/general/bfa-jewelcrafting-trainer-horde.jpg">Seshuli</a> (Horde) in Dazar'alor or <a href="/images/bfa-alliance-trainer-horde.jpg">Samuel D. Colton III</a> (Alliance) in Boralus. You can walk up to a guard in Dazar'alor or Boralus then ask where your profession trainer is located. This will place a red marker on your map at the trainer's location.</p>
+<p>After you complete the quest chain, you will get the <a class="rare" href="https://ptr.wowhead.com/item=168027" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/70_professions_scroll_02.jpg"/>Recipe: Jewelhammer's Focus</a> recipe. To craft this item, you need:</p>
+<ul>
+<li>10 x <a class="rare" href="https://ptr.wowhead.com/item=152668" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_expulsom.jpg"/>Expulsom</a></li>
+<li>5 x <a class="epic" href="https://ptr.wowhead.com/item=153706" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_specialgem01.jpg"/>Kraken's Eye</a></li>
+<li>50 x <a class="rare" href="https://ptr.wowhead.com/item=168134" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_dustspirit.jpg"/>Fine Azerite Powder</a> from Ashvane Company NPCs in Tiragarde. A good place to farm is at the Ashvane Foundry. (very low drop rate). You can also get it from Siege of Boralus or Tol Dagor.</li>
+<li>1 x <a class="rare" href="https://ptr.wowhead.com/item=168132" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_spyglass_03.jpg"/>Sweete's Diamond-Studded Spyglass</a> Drops from Harlan Sweete in Freehold dungeon. (any difficulty)</li>
+<li>1 x <a class="rare" href="https://ptr.wowhead.com/item=168133" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_glowingazeritegeode.jpg"/>Unrefined Azerite Geode</a> Drops from Azerokk in MOTHERLODE!! dungeon. (any difficulty)</li>
+</ul>
+<h3 class="gd3">Jewelcrafter-only rings</h3>
+<p>You can craft an epic item level 385 ring, which you can upgrade 2 times. You will need to craft the lower item level ring to get the recipe for the higher item level ones.</p>
+<p><b>IMPORTANT:</b> If you use the Scrapper I mention in my <a href="../../farming/how-to-get-expulsom/index.html">Expulsom Farming Guide</a>, you can get every soulbound material back when you scrap these rings. (Tidalcore, Breath of Bwonsamdi, Expulsom)</p>
+<ul>
+<li>ilvl 385 - <a class="epic" href="https://www.wowhead.com/spell=289179" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_70_raid_ring8c.jpg"/>Tidal Kraken's Eye Loop</a> - Requires Jewelcrafting 135</li>
+<li>ilvl 400 - <a class="epic" href="https://www.wowhead.com/spell=289180" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_70_raid_ring8c.jpg"/>Spirited Kraken's Eye Loop</a> - Discovered from crafting <a class="epic" href="https://www.wowhead.com/spell=289179" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_70_raid_ring8c.jpg"/>Tidal Kraken's Eye Loop</a></li>
+<li>ilvl 415 - <a class="epic" href="https://www.wowhead.com/spell=289175" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_70_raid_ring8b.jpg"/>Emblazoned Kraken's Eye Loop</a> - Discovered from crafting <a class="epic" href="https://www.wowhead.com/spell=289180" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_70_raid_ring8c.jpg"/>Spirited Kraken's Eye Loop</a></li>
+</ul>
+<h2 class="gtitle" id="crafting-materials">Crafting Materials</h2>
+<p>New ores: <a class="white" href="https://www.wowhead.com/item=152512" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_monalite.jpg"/>Monelite Ore</a>, <a class="white" href="https://www.wowhead.com/item=152579" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_stormsilver.jpg"/>Storm Silver Ore</a>, <a class="zold" href="https://www.wowhead.com/item=152513" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_platinum.jpg"/>Platinum Ore</a></p>
+<p>New raw gems: <a class="epic" href="https://bfa.wowhead.com/item=153706" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_specialgem01.jpg"/>Kraken's Eye</a>, <a class="rare" href="https://bfa.wowhead.com/item=154125" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_gem02_blue.jpg"/>Royal Quartz</a>, <a class="rare" href="https://bfa.wowhead.com/item=154123" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_gem02_orange.jpg"/>Amberblaze</a>, <a class="rare" href="https://bfa.wowhead.com/item=154122" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_gem02_purple.jpg"/>Tidal Amethyst</a>, <a class="rare" href="https://bfa.wowhead.com/item=154124" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_gem02_green.jpg"/>Laribole</a>, <a class="rare" href="https://bfa.wowhead.com/item=154121" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_gem02_red.jpg"/>Scarlet Diamond</a>, <a class="rare" href="https://bfa.wowhead.com/item=154120" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_gem02_yellow.jpg"/>Owlseye</a>, <a class="zold" href="https://bfa.wowhead.com/item=153705" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_gem01_blue.jpg"/>Kyanite</a>, <a class="zold" href="https://bfa.wowhead.com/item=153704" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_gem01_green.jpg"/>Viridium</a>, <a class="zold" href="https://bfa.wowhead.com/item=153702" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_gem01_purple.jpg"/>Kubiline</a>, <a class="zold" href="https://bfa.wowhead.com/item=153701" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_gem01_red.jpg"/>Rubellite</a>, <a class="zold" href="https://bfa.wowhead.com/item=153703" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_gem01_orange.jpg"/>Solstone</a></p>
+<p>There are also 5 soulbound crafting materials:</p>
+<p><a class="rare" href="https://bfa.wowhead.com/item=152668" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_expulsom.jpg"/>Expulsom</a> is obtained primarily from scrapping armors and weapons using the Scrap-o-Matic 1000 (Alliance), or the Shred-Master Mk1 (Horde). These tools work like disenchanting. You can break down any gear obtained that is from the Battle for Azeroth expansion, including dungeon/raid drops, quest rewards, world drops, and crafted gear. You can read about this in more detail if you visit my <a href="../../farming/how-to-get-expulsom/index.html">Expulsom Farming Guide</a>.</p>
+<p><a class="rare" href="https://www.wowhead.com/item=165948" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tradeskillitem_sorcererswater.jpg"/>Tidalcore</a> is a guaranteed drop from the last boss in a Mythic dungeons and from the chest at the end of any level Mythic Plus Dungeon. They can also drop from the last boss of a heroic dungeon. However, this is not a guaranteed drop.</p>
+<p><a class="epic" href="https://www.wowhead.com/item=165703" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tradeskill_81_breath_of_bwonsamdi_raid.jpg"/>Breath of Bwonsamdi</a> drops from bosses in the new raid Battle for Dazar'alor and is used for crafting epic 400 and 415 item Alchemy trinkets. (1 from each LFR wing, 1 from a Normal boss, 10 from a Heroic boss, 20 from a Mythic boss)</p>
+<p><a class="epic" href="https://bfa.wowhead.com/item=162461" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_malkorok_blightofyshaarj_red.jpg"/>Sanguicell</a> drops from raid bosses in Uldir. (1 from each LFR wing, 1 from a Normal boss, 10 from a Heroic boss, 20 from a Mythic boss)</p>
+<p><a class="rare" href="https://bfa.wowhead.com/item=162460" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_tradeskillitem_lessersorcererswater.jpg"/>Hydrocore</a> used to drop in Mythic dungeons, but it no longers drops since path 8.1, and you can only get it by using Transmutes.</p>
+<h2 class="gtitle" id="gems">Gems</h2>
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<th>
+			Recipe
+			</th>
+<th>
+			Reagent
+			</th>
+<th>
+			Jewelcrafting skill
+			</th>
+<th>
+			Description
+			</th>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=256693" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_cutgem01_red.jpg"/>Natant Rubellite</a>
+</td><td><a class="zold" href="https://www.wowhead.com/item=153701" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_gem01_red.jpg"/>Rubellite</a>
+</td><td>1
+			</td><td>+5% Swim Speed
+		</td></tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=256691" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_cutgem01_green.jpg"/>Straddling Viridium</a>
+</td><td><a class="zold" href="https://www.wowhead.com/item=153704" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_gem01_green.jpg"/>Viridium</a>
+</td><td>1
+			</td><td>+3% movement speed
+		</td></tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=256689" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_cutgem01_orange.jpg"/>Deadly Solstone</a>
+</td><td><a class="zold" href="https://www.wowhead.com/item=153703" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_gem01_orange.jpg"/>Solstone</a>
+</td><td>1
+			</td><td>+30 Critical Strike
+		</td></tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=256694" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_cutgem01_yellow.jpg"/>Quick Golden Beryl</a>
+</td><td><a class="zold" href="https://www.wowhead.com/item=153700" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_gem01_yellow.jpg"/>Golden Beryl</a>
+</td><td>1
+			</td><td>+30 Haste
+		</td></tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=256692" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_cutgem01_purple.jpg"/>Masterful Kubiline</a>
+</td><td><a class="zold" href="https://www.wowhead.com/item=153702" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_gem01_purple.jpg"/>Kubiline</a>
+</td><td>1
+			</td><td>+30 Mastery
+		</td></tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=256690" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_cutgem01_blue.jpg"/>Versatile Kyanite</a>
+</td><td><a class="zold" href="https://www.wowhead.com/item=153705" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_gem01_blue.jpg"/>Kyanite</a>
+</td><td>1
+			</td><td>+30 Versatility
+		</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=256696" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_cutgem02_orange.jpg"/>Deadly Amberblaze</a>
+</td><td><a class="rare" href="https://www.wowhead.com/item=154123" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_gem02_orange.jpg"/>Amberblaze</a>
+</td><td>75
+			</td><td>+40 Critical Strike
+		</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=256699" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_cutgem02_yellow.jpg"/>Quick Owlseye</a>
+</td><td><a class="rare" href="https://www.wowhead.com/item=154120" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_gem02_yellow.jpg"/>Owlseye</a>
+</td><td>75
+			</td><td>+40 Haste
+		</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=256698" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_cutgem02_purple.jpg"/>Masterful Tidal Amethyst</a>
+</td><td><a class="rare" href="https://www.wowhead.com/item=154122" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_gem02_purple.jpg"/>Tidal Amethyst</a>
+</td><td>75
+			</td><td>+40 Mastery
+		</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=256695" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_cutgem02_blue.jpg"/>Versatile Royal Quartz</a>
+</td><td><a class="rare" href="https://www.wowhead.com/item=154125" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_gem02_blue.jpg"/>Royal Quartz</a>
+</td><td>75
+			</td><td>+40 Versatility
+		</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=256701" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_specialgemcut01.jpg"/>Kraken's Eye of Agility</a>
+</td><td><a class="epic" href="https://www.wowhead.com/item=153706" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_specialgem01.jpg"/>Kraken's Eye</a>
+</td><td>125
+			</td><td>+40 Agility
+		</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=256702" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_specialgemcut01.jpg"/>Kraken's Eye of Intellect</a>
+</td><td><a class="epic" href="https://www.wowhead.com/item=153706" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_specialgem01.jpg"/>Kraken's Eye</a>
+</td><td>125
+			</td><td>+40 Intellect
+		</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=256700" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_specialgemcut01.jpg"/>Kraken's Eye of Strength</a>
+</td><td><a class="epic" href="https://www.wowhead.com/item=153706" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_specialgem01.jpg"/>Kraken's Eye</a>
+</td><td>125
+			</td><td>+40 Strength
+		</td></tr>
+</tbody>
+</table>
+</div>
+<h2 class="gtitle" id="rings">Rings</h2>
+<p>Eight different rings can be created by Jewelcrafters, each with one secondary stat and one socket.</p>
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<td class="tdtitle" rowspan="2">
+<p><strong>Recipe</strong></p>
+</td><td class="tdtitle" colspan="2">
+<p><strong>Jewelcrafting skill</strong></p></td><td class="tdtitle" rowspan="2">
+<p><strong>Rank 3</strong></p></td></tr>
+<tr>
+<th>
+Rank 1
+</th>
+<th>
+Rank 2
+</th>
+</tr>
+<tr>
+<td><a name="rings"></a><a class="zold" href="https://www.wowhead.com/spell=272226" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_lvlupring_orange.jpg"/>Solstone Ring</a>
+</td><td>1
+</td><td>-
+</td><td>-
+</td></tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=272227" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_lvlupring_yellow.jpg"/>Golden Beryl Ring</a>
+</td><td>1
+</td><td>-
+</td><td>-
+</td></tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=272228" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_lvlupring_purple.jpg"/>Kubiline Ring</a>
+</td><td>1
+</td><td>-
+</td><td>-
+</td></tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=272230" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_lvlupring_blue.jpg"/>Kyanite Ring</a>
+</td><td>1
+</td><td>-
+</td><td>-
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=256510" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_maxlvlring_orange.jpg"/>Amberblaze Loop</a>
+</td><td>50
+</td><td>85
+</td><td>The Honorbound / 7th Legion - Revered
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=256511" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_maxlvlring_yellow.jpg"/>Owlseye Loop</a>
+</td><td>50
+</td><td>85
+</td><td>Zandalari Empire / Storm's Wake - Revered
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=256512" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_maxlvlring_purple.jpg"/>Tidal Amethyst Loop</a>
+</td><td>50
+</td><td>85
+</td><td>Talanji's Expedition / Proudmoore Admiralty - Revered
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=256513" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_80_maxlvlring_blue.jpg"/>Royal Quartz Loop</a>
+</td><td>50
+</td><td>85
+</td><td>Voldunai / Order of Embers - Revered
+</td></tr>
+</tbody></table>
+</div>
+<h2 class="gtitle" id="staves">Staves</h2>
+<p>In Battle for Azeroth, Jewelcrafters can craft multiple staves.</p>
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<td class="tdtitle" rowspan="2">
+<p><strong>Recipe</strong></p>
+</td><td class="tdtitle" colspan="2">
+<p><strong>Jewelcrafting skill</strong></p></td><td class="tdtitle" rowspan="2">
+<p><strong>Rank 3</strong></p></td></tr>
+<tr>
+<th>
+Rank 1
+</th>
+<th>
+Rank 2
+</th>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=256253" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_2h_jcprofession_c_01.jpg"/>Viridium Staff of Alacrity</a>
+</td><td>25
+</td><td>-
+</td><td>-
+</td></tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=256254" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_2h_jcprofession_c_01.jpg"/>Rubellite Staff of Intuition</a>
+</td><td>25
+</td><td>-
+</td><td>-
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=256255" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_2h_jcprofession_c_01.jpg"/>Laribole Staff of Alacrity</a>
+</td><td>105
+</td><td>125
+</td><td>Zandalari Empire / Storm's Wake - Revered
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=256258" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_2h_jcprofession_c_01.jpg"/>Scarlet Diamond Staff of Intuition</a>
+</td><td>105
+</td><td>125
+</td><td>Zandalari Empire / Storm's Wake - Revered
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=269734" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_2h_jcprofession_c_01.jpg"/>Honorable Combatant's Intuitive Staff</a>
+</td><td>105
+</td><td>-
+</td><td>Rank 2 and 3 sold by <a href="https://www.wowhead.com/npc=142552" rel="nofollow">Ozgrom Ragefang</a> (Horde) / <a href="https://www.wowhead.com/npc=142564" rel="nofollow">Leedan Gustaf</a> (Alliance)
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=282343" rel="nofollow"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_2h_jcprofession_c_01.jpg"/>Sinister Combatant's Intuitive Staff</a>
+</td><td>115
+</td><td>-
+</td><td>Rank 2 and 3 sold by <a href="https://www.wowhead.com/npc=142552" rel="nofollow">Ozgrom Ragefang</a> (Horde) / <a href="https://www.wowhead.com/npc=142564" rel="nofollow">Leedan Gustaf</a> (Alliance)
+</td></tr>
+</tbody></table>
+</div>
+</article>
+</main>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>
