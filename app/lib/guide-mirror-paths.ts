@@ -71,7 +71,7 @@ export const GUIDE_MIRROR_PATHS: Partial<Record<ExpansionSlug, Partial<Record<Pr
     skinning: "mop/skinning-leveling-guide-mop-classic/index.html",
     tailoring: "mop/tailoring-leveling-guide-mop-classic/index.html",
   },
-  classic: {
+  "classic-era": {
     alchemy: "classic/alchemy-leveling-guide-classic-wow/index.html",
     blacksmithing: "classic/blacksmithing-leveling-guide-classic-wow/index.html",
     cooking: "classic/cooking-leveling-guide-classic-wow/index.html",

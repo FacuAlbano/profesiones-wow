@@ -2,7 +2,10 @@
 export const EXPANSION_SLUGS = [
   "the-war-within",
   "midnight",
-  "classic",
+  "classic-era",
+  "classic-hardcore",
+  "season-of-discovery",
+  "mop-classic",
   "the-burning-crusade",
   "wrath-of-the-lich-king",
   "cataclysm",
@@ -18,7 +21,10 @@ export type ExpansionSlug = (typeof EXPANSION_SLUGS)[number];
 export const EXPANSIONS = [
   { slug: "the-war-within" as const, name: "The War Within", short: "TWW", logo: "/images/logo-tww.png" },
   { slug: "midnight" as const, name: "Midnight", short: "Midnight", logo: "/images/logo-midnight.png" },
-  { slug: "classic" as const, name: "Classic", short: "Classic", logo: "/images/logo-classic.png" },
+  { slug: "classic-era" as const, name: "Classic Era", short: "Era", logo: "/images/logo-classic.png" },
+  { slug: "classic-hardcore" as const, name: "Hardcore", short: "HC", logo: "/images/logo-classic.png" },
+  { slug: "season-of-discovery" as const, name: "Season of Discovery", short: "SoD", logo: "/images/logo-classic.png" },
+  { slug: "mop-classic" as const, name: "MoP Classic", short: "MoP Classic", logo: "/images/logo-mop.png" },
   { slug: "the-burning-crusade" as const, name: "The Burning Crusade", short: "TBC", logo: "/images/logo-tbc.png" },
   { slug: "wrath-of-the-lich-king" as const, name: "Wrath of the Lich King", short: "WotLK", logo: "/images/logo-lk.png" },
   { slug: "cataclysm" as const, name: "Cataclysm", short: "Cata", logo: "/images/logo-cata.png" },

@@ -1,9 +1,15 @@
-import { Outlet, useLoaderData } from "react-router";
+import { Outlet, redirect, useLoaderData } from "react-router";
 import type { Route } from "./+types/expansion.$slug";
+import { classicHubRedirectFromPath } from "~/lib/classic-hub";
 import { EXPANSION_SLUGS, EXPANSIONS, EXPANSION_NAMES } from "~/lib/constants";
 
-export function loader({ params }: Route.LoaderArgs) {
+export function loader({ params, request }: Route.LoaderArgs) {
   const slug = params.slug;
+  const url = new URL(request.url);
+  const classicRedirect = classicHubRedirectFromPath(url.pathname, url.search);
+  if (classicRedirect) {
+    throw redirect(classicRedirect);
+  }
   if (!EXPANSION_SLUGS.includes(slug as (typeof EXPANSION_SLUGS)[number])) {
     throw new Response("Expansión no encontrada", { status: 404 });
   }

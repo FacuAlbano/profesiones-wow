@@ -134,39 +134,36 @@ export function AlchemyTBCGuide() {
           podés preguntarle a un guardia en cualquier ciudad por el instructor y te lo marca
           en el mapa.
         </p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Oficial, Experto y Artesano se aprenden en cualquier ciudad. A 300, las dos
+          facciones también pueden ir con <WowheadNpc npcKey="lorokeem" />.
+        </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Card className="card-faction border border-border">
             <CardContent className="p-4">
-              <h3 className="font-semibold text-foreground text-sm uppercase tracking-wider">Instructores clásicos (1-300)</h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                En Burning Crusade Classic puedes aprender Oficial, Experto y Artesano de Alquimia en cualquier ciudad. Ya no hace falta visitar instructores distintos.
-              </p>
-              <p className="mt-2 text-sm font-medium text-card-foreground">Horda:</p>
-              <ul className="mt-0.5 list-inside list-disc text-sm text-muted-foreground">
-                <li><WowheadNpc npcKey="camberon" /></li>
-                <li><WowheadNpc npcKey="benaWinterhoof" /></li>
-                <li><WowheadNpc npcKey="herbertHalsey" /></li>
-                <li><WowheadNpc npcKey="yelmak" /></li>
-              </ul>
-              <p className="mt-2 text-sm font-medium text-card-foreground">Alianza:</p>
-              <ul className="mt-0.5 list-inside list-disc text-sm text-muted-foreground">
-                <li><WowheadNpc npcKey="lucc" /></li>
-                <li><WowheadNpc npcKey="ainethil" /></li>
-                <li><WowheadNpc npcKey="lilyssiaNightbreeze" /></li>
-                <li><WowheadNpc npcKey="tallyBerryfizz" /></li>
+              <h3 className="font-semibold text-foreground text-sm uppercase tracking-wider">
+                Horda
+              </h3>
+              <ul className="mt-2 space-y-1 text-sm text-card-foreground">
+                <li>1-300: <WowheadNpc npcKey="yelmak" /></li>
+                <li>1-300: <WowheadNpc npcKey="benaWinterhoof" /></li>
+                <li>1-300: <WowheadNpc npcKey="herbertHalsey" /></li>
+                <li>1-300: <WowheadNpc npcKey="camberon" /></li>
+                <li>300-375: <WowheadNpc npcKey="apothecaryAntonivich" /></li>
               </ul>
             </CardContent>
           </Card>
           <Card className="card-faction border border-border">
             <CardContent className="p-4">
-              <h3 className="font-semibold text-foreground text-sm uppercase tracking-wider">Instructores TBC (300-375)</h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Puedes aprender la nueva Alquimia TBC con los instructores Maestros en Terrallende.
-              </p>
+              <h3 className="font-semibold text-foreground text-sm uppercase tracking-wider">
+                Alianza
+              </h3>
               <ul className="mt-2 space-y-1 text-sm text-card-foreground">
-                <li><strong>Ambas facciones:</strong> <WowheadNpc npcKey="lorokeem" /></li>
-                <li><strong>Horda:</strong> <WowheadNpc npcKey="apothecaryAntonivich" /></li>
-                <li><strong>Alianza:</strong> <WowheadNpc npcKey="alchemistGribble" /></li>
+                <li>1-300: <WowheadNpc npcKey="tallyBerryfizz" /></li>
+                <li>1-300: <WowheadNpc npcKey="lilyssiaNightbreeze" /></li>
+                <li>1-300: <WowheadNpc npcKey="ainethil" /></li>
+                <li>1-300: <WowheadNpc npcKey="lucc" /></li>
+                <li>300-375: <WowheadNpc npcKey="alchemistGribble" /></li>
               </ul>
             </CardContent>
           </Card>
@@ -248,10 +245,10 @@ export function AlchemyTBCGuide() {
       {/* Burning Crusade Classic (300-375) */}
       <section id="300-375" className="scroll-mt-24">
         <h2 className="guide-division font-heading text-xl font-semibold sm:text-2xl">
-          Burning Crusade Classic (300-375)
+          300-375
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Puedes aprender la nueva Alquimia TBC con los instructores Maestros en Terrallende.
+          Aprendé Alquimia de The Burning Crusade con los maestros de Terrallende.
         </p>
         <ul className="mt-1 list-inside list-disc text-sm text-muted-foreground">
           <li>Ambas facciones: <WowheadNpc npcKey="lorokeem" /></li>

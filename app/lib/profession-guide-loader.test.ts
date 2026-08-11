@@ -25,6 +25,22 @@ describe("loadProfessionGuidePage", () => {
     }
   });
 
+  it("redirige el hub classic a Classic Era", () => {
+    try {
+      loadProfessionGuidePage({
+        slug: "classic",
+        profSlug: "alchemy",
+      });
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(Response);
+      expect((error as Response).status).toBe(302);
+      expect((error as Response).headers.get("Location")).toBe(
+        "/expansion/classic-era/profesion/alchemy",
+      );
+    }
+  });
+
   it("redirige el segmento subida-de-nivel a la URL canónica", () => {
     try {
       loadProfessionGuidePage({
