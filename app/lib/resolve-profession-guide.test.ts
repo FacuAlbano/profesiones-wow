@@ -46,6 +46,38 @@ describe("resolveProfessionGuide", () => {
     });
   });
 
+  it.each([
+    ["alchemy", "alchemy-tww"],
+    ["blacksmithing", "blacksmithing-tww"],
+    ["enchanting", "enchanting-tww"],
+    ["engineering", "engineering-tww"],
+    ["leatherworking", "leatherworking-tww"],
+    ["tailoring", "tailoring-tww"],
+    ["herbalism", "herbalism-tww"],
+    ["mining", "mining-tww"],
+    ["skinning", "skinning-tww"],
+    ["cooking", "cooking-tww"],
+    ["jewelcrafting", "jewelcrafting-tww"],
+    ["fishing", "fishing-tww"],
+    ["inscription", "inscription-tww"],
+  ] as const)("resuelve %s The War Within como Subida de nivel nativa", (profession, nativeId) => {
+    expect(resolveProfessionGuide("the-war-within", profession)).toMatchObject({
+      kind: "nativa",
+      tipo: "subida-de-nivel",
+      path: `/expansion/the-war-within/profesion/${profession}`,
+      nativeId,
+    });
+  });
+
+  it("deja Recetas y conocimiento de Alquimia The War Within como vacío", () => {
+    expect(
+      resolveProfessionGuide("the-war-within", "alchemy", "recetas-y-conocimiento"),
+    ).toMatchObject({
+      kind: "vacio",
+      tipo: "recetas-y-conocimiento",
+    });
+  });
+
   it("deja Recetas y conocimiento de Herrería Midnight como vacío", () => {
     expect(
       resolveProfessionGuide("midnight", "blacksmithing", "recetas-y-conocimiento"),

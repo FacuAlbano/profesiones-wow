@@ -17,6 +17,9 @@ import {
 } from "~/components/guides/shadowlands-tailoring-guide";
 import { MIDNIGHT_SUBIDA_GUIDES } from "~/lib/midnight-subida-guides";
 import type { MidnightSubidaSpec } from "~/lib/midnight-subida-types";
+import { TwwSubidaGuide, twwSubidaIndex } from "~/components/guides/tww-subida-guide";
+import { TWW_SUBIDA_GUIDES } from "~/lib/tww-subida-guides";
+import type { TwwSubidaSpec } from "~/lib/tww-subida-types";
 
 export type NativeGuideView = {
   Guide: ComponentType;
@@ -32,6 +35,17 @@ function midnightSubidaView(spec: MidnightSubidaSpec): NativeGuideView {
     index: midnightSubidaIndex(spec),
     summary:
       "Subida de nivel 1-100 para Midnight. Lista de compras, entrenador y ruta por rangos.",
+  };
+}
+
+function twwSubidaView(spec: TwwSubidaSpec): NativeGuideView {
+  const cap = spec.ranges.at(-1)?.to ?? 100;
+  return {
+    Guide: function TwwNativeGuide() {
+      return <TwwSubidaGuide spec={spec} />;
+    },
+    index: twwSubidaIndex(spec),
+    summary: `Subida de nivel 1-${cap} para The War Within. Lista de compras, entrenador y ruta por rangos.`,
   };
 }
 
@@ -72,4 +86,17 @@ export const NATIVE_GUIDE_VIEWS: Record<NativeGuideId, NativeGuideView> = {
   "jewelcrafting-midnight": midnightSubidaView(MIDNIGHT_SUBIDA_GUIDES["jewelcrafting-midnight"]),
   "fishing-midnight": midnightSubidaView(MIDNIGHT_SUBIDA_GUIDES["fishing-midnight"]),
   "inscription-midnight": midnightSubidaView(MIDNIGHT_SUBIDA_GUIDES["inscription-midnight"]),
+  "alchemy-tww": twwSubidaView(TWW_SUBIDA_GUIDES["alchemy-tww"]),
+  "blacksmithing-tww": twwSubidaView(TWW_SUBIDA_GUIDES["blacksmithing-tww"]),
+  "enchanting-tww": twwSubidaView(TWW_SUBIDA_GUIDES["enchanting-tww"]),
+  "engineering-tww": twwSubidaView(TWW_SUBIDA_GUIDES["engineering-tww"]),
+  "leatherworking-tww": twwSubidaView(TWW_SUBIDA_GUIDES["leatherworking-tww"]),
+  "tailoring-tww": twwSubidaView(TWW_SUBIDA_GUIDES["tailoring-tww"]),
+  "herbalism-tww": twwSubidaView(TWW_SUBIDA_GUIDES["herbalism-tww"]),
+  "mining-tww": twwSubidaView(TWW_SUBIDA_GUIDES["mining-tww"]),
+  "skinning-tww": twwSubidaView(TWW_SUBIDA_GUIDES["skinning-tww"]),
+  "cooking-tww": twwSubidaView(TWW_SUBIDA_GUIDES["cooking-tww"]),
+  "jewelcrafting-tww": twwSubidaView(TWW_SUBIDA_GUIDES["jewelcrafting-tww"]),
+  "fishing-tww": twwSubidaView(TWW_SUBIDA_GUIDES["fishing-tww"]),
+  "inscription-tww": twwSubidaView(TWW_SUBIDA_GUIDES["inscription-tww"]),
 };

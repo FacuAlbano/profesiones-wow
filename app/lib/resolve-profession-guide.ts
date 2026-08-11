@@ -40,7 +40,20 @@ export type NativeGuideId =
   | "cooking-midnight"
   | "jewelcrafting-midnight"
   | "fishing-midnight"
-  | "inscription-midnight";
+  | "inscription-midnight"
+  | "alchemy-tww"
+  | "blacksmithing-tww"
+  | "enchanting-tww"
+  | "engineering-tww"
+  | "leatherworking-tww"
+  | "tailoring-tww"
+  | "herbalism-tww"
+  | "mining-tww"
+  | "skinning-tww"
+  | "cooking-tww"
+  | "jewelcrafting-tww"
+  | "fishing-tww"
+  | "inscription-tww";
 
 export type ProfessionPageResolution = {
   kind: ProfessionPageKind;
@@ -69,6 +82,19 @@ const NATIVE_SUBIDA: Record<string, NativeGuideId> = {
   "midnight:jewelcrafting": "jewelcrafting-midnight",
   "midnight:fishing": "fishing-midnight",
   "midnight:inscription": "inscription-midnight",
+  "the-war-within:alchemy": "alchemy-tww",
+  "the-war-within:blacksmithing": "blacksmithing-tww",
+  "the-war-within:enchanting": "enchanting-tww",
+  "the-war-within:engineering": "engineering-tww",
+  "the-war-within:leatherworking": "leatherworking-tww",
+  "the-war-within:tailoring": "tailoring-tww",
+  "the-war-within:herbalism": "herbalism-tww",
+  "the-war-within:mining": "mining-tww",
+  "the-war-within:skinning": "skinning-tww",
+  "the-war-within:cooking": "cooking-tww",
+  "the-war-within:jewelcrafting": "jewelcrafting-tww",
+  "the-war-within:fishing": "fishing-tww",
+  "the-war-within:inscription": "inscription-tww",
 };
 
 function nativeKey(expansion: ExpansionSlug, profession: ProfessionSlug): string {

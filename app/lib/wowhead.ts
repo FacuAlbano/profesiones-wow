@@ -6,7 +6,7 @@
 const WOWHEAD_BASE_ES = "https://es.wowhead.com";
 const WOW_ZAMIMG_ICONS = "https://wow.zamimg.com/images/wow/icons/small";
 
-export type WowheadGame = "tbc" | "classic" | "shadowlands" | "midnight";
+export type WowheadGame = "tbc" | "classic" | "shadowlands" | "the-war-within" | "midnight";
 
 export type WowheadEntityTipo =
   | "objeto"

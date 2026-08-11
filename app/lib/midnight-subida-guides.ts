@@ -1,10 +1,12 @@
 import type { NativeGuideId } from "~/lib/resolve-profession-guide";
 import type { MidnightSubidaSpec } from "~/lib/midnight-subida-types";
 
-export const MIDNIGHT_SUBIDA_GUIDES: Record<
-  Exclude<NativeGuideId, "alchemy-tbc" | "alchemy-midnight" | "herbalism-tbc" | "tailoring-shadowlands">,
-  MidnightSubidaSpec
-> = {
+type MidnightCatalogId = Exclude<
+  Extract<NativeGuideId, `${string}-midnight`>,
+  "alchemy-midnight"
+>;
+
+export const MIDNIGHT_SUBIDA_GUIDES: Record<MidnightCatalogId, MidnightSubidaSpec> = {
   "blacksmithing-midnight": {
     slug: "blacksmithing",
     nativeId: "blacksmithing-midnight",
