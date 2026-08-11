@@ -1,8 +1,21 @@
+import type { ComponentProps } from "react";
 import { Link } from "react-router";
 import { Card, CardContent } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
-import { WowheadItem } from "~/components/wowhead-item";
-import { WowheadNpc } from "~/components/wowhead-npc";
+import { WowheadItem as WowheadItemBase } from "~/components/wowhead-item";
+import { WowheadNpc as WowheadNpcBase } from "~/components/wowhead-npc";
+import { ALCHEMY_TBC_MATERIALS } from "~/lib/alchemy-tbc-materials";
+import { ALCHEMY_TBC_NPCS } from "~/lib/alchemy-tbc-npcs";
+
+function WowheadItem(
+  props: Omit<ComponentProps<typeof WowheadItemBase>, "materials" | "game">,
+) {
+  return <WowheadItemBase materials={ALCHEMY_TBC_MATERIALS} game="tbc" {...props} />;
+}
+
+function WowheadNpc(props: Omit<ComponentProps<typeof WowheadNpcBase>, "npcs" | "game">) {
+  return <WowheadNpcBase npcs={ALCHEMY_TBC_NPCS} game="tbc" {...props} />;
+}
 
 /** Secciones para el índice de la guía (igual que wow-professions: Table of Contents) */
 export const ALCHEMY_TBC_INDEX = [

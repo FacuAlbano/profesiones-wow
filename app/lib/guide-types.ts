@@ -1,6 +1,6 @@
 /**
  * Tipos compartidos para guías: materiales (items) y NPCs.
- * Cada guía puede definir su propio registro y pasarlo a WowheadItem / WowheadNpc.
+ * Cada guía define su registro y lo pasa a WowheadItem / WowheadNpc (sin default de Alquimia TBC).
  */
 
 export type MaterialEntry = {

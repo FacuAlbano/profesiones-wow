@@ -1,39 +1,30 @@
-import { cn } from "~/lib/utils";
-import { wowheadNpcUrl } from "~/lib/wowhead";
 import type { NpcEntry } from "~/lib/guide-types";
-import type { NpcKey } from "~/lib/alchemy-tbc-npcs";
-import { ALCHEMY_TBC_NPCS } from "~/lib/alchemy-tbc-npcs";
+import type { WowheadGame } from "~/lib/wowhead";
+import { WowheadEntityLink } from "~/components/wowhead-entity";
 
 type WowheadNpcProps = {
-  /** Clave del NPC en el registro de NPCs */
   npcKey: string;
+  npcs: Record<string, NpcEntry>;
   className?: string;
-  /** Registro de NPCs (por defecto: Alquimia TBC). Usar en otras guías. */
-  npcs?: Record<string, NpcEntry>;
-  /** Juego para enlace Wowhead */
-  game?: "tbc" | "classic";
+  game?: WowheadGame;
 };
 
 /**
- * Enlace a Wowhead (español) con el nombre del NPC en español (MX).
+ * NPC de un registro de guía → entidad Wowhead.
  */
-export function WowheadNpc({ npcKey, className, npcs = ALCHEMY_TBC_NPCS, game = "tbc" }: WowheadNpcProps) {
-  const npc = npcs[npcKey] ?? (ALCHEMY_TBC_NPCS as Record<string, NpcEntry>)[npcKey];
+export function WowheadNpc({ npcKey, npcs, className, game = "tbc" }: WowheadNpcProps) {
+  const npc = npcs[npcKey];
   if (!npc) return null;
-
-  const href = wowheadNpcUrl(npc.npcId, game);
 
   const label = npc.location ? `${npc.name} ${npc.location}` : npc.name;
 
   return (
-    <a
-      href={href}
-      rel="nofollow"
-      target="_blank"
-      className={cn("no-icon link-faction", className)}
+    <WowheadEntityLink
+      entity={{ tipo: "npc", id: npc.npcId, juego: game }}
       title={label}
+      className={className}
     >
       {label}
-    </a>
+    </WowheadEntityLink>
   );
 }
