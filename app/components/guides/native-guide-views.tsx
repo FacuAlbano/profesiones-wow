@@ -23,7 +23,7 @@ export const NATIVE_GUIDE_VIEWS: Record<NativeGuideId, NativeGuideView> = {
     Guide: AlchemyTBCGuide,
     index: ALCHEMY_TBC_INDEX,
     summary:
-      "Guía de nivelado 1-375 para TBC Classic. Lista de compras, instructores y pasos por rangos.",
+      "Subida de nivel 1-375 para The Burning Crusade. Lista de compras, entrenadores y ruta por rangos.",
   },
   "alchemy-midnight": {
     Guide: AlchemyMidnightGuide,
