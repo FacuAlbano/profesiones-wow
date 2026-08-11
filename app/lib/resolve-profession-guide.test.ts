@@ -24,6 +24,37 @@ describe("resolveProfessionGuide", () => {
     });
   });
 
+  it.each([
+    ["blacksmithing", "blacksmithing-midnight"],
+    ["enchanting", "enchanting-midnight"],
+    ["engineering", "engineering-midnight"],
+    ["leatherworking", "leatherworking-midnight"],
+    ["tailoring", "tailoring-midnight"],
+    ["herbalism", "herbalism-midnight"],
+    ["mining", "mining-midnight"],
+    ["skinning", "skinning-midnight"],
+    ["cooking", "cooking-midnight"],
+    ["jewelcrafting", "jewelcrafting-midnight"],
+    ["fishing", "fishing-midnight"],
+    ["inscription", "inscription-midnight"],
+  ] as const)("resuelve %s Midnight como Subida de nivel nativa", (profession, nativeId) => {
+    expect(resolveProfessionGuide("midnight", profession)).toMatchObject({
+      kind: "nativa",
+      tipo: "subida-de-nivel",
+      path: `/expansion/midnight/profesion/${profession}`,
+      nativeId,
+    });
+  });
+
+  it("deja Recetas y conocimiento de Herrería Midnight como vacío", () => {
+    expect(
+      resolveProfessionGuide("midnight", "blacksmithing", "recetas-y-conocimiento"),
+    ).toMatchObject({
+      kind: "vacio",
+      tipo: "recetas-y-conocimiento",
+    });
+  });
+
   it("deja Recetas y conocimiento de Alquimia Midnight como vacío", () => {
     expect(
       resolveProfessionGuide("midnight", "alchemy", "recetas-y-conocimiento"),

@@ -8,15 +8,32 @@ import {
 import { AlchemyTBCGuide, ALCHEMY_TBC_INDEX } from "~/components/guides/alchemy-tbc-guide";
 import { HerbalismTBCGuide, HERBALISM_TBC_INDEX } from "~/components/guides/herbalism-tbc-guide";
 import {
+  MidnightSubidaGuide,
+  midnightSubidaIndex,
+} from "~/components/guides/midnight-subida-guide";
+import {
   ShadowlandsTailoringGuide,
   SHADOWLANDS_TAILORING_INDEX,
 } from "~/components/guides/shadowlands-tailoring-guide";
+import { MIDNIGHT_SUBIDA_GUIDES } from "~/lib/midnight-subida-guides";
+import type { MidnightSubidaSpec } from "~/lib/midnight-subida-types";
 
 export type NativeGuideView = {
   Guide: ComponentType;
   index: GuideIndexSection[];
   summary: string;
 };
+
+function midnightSubidaView(spec: MidnightSubidaSpec): NativeGuideView {
+  return {
+    Guide: function MidnightNativeGuide() {
+      return <MidnightSubidaGuide spec={spec} />;
+    },
+    index: midnightSubidaIndex(spec),
+    summary:
+      "Subida de nivel 1-100 para Midnight. Lista de compras, entrenador y ruta por rangos.",
+  };
+}
 
 export const NATIVE_GUIDE_VIEWS: Record<NativeGuideId, NativeGuideView> = {
   "alchemy-tbc": {
@@ -43,4 +60,16 @@ export const NATIVE_GUIDE_VIEWS: Record<NativeGuideId, NativeGuideView> = {
     summary:
       "Resumen de Sastrería en Shadowlands: instructor, materiales, bases legendarias, armaduras y bolsas en español.",
   },
+  "blacksmithing-midnight": midnightSubidaView(MIDNIGHT_SUBIDA_GUIDES["blacksmithing-midnight"]),
+  "enchanting-midnight": midnightSubidaView(MIDNIGHT_SUBIDA_GUIDES["enchanting-midnight"]),
+  "engineering-midnight": midnightSubidaView(MIDNIGHT_SUBIDA_GUIDES["engineering-midnight"]),
+  "leatherworking-midnight": midnightSubidaView(MIDNIGHT_SUBIDA_GUIDES["leatherworking-midnight"]),
+  "tailoring-midnight": midnightSubidaView(MIDNIGHT_SUBIDA_GUIDES["tailoring-midnight"]),
+  "herbalism-midnight": midnightSubidaView(MIDNIGHT_SUBIDA_GUIDES["herbalism-midnight"]),
+  "mining-midnight": midnightSubidaView(MIDNIGHT_SUBIDA_GUIDES["mining-midnight"]),
+  "skinning-midnight": midnightSubidaView(MIDNIGHT_SUBIDA_GUIDES["skinning-midnight"]),
+  "cooking-midnight": midnightSubidaView(MIDNIGHT_SUBIDA_GUIDES["cooking-midnight"]),
+  "jewelcrafting-midnight": midnightSubidaView(MIDNIGHT_SUBIDA_GUIDES["jewelcrafting-midnight"]),
+  "fishing-midnight": midnightSubidaView(MIDNIGHT_SUBIDA_GUIDES["fishing-midnight"]),
+  "inscription-midnight": midnightSubidaView(MIDNIGHT_SUBIDA_GUIDES["inscription-midnight"]),
 };
