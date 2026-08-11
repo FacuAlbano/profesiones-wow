@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="This WotLK Classic Enchanting Leveling Guide will show you the fastest and easiest way to level your Enchanting skill up from 1 to 450 in Wrath of the Lich King Classic." name="description"/>
+<meta content="WotLK Classic Enchanting Leveling Guide 1-450" property="og:title"/>
+<meta content="This WotLK Classic Enchanting Leveling Guide will show you the fastest and easiest way to level your Enchanting skill up from 1 to 450 in Wrath of the Lich King Classic." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/wotlk/enchanting-leveling-guide-wotlk-classic" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>WotLK Classic Enchanting Leveling Guide 1-450</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=sjafTcoVsEx_7s2rjTA3eyzpBKBnQVPTcTboRNsAciE-1771997349.9288733-1.0.1.1-BJtJF.p67rt97fA9JWmW1VSwtnax9UhWxmSG1sSgYrg" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--4">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#mats">Shopping List</a></li>
+<li><a href="#enchanting-trainers">Enchanting Trainers</a></li>
+<li><a href="#apprentice-enchanting">1-50</a></li>
+<li><a href="#journeyman-enchanting">50-135</a></li>
+<li><a href="#expert-enchanting">135-225</a></li>
+<li><a href="#artisan-enchanting">225-300</a></li>
+<li><a href="#master-enchanting">300-350</a></li>
+<li><a href="#grand-master-enchanting">350-450</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">WotLK Classic Enchanting Leveling Guide 1-450</h1>
+<article>
+<p><a name="top"></a><img align="left" height="64" src="../../images/icons/professions/enchanting.png" style="margin-right: 8px;" width="64"/>This WotLK Classic Enchanting Leveling Guide will show you the fastest and easiest way to level your Enchanting skill up from 1 to 450 in Wrath of the Lich King Classic.</p>
+<p class="zygor">I recommend trying <a href="../../recommends/zygor-wotlk/index.html">Zygor's 1-80 Leveling Guide</a> if you are still leveling your character or you just started a new alt. The guide will help you to reach level 80 a lot faster.</p>
+<h2 class="gtitle" id="mats">Shopping List</h2>
+<p>This is the list of the approximate materials required to level Enchanting up to 450.</p>
+<div class="row guidegrid">
+<div class="col-xs-12 col-sm-12 col-md-6 guiderow">
+<h4>Classic (1-300)</h4>
+<ul>
+<li>125x <a class="white" href="https://www.wowhead.com/wotlk/item=10940" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_duststrange.jpg"/>Strange Dust</a></li>
+<li>1x <a class="zold" href="https://www.wowhead.com/wotlk/item=10938" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_essencemagicsmall.jpg"/>Lesser Magic Essence</a></li>
+<li>12x <a class="zold" href="https://www.wowhead.com/wotlk/item=10939" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_essencemagiclarge.jpg"/>Greater Magic Essence</a></li>
+<li>25x <a class="zold" href="https://www.wowhead.com/wotlk/item=10998" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_essenceastralsmall.jpg"/>Lesser Astral Essence</a></li>
+<li>130x <a class="white" href="https://www.wowhead.com/wotlk/item=11083" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_dustsoul.jpg"/>Soul Dust</a></li>
+<li>2x <a class="zold" href="https://www.wowhead.com/wotlk/item=11082" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_essenceastrallarge.jpg"/>Greater Astral Essence</a></li>
+<li>240x <a class="white" href="https://www.wowhead.com/wotlk/item=11137" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_dustvision.jpg"/>Vision Dust</a></li>
+<li>2x <a class="zold" href="https://www.wowhead.com/wotlk/item=11135" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_essencemysticallarge.jpg"/>Greater Mystic Essence</a></li>
+<li>5x <a class="zold" href="https://www.wowhead.com/wotlk/item=11174" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_essencenethersmall.jpg"/>Lesser Nether Essence</a></li>
+<li>195x <a class="white" href="https://www.wowhead.com/wotlk/item=11176" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_dustdream.jpg"/>Dream Dust</a></li>
+<li>40x <a class="white" href="https://www.wowhead.com/wotlk/item=8831" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_17.jpg"/>Purple Lotus</a></li>
+<li>82x <a class="white" href="https://www.wowhead.com/wotlk/item=16204" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_dustillusion.jpg"/>Illusion Dust</a></li>
+<li>4x <a class="zold" href="https://www.wowhead.com/wotlk/item=16203" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_essenceeternallarge.jpg"/>Greater Eternal Essence</a></li>
+<li>2x <a class="rare" href="https://www.wowhead.com/wotlk/item=14344" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_shardbrilliantlarge.jpg"/>Large Brilliant Shard</a></li>
+<li>1x <a class="white" href="https://www.wowhead.com/wotlk/item=6217" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_flute_01.jpg"/>Copper Rod</a></li>
+<li>1x <a class="white" href="https://www.wowhead.com/wotlk/item=6338" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_01.jpg"/>Silver Rod</a></li>
+<li>1x <a class="white" href="https://www.wowhead.com/wotlk/item=11128" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_10.jpg"/>Golden Rod</a></li>
+<li>1x <a class="zold" href="https://www.wowhead.com/wotlk/item=5500" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_pearl_02.jpg"/>Iridescent Pearl</a></li>
+<li>1x <a class="white" href="https://www.wowhead.com/wotlk/item=11144" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_11.jpg"/>Truesilver Rod</a></li>
+<li>1x <a class="zold" href="https://www.wowhead.com/wotlk/item=7971" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_pearl_01.jpg"/>Black Pearl</a></li>
+<li>1x <a class="white" href="https://www.wowhead.com/wotlk/item=16206" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_19.jpg"/>Arcanite Rod</a></li>
+<li>1x <a class="zold" href="https://www.wowhead.com/wotlk/item=13926" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_pearl_04.jpg"/>Golden Pearl</a></li>
+</ul>
+</div>
+<div class="col-xs-12 col-sm-12 col-md-6 guiderow">
+<h4>TBC (300-350)</h4>
+<ul>
+<li>4x <a class="zold" href="https://www.wowhead.com/wotlk/item=16203" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_essenceeternallarge.jpg"/>Greater Eternal Essence</a></li>
+<li>6x <a class="rare" href="https://www.wowhead.com/wotlk/item=14344" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_shardbrilliantlarge.jpg"/>Large Brilliant Shard</a></li>
+<li>1x <a class="white" href="https://www.wowhead.com/wotlk/item=25843" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_rod_felsteel.jpg"/>Fel Iron Rod</a></li>
+<li>350x <a class="white" href="https://www.wowhead.com/wotlk/item=22445" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_dustarcane.jpg"/>Arcane Dust</a></li>
+<li>20x <a class="zold" href="https://www.wowhead.com/wotlk/item=22447" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_essencearcanesmall.jpg"/>Lesser Planar Essence</a></li>
+<li>14x <a class="zold" href="https://www.wowhead.com/wotlk/item=22446" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_essencearcanelarge.jpg"/>Greater Planar Essence</a></li>
+<li>15x <a class="white" href="https://www.wowhead.com/wotlk/item=22792" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_nightmarevine.jpg"/>Nightmare Vine</a></li>
+<li>13x <a class="rare" href="https://www.wowhead.com/wotlk/item=22449" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_shardprismaticlarge.jpg"/>Large Prismatic Shard</a></li>
+<li>1x <a class="white" href="https://www.wowhead.com/wotlk/item=25844" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_rod_adamantite.jpg"/>Adamantite Rod</a></li>
+<li>1x <a class="rare" href="https://www.wowhead.com/wotlk/item=23571" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_nature_lightningoverload.jpg"/>Primal Might</a></li>
+<li>1x <a class="rare" href="https://www.wowhead.com/wotlk/item=25845" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_rod_eternium.jpg"/>Eternium Rod</a></li>
+</ul>
+<h4>WotLK (350-450)</h4>
+<ul>
+<li>742x <a class="white" href="https://www.wowhead.com/item=34054" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_dust_infinite.jpg"/>Infinite Dust</a></li>
+<li>27x <a class="zold" href="https://www.wowhead.com/item=34055" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_essencecosmicgreater.jpg"/>Greater Cosmic Essence</a></li>
+<li>40x <a class="rare" href="https://www.wowhead.com/item=34052" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_dreamshard_02.jpg"/>Dream Shard</a></li>
+<li>134x <a class="zold" href="https://www.wowhead.com/item=35624" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_eternal_earth.jpg"/>Eternal Earth</a></li>
+<li>10x <a class="white" href="https://www.wowhead.com/item=37705" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_crystal_water.jpg"/>Crystallized Water</a></li>
+<li>1x <a class="white" href="https://www.wowhead.com/item=41745" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_rod_platinum.jpg"/>Titanium Rod</a></li>
+<li>5-10x <a class="epic" href="https://www.wowhead.com/wotlk/item=34057" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_abysscrystal.jpg"/>Abyss Crystal</a></li>
+</ul>
+</div>
+</div>
+<p>For more information on Disenchanting results, check out the disenchanting tables I put together:</p>
+<p class="text-align-center"><a class="gblock" href="../../wotlk/disenchanting-tables-wotlk-classic/index.html"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_disenchant.jpg"/>Disenchanting Tables for WotLK Classic</a></p>
+<h2 class="gtitle" id="enchanting-trainers">Enchanting Trainers</h2>
+<h4>Classic Trainers (1-300)</h4>
+<div class="row guidegrid">
+<div class="col-xs-12 col-sm-12 col-md-6 guiderow">
+<p><b>Horde trainers:</b></p>
+<ul>
+<li><a href="https://tbc.wowhead.com/npc=3345" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Godan</a> in Orgrimmar.</li>
+<li><a href="https://tbc.wowhead.com/npc=4616" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Lavinia Crowe</a> in Undercity.</li>
+<li><a href="https://tbc.wowhead.com/npc=3011" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Teg Dawnstrider</a> in Thunder Bluff.</li>
+<li><a href="https://tbc.wowhead.com/npc=5695" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Vance Undergloom</a> in Tirisfal Glades at Brill.</li>
+<li><a href="https://www.wowhead.com/npc=16633" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Sedana</a> in Silvermoon City.</li>
+</ul>
+</div>
+<div class="col-xs-12 col-sm-12 col-md-6 guiderow">
+<p><b>Alliance trainers:</b></p>
+<ul>
+<li><a href="https://tbc.wowhead.com/npc=1317" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Lucan Cordell</a> in Stormwind City.</li>
+<li><a href="https://tbc.wowhead.com/npc=5157" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Gimble Thistlefuzz</a> in Ironforge.</li>
+<li><a href="https://tbc.wowhead.com/npc=4213" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Taladan</a> in Darnassus</li>
+<li><a href="https://tbc.wowhead.com/npc=3606" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Alanna Raveneye</a> in Teldrassil.</li>
+<li><a href="https://www.wowhead.com/npc=16725" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Nahogg</a> in The Exodar.</li>
+</ul>
+</div>
+</div>
+<h4>WotLK Trainers (300-450)</h4>
+<p>You can learn the new WotLK Classic Enchanting skill from these NPCS:</p>
+<div class="row guidegrid">
+<div class="col-xs-12 col-sm-12 col-md-6 guiderow">
+<p><b>Horde:</b></p>
+<ul>
+<li><a href="https://www.wowhead.com/npc=26954" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Emil Autumn</a> in Howling Fjord.</li>
+<li><a href="https://www.wowhead.com/npc=26980" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Eorain Dawnstrike</a> in Borean Tundra</li>
+</ul>
+</div>
+<div class="col-xs-12 col-sm-12 col-md-6 guiderow">
+<p><b>Alliance:</b></p>
+<ul>
+<li><a href="https://www.wowhead.com/npc=26906" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Elizabeth Jackson</a> in Howling Fjord.</li>
+<li><a href="https://www.wowhead.com/npc=26990" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Alexis Marlowe</a> in Borean Tundra</li>
+</ul>
+</div>
+</div>
+<p>Both factions can also learn it from <a href="https://www.wowhead.com/npc=93531" rel="nofollow noopener noreferrer" target="_blank">Enchanter Nalthanis</a> at Dalaran.</p>
+<h2 class="gtitle" id="apprentice-enchanting">Leveling WotLK Enchanting</h2>
+<h3 class="gdskill">1 - 50</h3>
+<p><b>Blood Elf </b>characters have +10 Enchanting skill because of their passive <a class="white" href="https://www.wowhead.com/wotlk/spell=28877" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_shardglimmeringlarge.jpg"/>Arcane Affinity</a>. An extra 10 Enchanting skill means recipes stay orange for 10 more points, so you can save a lot of gold by doing lower level recipes for 10 more points.</p>
+<ul class="gd">
+<li><b>1-2</b><br/>
+	1x <a class="white" href="https://www.wowhead.com/wotlk/spell=7421" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_goldfeathered_01.jpg"/>Runed Copper Rod</a> - 1 Copper Rod, 1 Strange Dust, 1 Lesser Magic Essence
+<p><a class="white" href="https://www.wowhead.com/wotlk/item=6217" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_flute_01.jpg"/>Copper Rod</a> is sold by Trade Good, Trade Supply, and Enchanting Supply vendors, don't buy the rod from the Auction House. The vendors are usually near your trainer somewhere.</p>
+</li></ul>
+<ul class="gd">
+<li><b>2-50</b><br/>
+	Disenchant green quality items or make the following:
+	<p>48x <a class="white" href="https://www.wowhead.com/wotlk/spell=7418" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Enchant Bracer: Minor Health</a> - 48 Strange Dust</p>
+</li>
+</ul>
+<h2 class="gtitle" id="journeyman-enchanting">Journeyman Enchanting</h2>
+<p>Visit your trainer and learn Journeyman Enchanting. (Requires level 10)</p>
+<h3 class="gdskill">50 - 135</h3>
+<ul class="gd">
+<li><b>50-90</b><br/>
+	40x <a class="white" href="https://www.wowhead.com/wotlk/spell=7418" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Enchant Bracer: Minor Health</a> - 40 Strange Dust
+<p>If Strange Dust is cheap and Greater Magic Essence is expensive on your realm, you can make this Enchant up to 120.</p>
+</li></ul>
+<ul class="gd">
+<li><b>90-100</b><br/>
+	10x <a class="white" href="https://www.wowhead.com/wotlk/spell=7457" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Enchant Bracer: Minor Stamina</a> - 30 Strange Dust</li>
+</ul>
+<ul class="gd">
+<li><b>100-101</b><br/>
+	1x <a class="white" href="https://www.wowhead.com/wotlk/spell=7795" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_01.jpg"/>Runed Silver Rod</a> - 1 Silver Rod, 6 Strange Dust, 3 Greater Magic Essence</li>
+</ul>
+<ul class="gd">
+<li><b>101-110</b><br/>
+	9x <a class="zold" href="https://www.wowhead.com/wotlk/item=11288" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_07.jpg"/>Greater Magic Wand</a> - 9 Simple Wood, 9 Greater Magic Essence</li>
+</ul>
+<ul class="gd">
+<li><b>110-135</b>
+<p>Buy these two recipes <a class="zold" href="https://www.wowhead.com/wotlk/item=11101" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_note_01.jpg"/>Formula: Enchant Bracer - Lesser Strength</a>, <a class="zold" href="https://www.wowhead.com/wotlk/item=11039" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_note_01.jpg"/>Formula: Enchant Cloak - Minor Agility</a> from <a href="https://tbc.wowhead.com/npc=12043" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Kulwia</a> (Horde) in Stonetalon Mountains, or from <a href="https://tbc.wowhead.com/npc=3954" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Dalria</a> (Alliance) in Ashenvale.</p><p>These are limited supply recipes. If someone bought them before you, then you have to wait for it to respawn. I don't know the exact respawn timer, but it's between 30-50 min. (or just buy them from the Auction House)</p><p>25x <a class="white" href="https://www.wowhead.com/wotlk/spell=13419" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Enchant Cloak: Minor Agility</a> - 25 Lesser Astral Essence</p><p><b>Alternative</b></p><p>Make the recipe below if Astral essence is expensive on your realm and you can find cheap Small Glimmering Shards.</p><p>28x <a class="white" href="https://www.wowhead.com/wotlk/spell=7745" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Enchant 2H Weapon - Minor Impact</a> - 112 Strange Dust, 28 Small Glimmering Shard</p>
+</li></ul>
+<h2 class="gtitle" id="expert-enchanting">Expert Enchanting</h2>
+<p>Visit your trainer and learn Expert Enchanting. (Requires level 20)</p>
+<h3 class="gdskill">135 - 225</h3>
+<ul class="gd">
+<li><b>135-155</b><br/>
+	20x <a class="white" href="https://www.wowhead.com/wotlk/spell=13501" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Enchant Bracer - Lesser Stamina</a> - 40 Soul Dust</li>
+</ul>
+<ul class="gd">
+<li><b>155-156</b><br/>
+	1x <a class="white" href="https://www.wowhead.com/wotlk/spell=13628" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_10.jpg"/>Runed Golden Rod</a> - 1 Golden Rod, 1 Iridescent Pearl, 2 Greater Astral Essence, 2 Soul Dust</li>
+</ul>
+<ul class="gd">
+<li><b>156-185</b><br/>
+	40x <a class="white" href="https://www.wowhead.com/wotlk/spell=13536" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Enchant Bracer - Lesser Strength</a> - 80 Soul Dust
+<p>Check the "110-135" step for recipe location.</p><p>If 2 Soul Dust is a lot more expensive than 1 Lesser Mystic Essence then from 165 switch to this recipe:</p><ul>
+<li><b>165-185</b><br/>
+20x <a class="white" href="https://www.wowhead.com/wotlk/spell=13642"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Enchant Bracer: Spirit</a> - 20 Lesser Mystic Essence</li>
+</ul>
+</li></ul>
+<ul class="gd">
+<li><b>185-200</b><br/>
+	15x <a class="white" href="https://www.wowhead.com/wotlk/spell=13661" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Enchant Bracer: Strength</a> - 15 Vision Dust</li>
+</ul>
+<ul class="gd">
+<li><b>200-201</b><br/>
+	1x <a class="white" href="https://www.wowhead.com/wotlk/spell=13702" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_11.jpg"/>Runed Truesilver Rod</a> - 1 Truesilver Rod, 1 Black Pearl, 2 Greater Mystic Essence, 2 Vision Dust</li>
+</ul>
+<ul class="gd">
+<li><b>201-220</b><br/>
+	25x <a class="white" href="https://www.wowhead.com/wotlk/spell=13661" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Enchant Bracer: Strength</a> - 25 Vision Dust
+<p>The enchant will be yellow, so you should buy enough dust to make it around 25 times.</p>
+</li></ul>
+<ul class="gd">
+<li><b>220-225</b><br/>
+	5x <a class="white" href="https://www.wowhead.com/wotlk/spell=13746" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Enchant Cloak: Greater Defense</a> - 15 Vision Dust</li>
+</ul>
+<h2 class="gtitle" id="artisan-enchanting">Artisan Enchanting</h2>
+<p>Visit your trainer and learn Artisan Enchanting. (Requires level 35)</p>
+<h3 class="gdskill">225 - 300</h3>
+<ul class="gd">
+<li><b>225-230</b><br/>
+	5x <a class="white" href="https://www.wowhead.com/wotlk/spell=13815" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Enchant Gloves: Agility</a> - 5 Lesser Nether Essence, 5 Vision Dust
+<p>Make <a class="white" href="https://www.wowhead.com/wotlk/spell=13746" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Enchant Cloak: Greater Defense</a>, if you don't have Lesser Nether Essence.</p>
+</li></ul>
+<ul class="gd">
+<li><b>230-235</b><br/>
+	5x <a class="white" href="https://www.wowhead.com/wotlk/spell=13836" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Enchant Boots - Stamina</a> - 25 Vision Dust</li>
+</ul>
+<ul class="gd">
+<li><b>235-250</b><br/>
+	25x <a class="white" href="https://www.wowhead.com/wotlk/spell=13858" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Enchant Chest: Superior Health</a> - 150 Vision Dust</li>
+</ul>
+<p>Try to hunt for <a class="zold" href="https://www.wowhead.com/wotlk/item=11225" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_note_01.jpg"/>Formula: Enchant Bracer - Greater Stamina</a> at the Auction House. It's a random world drop, but this recipe is the best to level Enchanting from 245 to 265 or even 285.</p>
+<ul class="gd">
+<li><b>250-265</b><br/>
+	20x <a class="white" href="https://www.wowhead.com/wotlk/spell=25127" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_99.jpg"/>Lesser Mana Oil</a> - 60 Dream Dust, 40 Purple Lotus, 20 Crystal Vial
+<p>You can make this one up to 270 if you can get cheap purple lotus.</p><p><a href="https://tbc.wowhead.com/npc=15419" rel="nofollow noopener noreferrer" target="_blank">Kania</a> sells the <a class="white" href="https://www.wowhead.com/wotlk/item=20754" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_note_01.jpg"/>Formula: Lesser Mana Oil</a> in Silithus. She is upstairs in the Inn.</p>
+</li></ul>
+<ul class="gd">
+<li><b>265-290</b><br/>
+	27x <a class="white" href="https://www.wowhead.com/wotlk/spell=20017" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Enchant Shield: Greater Stamina</a> - 135 Dream Dust
+<p>The recipe is sold by <a href="https://tbc.wowhead.com/npc=4561" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Daniel Bartlett</a> at Undercity, and by <a href="https://tbc.wowhead.com/npc=4229" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Mythrin'dir</a> at Darnassus.</p><p><b>IMPORTANT!</b> The recipe binds when picked up! Don't make the mistake of trying to buy it with an alt and mail it. It's also limited in supply, this means you have to wait if someone bought it before you. </p>
+</li></ul>
+<ul class="gd">
+<li><b>290-299</b><br/>
+	9x <a class="white" href="https://www.wowhead.com/wotlk/spell=20028" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_formulagood_01.jpg"/>Enchant Chest - Major Mana</a> - 72 Illusion Dust
+<p>You can continue to make <a class="white" href="https://www.wowhead.com/wotlk/spell=20017" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Enchant Shield: Greater Stamina</a> if you have a lot of dream dust, or if Illusion Dust is really expensive.</p>
+</li></ul>
+<ul class="gd">
+<li><b>299-300</b><br/>
+	1x <a class="white" href="https://www.wowhead.com/wotlk/spell=20051" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_wand_09.jpg"/>Runed Arcanite Rod</a> - 1 Arcanite Rod, 1 Golden Pearl, 10 Illusion Dust, 4 Greater Eternal Essence, 2 Large Brilliant Shard
+<p><a class="white" href="https://www.wowhead.com/wotlk/item=16243" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_note_01.jpg"/>Formula: Runed Arcanite Rod</a> is sold by <a href="https://tbc.wowhead.com/npc=12022" rel="nofollow noopener noreferrer" target="_blank">Lorelae Wintersong</a> in Moonglade at Nighthaven.</p>
+</li></ul>
+<h2 class="gtitle" id="master-enchanting">Burning Crusade Classic (300-350)</h2>
+<p>Visit one of the trainers at Outland and learn Master Enchanting. (Requires level 50)</p>
+<ul>
+<li><b>Shattrath City: </b><a href="https://www.wowhead.com/wotlk/npc=33633" rel="nofollow noopener noreferrer" target="_blank">Enchantress Andiala</a> (The Scryers) or <a href="https://www.wowhead.com/wotlk/npc=33676" rel="nofollow noopener noreferrer" target="_blank">Zurii</a> (The Aldor)</li>
+<li><b>Hellfire Peninsula: </b><a href="https://www.wowhead.com/wotlk/npc=18753" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Felannia</a> (Horde) and <a href="https://www.wowhead.com/wotlk/npc=18773" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Johan Barnes</a> (Alliance)</li>
+</ul>
+<h3 class="gdskill">300 - 310</h3>
+<ul>
+<li>
+<p>1x <a class="white" href="https://www.wowhead.com/wotlk/spell=32664" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_rod_enchantedfelsteel.jpg"/>Runed Fel Iron Rod</a> - 1 Fel Iron Rod, 4 Greater Eternal Essence, 6 Large Brilliant Shard</p>
+</li>
+<li>
+<p>9x <a class="white" href="https://www.wowhead.com/wotlk/spell=34002" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Bracer - Assault</a> - 54 Arcane Dust</p>
+</li>
+</ul>
+<h3 class="gdskill">310 - 316</h3>
+<p>6x <a class="white" href="https://www.wowhead.com/wotlk/spell=27899" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Bracer - Brawn</a> - 36 Arcane Dust</p>
+<h3 class="gdskill">316 - 330</h3>
+<p>16x <a class="white" href="https://www.wowhead.com/wotlk/spell=33996" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Gloves - Assault</a> - 128 Arcane Dust</p>
+<p>This recipe will be yellow between 20-30, so you might need to make more.</p>
+<h4>Alternative recipe:</h4>
+<p>If 100x <a class="white" href="https://www.wowhead.com/wotlk/item=22445" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_dustarcane.jpg"/>Arcane Dust</a> is more expensive than 20x <a class="zold" href="https://www.wowhead.com/wotlk/item=22446" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_essencearcanelarge.jpg"/>Greater Planar Essence</a> then you should make <a class="white" href="https://www.wowhead.com/wotlk/spell=33990" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Chest - Major Spirit</a> between 320-330.</p>
+<p>10x <a class="white" href="https://www.wowhead.com/wotlk/spell=33990" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Chest - Major Spirit</a> - 20 Greater Planar Essence</p>
+<h3 class="gdskill">330 - 335</h3>
+<p>5x <a class="white" href="https://www.wowhead.com/wotlk/spell=34009" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Shield - Major Stamina</a> - 75 Arcane Dust</p>
+<p>The recipe is sold by <a href="https://www.wowhead.com/npc=19663" rel="nofollow noopener noreferrer">Madame Ruby</a> at Shattrath City. You should also buy  <a class="white" href="https://www.wowhead.com/wotlk/item=22563" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_note_01.jpg"/>Formula: Superior Wizard Oil</a> while you are there. Both of them are <b>limited supply items</b>, so if someone bought them before you, you have to wait for them to respawn. (5-10minutes)</p>
+<h4>Alternative recipe:</h4>
+<p>6x <a class="white" href="https://www.wowhead.com/wotlk/spell=33990" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Chest - Major Spirit</a> - 12 Greater Planar Essence</p>
+<p>You might have to make a few more to reach 335.</p>
+<h3 class="gdskill">Blood Elf Only 335 - 345</h3>
+<p>There is an alternative cheap method for the 335-345 part, but only <b>Blood Elves</b> can benefit from it.</p>
+<p>Their racial passive skill <a class="white" href="https://www.wowhead.com/wotlk/spell=28877" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_shardglimmeringlarge.jpg"/>Arcane Affinity</a> allows them to gain ten free skill ups by converting a <a class="rare" href="https://www.wowhead.com/wotlk/item=22449" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_shardprismaticlarge.jpg"/>Large Prismatic Shard</a> into three <a class="rare" href="https://www.wowhead.com/wotlk/item=22448" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_shardprismaticsmall.jpg"/>Small Prismatic Shard</a> and back again.</p>
+<p>Only the conversion from one Large Prismatic Shard to three Small Prismatic Shards is affected by this. Therefore, you will only have the chance to gain skill-ups half of the time (since the other half of the time, you'll be converting back to three Small Prismatic Shards). <strong>The recipe will be grey, and you won't gain skill points for every craft! </strong>The chance of gaining skill points is very low. It will probably take 10-15 minutes to gain the 10 free skill points.</p>
+<p>The <a class="white" href="https://www.wowhead.com/wotlk/item=22565" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_note_01.jpg"/>Formula: Large Prismatic Shard</a> is sold by <a href="https://www.wowhead.com/wotlk/item=22565#sold-by" rel="nofollow noopener noreferrer">these NPCs</a>, and the <a class="white" href="https://www.wowhead.com/wotlk/spell=42615" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_shardprismaticsmall.jpg"/>Small Prismatic Shard</a> recipe is taught by your trainer. </p>
+<h3 class="gdskill">335 - 340</h3>
+<p>5x <a class="white" href="https://www.wowhead.com/wotlk/spell=44383" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Shield - Resilience</a> - 5 Large Prismatic Shard, 20 Lesser Planar Essence</p>
+<p>You can keep making <a class="white" href="https://www.wowhead.com/wotlk/spell=34009" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Shield - Major Stamina</a> if <a class="rare" href="https://www.wowhead.com/wotlk/item=22449" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_shardprismaticlarge.jpg"/>Large Prismatic Shard</a> is too expensive.</p>
+<h3 class="gdskill">340 - 350</h3>
+<p>15x <a class="white" href="https://www.wowhead.com/wotlk/item=22522" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_141.jpg"/>Superior Wizard Oil</a>- 45 Arcane Dust, 15 Nightmare Vine, 15 Imbued Vial</p>
+<p>The recipe is sold by <a href="https://www.wowhead.com/npc=19663" rel="nofollow noopener noreferrer">Madame Ruby</a> at Shattrath City. It's yellow already when you learn it, so you might need to make a few more.</p>
+<p>You can buy Imbued Vials from trade supply or alchemy supply vendors.</p>
+<h4>Alternative recipe:</h4>
+<p>Make more <a class="white" href="https://www.wowhead.com/wotlk/spell=44383" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_holy_greaterheal.jpg"/>Shield - Resilience</a> or switch to the next recipe if you don't have Nightmare Vine.</p>
+<h3 class="gdskill">350 - 351</h3>
+<p>1x <a class="zold" href="https://www.wowhead.com/wotlk/spell=32665" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_rod_enchantedadamantite.jpg"/>Runed Adamantite Rod</a> - 1 Adamantite Rod, 1 Primal Might, 8 Greater Planar Essence, 8 Large Prismatic Shard</p>
+<p>The <a class="white" href="https://www.wowhead.com/wotlk/item=25848" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_note_01.jpg"/>Formula: Runed Adamantite Rod</a> is sold by <a href="https://www.wowhead.com/npc=18960" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Rungor</a> in Terrokar Forest at Stonebreaker Hold, and by <a href="https://www.wowhead.com/npc=19004" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Vodesiin</a> in Hellfire Penninsula at the Temple of Telhamat.</p>
+<h2 class="gtitle" id="grand-master-enchanting">WotLK Classic Enchanting</h2>
+<p>You can learn the new WotLK Classic Enchanting skill from these NPCs below. (Requires level 65)</p>
+<p><b>Horde:</b></p>
+<ul>
+<li><a href="https://www.wowhead.com/npc=26954" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Emil Autumn</a> in Howling Fjord.</li>
+<li><a href="https://www.wowhead.com/npc=26980" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Eorain Dawnstrike</a> in Borean Tundra</li>
+</ul>
+<p><b>Alliance:</b></p>
+<ul>
+<li><a href="https://www.wowhead.com/npc=26906" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Elizabeth Jackson</a> in Howling Fjord.</li>
+<li><a href="https://www.wowhead.com/npc=26990" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Alexis Marlowe</a> in Borean Tundra</li>
+</ul>
+<p>Both factions can also learn it from <a href="https://www.wowhead.com/npc=93531" rel="nofollow noopener noreferrer" target="_blank">Enchanter Nalthanis</a> at Dalaran.</p>
+<h3 class="gdskill">351 - 450</h3>
+<ul class="gd">
+<li><b>351-360</b><br/>
+	9x <a class="white" href="http://www.wowhead.com/wotlk/spell=60609" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_engraving.jpg"/>Enchant Cloak - Speed</a> - 54 Infinite Dust</li>
+</ul>
+<ul class="gd">
+<li><b>360-375</b><br/>
+	18x <a class="white" href="http://www.wowhead.com/wotlk/spell=60616" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_engraving.jpg"/>Enchant Bracers - Striking</a> - 108 Infinite Dust</li>
+</ul>
+<ul class="gd">
+<li><b>375-376</b><br/>
+	1x <a class="rare" href="https://www.wowhead.com/wotlk/spell=32667" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_rod_enchantedeternium.jpg"/>Runed Eternium Rod</a> - 1 Eternium Rod, 6 Greater Planar Essence, 6 Arcane Dust, 1 Runed Adamantite Rod</li>
+</ul>
+<ul class="gd">
+<li><b>376-380</b><br/>
+	6x <a class="white" href="http://www.wowhead.com/wotlk/spell=60616" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_engraving.jpg"/>Enchant Bracers - Striking</a> - 36 Infinite Dust</li>
+</ul>
+<ul class="gd">
+<li><b>380-385</b><br/>
+	5x <a class="white" href="http://www.wowhead.com/wotlk/spell=44555" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_engraving.jpg"/>Enchant Bracers - Exceptional Intellect</a> - 50 Infinite Dust</li>
+</ul>
+<ul class="gd">
+<li><b>385-395</b><br/>
+	10x <a class="white" href="http://www.wowhead.com/wotlk/spell=60623" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_engraving.jpg"/>Enchant Boots - Icewalker</a> - 80 Infinite Dust, 10 Crystallized Water</li>
+</ul>
+<ul class="gd">
+<li><b>395-410</b><br/>
+	15x <a class="white" href="http://www.wowhead.com/wotlk/spell=44500" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_engraving.jpg"/>Enchant Cloak - Superior Agility</a> - 135 Infinite Dust</li>
+</ul>
+<ul class="gd">
+<li><b>410-415</b><br/>
+	5x <a class="white" href="http://www.wowhead.com/wotlk/spell=44484" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_engraving.jpg"/>Enchant Gloves - Expertise</a> - 60 Infinite Dust</li>
+</ul>
+<ul class="gd">
+<li><b>415-420</b><br/>
+	5x <a class="white" href="http://www.wowhead.com/wotlk/spell=44508" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_engraving.jpg"/>Enchant Boots - Greater Spirit</a> - 50 Infinite Dust, 5 Greater Cosmic Essence</li>
+</ul>
+<ul class="gd">
+<li><b>420-425</b><br/>
+	5x <a class="white" href="http://www.wowhead.com/wotlk/spell=44489" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_engraving.jpg"/>Enchant Shield - Defense</a> - 30 Infinite Dust, 30 Eternal Earth</li>
+</ul>
+<ul class="gd">
+<li><b>425-426</b><br/>
+	1x <a class="rare" href="https://www.wowhead.com/wotlk/spell=60619" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_rod_titanium.jpg"/>Runed Titanium Rod</a> - 1 Titanium Rod, 40 Infinite Dust, 12 Greater Cosmic Essence, 8 Dream Shard, 1 Runed Eternium Rod</li>
+</ul>
+<ul class="gd">
+<li><b>426-430</b><br/>
+	4x <a class="white" href="http://www.wowhead.com/wotlk/spell=44489" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_engraving.jpg"/>Enchant Shield - Defense</a> - 24 Infinite Dust, 24 Eternal Earth</li>
+</ul>
+<ul class="gd">
+<li><b>430-435</b><br/>
+	5x <a class="white" href="http://www.wowhead.com/wotlk/spell=47672" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_engraving.jpg"/>Enchant Cloak - Mighty Armor</a> - 75 Infinite Dust, 10 Greater Cosmic Essence
+<p>The recipe is sold by <a href="http://www.wowhead.com/?npc=32514">Vanessa Sellers</a> in Dalaran, it costs 4 Dream Shard.</p>
+</li></ul>
+<ul class="gd">
+<li><b>435-445</b><br/>
+	10x <a class="white" href="http://www.wowhead.com/wotlk/spell=44625" rel="nofollow noopener noreferrer"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_engraving.jpg"/>Enchant Gloves - Armsman</a> - 20 Dream Shard, 80 Eternal Earth<br/>
+<br/>
+	The recipe is sold by <a href="http://www.wowhead.com/?npc=32514">Vanessa Sellers</a> in Dalaran, it costs 4 Dream Shard.</li>
+</ul>
+<ul class="gd">
+<li><b>445-450</b><br/>
+	7x <a class="zold" href="https://www.wowhead.com/wotlk/spell=69412" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_shaman_spectraltransformation.jpg"/>Abyssal Shatter</a> - 7 Abyss Crystal
+<p>The recipe will be green for the last 3 points, so you might have to make more. These are very cheap skill ups because sometimes you can to sell the Dusts/Essences for more than you got the Crystals for.</p>
+</li></ul>
+<p><br/>
+Congratulations on reaching 450! Please <a href="../../contact/index.html" rel="nofollow noopener noreferrer">send feedback</a> about the guide if you think there are parts I could improve or if you found typos, errors, or wrong material numbers!</p>
+<p class="text-align-center"><a href="#top">(Return to Top)</a></p>
+</article>
+</main>
+<aside class="left-sidebar-menu sidebar-sticky">
+<nav>
+<h4>Quick Links</h4>
+<ul>
+<li><a href="../../wotlk/alchemy-leveling-guide-wotlk-classic/index.html">Alchemy</a></li>
+<li><a href="../../wotlk/blacksmithing-leveling-guide-wotlk-classic/index.html">Blacksmithing</a></li>
+<li><a href="../../wotlk/enchanting-leveling-guide-wotlk-classic/index.html">Enchanting</a></li>
+<li><a href="../../wotlk/engineering-leveling-guide-wotlk-classic/index.html">Engineering</a></li>
+<li><a href="../../wotlk/inscription-leveling-guide-wotlk-classic/index.html">Inscription</a></li>
+<li><a href="../../wotlk/jewelcrafting-leveling-guide-wotlk-classic/index.html">Jewelcrafting</a></li>
+<li><a href="../../wotlk/leatherworking-leveling-guide-wotlk-classic/index.html">Leatherworking</a></li>
+<li><a href="../../wotlk/tailoring-leveling-guide-wotlk-classic/index.html">Tailoring</a></li>
+<li><a href="../../wotlk/herbalism-leveling-guide-wotlk-classic/index.html">Herbalism</a></li>
+<li><a href="../../wotlk/mining-leveling-guide-wotlk-classic/index.html">Mining</a></li>
+<li><a href="../../wotlk/skinning-leveling-guide-wotlk-classic/index.html">Skinning</a></li>
+<li><a href="../../wotlk/first-aid-leveling-guide-wotlk-classic/index.html">First Aid</a></li>
+<li><a href="../../wotlk/fishing-and-cooking-leveling-guide-wotlk-classic/index.html">Fishing+Cooking</a></li>
+<li><a href="../../wotlk/cooking-leveling-guide-wotlk-classic/index.html">Cooking</a></li>
+<li><a href="../../wotlk/fishing-leveling-guide-wotlk-classic/index.html">Fishing</a></li>
+<li><a href="../../wotlk/lockpicking-leveling-guide-wotlk-classic/index.html">Lockpicking</a></li>
+</ul>
+</nav>
+</aside>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

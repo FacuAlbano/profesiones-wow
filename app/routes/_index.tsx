@@ -13,14 +13,15 @@ export function meta({}: Route.MetaArgs) {
     {
       name: "description",
       content:
-        "Guías de profesiones de World of Warcraft en español. The War Within y más.",
+        "Guías de profesiones de World of Warcraft en español. La Guerra Interior y más.",
     },
   ];
 }
 
 export default function HomePage() {
   return (
-    <div className="mx-auto w-full max-w-5xl px-3 py-6 sm:px-6 sm:py-10">
+    <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden" data-main-scroll>
+      <div className="mx-auto w-full max-w-5xl px-3 py-6 sm:px-6 sm:py-10">
       <section className="py-8 text-center sm:py-12 md:py-16">
         <h2 className="title-hero font-heading text-2xl font-semibold leading-tight xs:text-3xl sm:text-4xl md:text-5xl">
           Página de profesiones de eldonqu
@@ -34,6 +35,14 @@ export default function HomePage() {
       <Separator className="separator-faction my-6 sm:my-8" />
 
       <section className="mt-6 sm:mt-10">
+        <Link to="/guia" className="link-faction mb-4 inline-block">
+          <Card className="card-faction w-fit border-primary/30 transition-all duration-200 hover:border-primary/60">
+            <CardContent className="flex items-center gap-3 p-4 text-card-foreground">
+              <span className="font-semibold">📚 Índice de guías</span>
+              <span className="text-sm text-muted-foreground">— Todas las guías del mirror en español</span>
+            </CardContent>
+          </Card>
+        </Link>
         <h3 className="title-underline-faction font-heading mb-3 text-base font-medium uppercase tracking-wider text-muted-foreground sm:mb-4 sm:text-xl">
           Expansiones
         </h3>
@@ -43,11 +52,13 @@ export default function HomePage() {
               <Link to={`/expansion/${exp.slug}`} className="block link-faction min-h-[44px]">
                 <Card className="card-faction h-full transition-all duration-200">
                   <CardContent className="flex flex-nowrap items-center gap-3 p-3 text-card-foreground xs:gap-4 xs:p-4 sm:p-5">
-                    <img
-                      src={exp.logo}
-                      alt=""
-                      className="h-12 w-12 shrink-0 object-contain"
-                    />
+                    {exp.logo && (
+                      <img
+                        src={exp.logo}
+                        alt=""
+                        className="h-12 w-12 shrink-0 object-contain"
+                      />
+                    )}
                     <span className="min-w-0 truncate font-semibold text-sm xs:text-base">
                       {exp.name}
                     </span>
@@ -61,6 +72,7 @@ export default function HomePage() {
           ))}
         </ul>
       </section>
+      </div>
     </div>
   );
 }

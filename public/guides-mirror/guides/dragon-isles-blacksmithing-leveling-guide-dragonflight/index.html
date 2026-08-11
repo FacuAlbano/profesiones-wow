@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="This Dragonflight Blacksmithing leveling guide will show you the fastest and easiest way to level your Dragonflight Blacksmithing skill up from 1 to 100." name="description"/>
+<meta content="Dragon Isles Blacksmithing Leveling Guide 1-100 (Dragonflight)" property="og:title"/>
+<meta content="This Dragonflight Blacksmithing leveling guide will show you the fastest and easiest way to level your Dragonflight Blacksmithing skill up from 1 to 100." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/guides/dragon-isles-blacksmithing-leveling-guide-dragonflight" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>Dragon Isles Blacksmithing Leveling Guide 1-100 (Dragonflight)</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=yWBDfLh8LW7y4vv5rw92hJicMUiC68kN30QGVr1YPRY-1771997014.4014635-1.0.1.1-OEcf9eDATNXm7GSZbXF_AzTdoBtmM9CExCsTOyP.OEw" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--3">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#blacksmithing-trainers">Dragonflight Blacksmithing Trainers</a></li>
+<li><a href="#new-features">New features in Dragonflight</a></li>
+<li><a href="#crafting-orders">Crafting Orders</a></li>
+<li><a href="#mats">Shopping List</a></li>
+<li><a href="#1-65">Leveling to 65</a></li>
+<li><a href="#65-100">65 to 100</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+<div class="related-guides" data-pagefind-ignore="all">
+<h4 class="sidebar-header">Blacksmithing Guides</h4>
+<ul>
+<li>
+<a href="../../guides/vanilla-blacksmithing-leveling/index.html">
+                        Vanilla 1-300
+                      </a>
+</li>
+<li>
+<a href="../../guides/outland-blacksmithing-leveling/index.html">
+                        Outland 1-75
+                      </a>
+</li>
+<li>
+<a href="../../guides/northrend-blacksmithing-leveling/index.html">
+                        Northrend 1-75
+                      </a>
+</li>
+<li>
+<a href="../../guides/cataclysm-blacksmithing-leveling/index.html">
+                        Cataclysm 1-75
+                      </a>
+</li>
+<li>
+<a href="../../guides/pandaria-blacksmithing-leveling/index.html">
+                        Pandaria 1-75
+                      </a>
+</li>
+<li>
+<a href="../../guides/draenor-blacksmithing-leveling/index.html">
+                        Draenor 1-100
+                      </a>
+</li>
+<li>
+<a href="../../guides/legion-blacksmithing-leveling/index.html">
+                        Legion 1-100
+                      </a>
+</li>
+<li>
+<a href="../../guides/zandalari-kul-tiran-bfa-blacksmithing-leveling-guide/index.html">
+                        BfA 1-175
+                      </a>
+</li>
+<li>
+<a href="../../guides/shadowlands-blacksmithing-leveling-guide/index.html">
+                        Shadowlands 1-100
+                      </a>
+</li>
+<li class="active">
+<a class="active" href="../../guides/dragon-isles-blacksmithing-leveling-guide-dragonflight/index.html">
+                        Dragonflight 1-100
+                      </a>
+</li>
+<li>
+<a href="../../the-war-within/khaz-algar-blacksmithing-leveling-guide/index.html">
+                        The War Within 1-100
+                      </a>
+</li>
+<li>
+<a href="../../guides/wow-blacksmithing-leveling-guide/index.html">
+                        Midnight 1-100
+                      </a>
+</li>
+</ul>
+</div>
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">Dragon Isles Blacksmithing Leveling Guide 1-100 (Dragonflight)</h1>
+<article>
+<p><img align="left" height="64" src="../../images/icons/professions/blacksmithing.png" style="margin-right: 8px;" width="64"/><a name="top"></a>This Dragonflight Blacksmithing leveling guide will show you the fastest and easiest way to level your Dragonflight Blacksmithing skill up from 1 to 100.</p>
+<div class="old-toc">
+<h4>Table of contents</h4>
+<ul>
+<li><a href="#blacksmithing-trainers">Dragonflight Blacksmithing Trainers</a></li>
+<li><a href="#new-features">New features in Dragonflight</a></li>
+<li><a href="#crafting-orders">Crafting Orders</a></li>
+<li><a href="#mats">Shopping List</a></li>
+<li><a href="#1-65">Leveling to 65</a></li>
+<li><a href="#65-100">65 to 100</a></li>
+</ul>
+</div>
+<h2 class="gtitle" id="blacksmithing-trainers">Dragonflight Blacksmithing Trainers</h2>
+<ul>
+<li><a href="https://www.wowhead.com/npc=185546" rel="nofollow noopener noreferrer" target="_blank">Metalshaper Kuroko</a> in Valdrakken.</li>
+<li><a href="https://www.wowhead.com/npc=192563" rel="nofollow noopener noreferrer" target="_blank">Kholmar Sunrunner</a> in The Waking Shores.</li>
+<li><a href="https://www.wowhead.com/npc=198897" rel="nofollow noopener noreferrer" target="_blank">Farrier Josu</a> in Ohn'ahran Plains.</li>
+<li><a href="https://www.wowhead.com/npc=189208" rel="nofollow noopener noreferrer" target="_blank">Custodian Vernagos</a> in The Azura Span.</li>
+</ul>
+<h2 class="gtitle" id="new-features">New Dragonflight Blacksmithing features</h2>
+<p>There are a lot of new stats added to professions in Dragonflight, so here is a quick explanation for some of these.</p>
+<h4>Recipe Difficulty</h4>
+<p>Recipe Difficulty shows you how much profession skill is required to make a recipe at the highest quality. You can see your current profession Skill below the Recipe Difficulty stat. Your Skill comes from your base profession skill, specializations, profession equipment, racials, and using high-quality reagents. So, your profession skill can go well above 100.</p>
+<h4>Item Quality</h4>
+<p>Every crafted piece of Blacksmithing armor and weapon has 5 different qualities. Blacksmithing Crafted Reagents, Enchantments, and Consumable items have 3 different qualities.</p>
+<p>Basically, if you have higher skill, you can make higher-ilvl gear, higher-quality consumables that give more stat, and higher-quality reagents that give more profession skill when used in recipes.</p>
+<h4>Inspiration, Multicraft, Resourcefulness</h4>
+<ul>
+<li><strong>Inspiration</strong>: Each time you craft something, there is a chance you get Inspired and craft the recipe with some bonus profession skill, so you can craft an item with higher quality than you could normally.</li>
+<li><strong>Resourcefulness</strong>: You have a chance to use fewer reagents.</li>
+<li><strong>Multicraft</strong>: You have a chance to craft additional items. (doesn't work on crafted gear, only consumables and reagents)</li>
+</ul>
+<h4>Dragon Isles Blacksmithing Knowledge</h4>
+<p>Dragon Isles Blacksmithing Knowledge points are the "talent points" you can put into your profession specialization to learn new skills, stats, and bonuses.</p>
+<h2 class="gtitle" id="crafting-orders">Blacksmithing Crafting Orders</h2>
+<p>Crafting Orders are a new way for players to request a crafter to craft something for them. The interface looks like the Auction House, but instead of players posting Auctions, it will be filled with Crafting Orders you can complete as a Blacksmith.</p>
+<p>Completing crafting orders can give you skill points if you complete orders for items that would normally give you a skill point.</p>
+<h3>How to Complete Crafting Orders</h3>
+<p>Clicking on the <strong>Crafting Orders tab at the bottom of your profession window</strong> will open up the Crafting Order UI, where you can browse Crafting Orders posted by other players. <b>You must be near a Crafting Table for your profession</b> to be able to access Crafting Orders.</p>
+<h3>Blacksmithing Crafting Table location</h3>
+<p>You can find the Blacksmithing crafting table in Valdrakken on the small platform marked in the picture below. <b>For some reason, it is near the Mining trainer but not the Blacksmithing trainer!</b></p>
+<p><img class="maps" height="532" src="../../images/dragonflight/blacksmithing-crafting-table.jpg" width="798"/></p>
+<h2 class="gtitle" id="mats">Shopping List</h2>
+<p>This is the total list of materials required to reach 100.</p>
+<p>The <b>quality doesn't matter</b> for leveling. Buy<b> the cheapest</b>.</p>
+<ul>
+<li>300x <a class="zold" href="https://www.wowhead.com/item=189143" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_draconium.jpg"/>Draconium Ore</a></li>
+<li>650x <a class="white" href="https://www.wowhead.com/item=190395" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_tyrivite.jpg"/>Serevite Ore</a></li>
+<li>170x <a class="white" href="https://www.wowhead.com/item=190452" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_herbalism_70_starlightrosedust.jpg"/>Primal Flux</a> (Vendor)</li>
+<li>168x <a class="rare" href="https://www.wowhead.com/item=189541" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_blacksmithing_craftedbar_primalmoltenalloy.jpg"/>Primal Molten Alloy</a></li>
+</ul>
+<h2 class="gtitle" id="1-65"><strong>Leveling Dragonflight Blacksmithing</strong></h2>
+<h3>Racial Bonuses</h3>
+<p>Some races have a profession skill bonus as a racial trait, allowing recipes to remain orange for 2-5 extra points. This means you can save gold by crafting lower-level recipes to gain additional skill points.</p>
+<p>These races are:</p>
+<ul>
+<li><b>Lightforged Draenei:</b> +5 skill</li>
+<li><b>Dark Iron Dwarves:</b>+5 skill</li>
+<li><b>Kul Tiran</b>: +2 skill</li>
+</ul>
+<h3>First Craft Bonus</h3>
+<p>You will get 1x Dragon Isles Blacksmithing Knowledge talent point each time you craft something for the first time. Dragon Isles Blacksmithing Knowledge is very valuable and has a weekly cap from other sources. </p>
+<p><b>So, sometimes you will see I recommend crafting a recipe that's slightly more expensive to make.</b> This is because I think it's better to get the bonuses while they give you skill points. You will want to get all of them eventually.</p>
+<p><a class="white" href="https://www.wowhead.com/item=190452" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_herbalism_70_starlightrosedust.jpg"/>Primal Flux</a> is sold by blacksmithing supply vendors. If you are leveling in Valdrakken, you can buy it from <a href="https://www.wowhead.com/npc=198580" rel="nofollow noopener noreferrer" target="_blank">Kognir</a>.</p>
+<h3 class="gdskill">1 - 7</h3>
+<p>1x <a class="rare" href="https://www.wowhead.com/spell=367609" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_bracer_plate_dragonquest_b_01.jpg"/>Explorer's Plate Bracers</a> - 8x Serevite Ore, 3x Draconium Ore<br/>
+1x <a class="zold" href="https://www.wowhead.com/spell=371344" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_archaeology_ogre2handedhammer.jpg"/>Draconium Blacksmith's Hammer</a> - 10x Serevite Ore, 2x Draconium Ore</p>
+<p>If you need a <a class="white" href="https://www.wowhead.com/item=5956" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_hammer_20.jpg"/>Blacksmith Hammer</a> to craft these items, you can buy one from <a href="https://www.wowhead.com/npc=193659" rel="nofollow noopener noreferrer" target="_blank">Provisioner Thom</a> in Valdrakken. (or any other blacksmithing supply vendor).</p>
+<p>Equip the <a class="zold" href="https://www.wowhead.com/spell=371344" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_archaeology_ogre2handedhammer.jpg"/>Draconium Blacksmith's Hammer</a>. You can destroy the <a class="white" href="https://www.wowhead.com/item=5956" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_hammer_20.jpg"/>Blacksmith Hammer</a>. You won't need it anymore.</p>
+<h3 class="gdskill">7 - 10</h3>
+<p>1x <a class="zold" href="https://www.wowhead.com/spell=371309" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_axe_1h_miningpick_a_01.jpg"/>Draconium Pickaxe</a> - 10x Serevite Ore, 2x Draconium Ore</p>
+<h3 class="gdskill">10 - 17</h3>
+<p>1x <a class="zold" href="https://www.wowhead.com/spell=371343" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_axe_1h_herbalism_b_01.jpg"/>Draconium Sickle</a> - 10x Serevite Ore, 2x Draconium Ore<br/>
+1x <a class="rare" href="https://www.wowhead.com/spell=395886" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_chest_plate_dragonquest_b_01.jpg"/>Explorer's Plate Chestguard</a> - 10x Serevite Ore, 3x Draconium Ore</p>
+<h3 class="gdskill">17 - 21</h3>
+<p>Make sure to craft these next two in the same order listed here.</p>
+<p>1x <a class="zold" href="https://www.wowhead.com/spell=371304" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_knife_1h_skinning_a_01.jpg"/>Draconium Skinning Knife</a> - 10x Serevite Ore, 3x Draconium Ore<br/>
+1x <a class="zold" href="https://www.wowhead.com/spell=371364" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_blacksmithing_toolbox_01.jpg"/>Draconium Blacksmith's Toolbox</a> - 12x Serevite Ore, 3x Draconium Ore</p>
+<p>Equip the <a class="zold" href="https://www.wowhead.com/spell=371364" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_blacksmithing_toolbox_01.jpg"/>Draconium Blacksmith's Toolbox</a>.</p>
+<h3 class="gdskill">21 - 26</h3>
+<p>1x <a class="zold" href="https://www.wowhead.com/spell=371338" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_knife_1h_leatherworking_b_01.jpg"/>Draconium Leatherworker's Knife</a> - 12x Serevite Ore, 3x Draconium Ore<br/>
+1x <a class="rare" href="https://www.wowhead.com/spell=393404" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_shield_1h_dragonquest_b_02.jpg"/>Draconium Defender</a> - 12x Serevite Ore,  6x Draconium Ore</p>
+<h3>Blacksmithing Specializations</h3>
+<p>When you hit 25, you will unlock Blacksmithing specializations.</p>
+<h4>Which Specialization to choose first?</h4>
+<p>I recommend choosing <b>Armorsmithing</b> as your first specialization. (you can learn all 4 as you level up your profession)</p>
+<p>You will need 50 skill points to unlock the second specialization, 65 for the third, and 75 for the fourth. 65 is very easy to reach, but it may take a little longer to level to 75.</p>
+<h4>Where should you put your Dragon Isles Blacksmithing Knowledge talent points?</h4>
+<p>Don't spend any points yet. I recommend leveling your profession to 65 first. You will need 20 points to unlock a recipe that you will use to level Blacksmithing. (more on this later)</p>
+<h3 class="gdskill">26 - 31</h3>
+<p>Craft them in the same order as listed!</p>
+<p>1x <a class="rare" href="https://www.wowhead.com/spell=367600" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_axe_1h_dragonquest_b_02.jpg"/>Draconium Axe</a> - 12x Serevite Ore, 6x Draconium Ore<br/>
+1x <a class="zold" href="https://www.wowhead.com/spell=371360" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_food_lunchbox_red.jpg"/>Draconium Leatherworker's Toolset</a> - 12x Serevite Ore, 6x Draconium Ore</p>
+<h3 class="gdskill">31 - 37</h3>
+<p>1x <a class="zold" href="https://www.wowhead.com/spell=371302" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_professions_tailoringneedleset02.jpg"/>Draconium Needle Set</a> - 10x Serevite Ore, 4x Draconium Ore<br/>
+1x <a class="rare" href="https://www.wowhead.com/spell=367611" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_belt_plate_dragonquest_b_01.jpg"/>Explorer's Expert Clasp</a> - 10x Serevite Ore, 4x Draconium Ore</p>
+<h3 class="gdskill">37 - 41</h3>
+<p>2x <a class="rare" href="https://www.wowhead.com/spell=395881" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_pant_plate_dragonquest_b_01.jpg"/>Explorer's Expert Greaves</a> - 42x Serevite Ore, 21x Draconium Ore</p>
+<h3 class="gdskill">41 - 45</h3>
+<p>1x <a class="rare" href="https://www.wowhead.com/spell=393416" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_axe_2h_dragonquest_b_01.jpg"/>Draconium Great Axe</a> - 20x Serevite Ore, 10x Draconium Ore<br/>
+1x <a class="rare" href="https://www.wowhead.com/spell=395879" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_glove_plate_dragonquest_b_01.jpg"/>Explorer's Expert Gauntlets</a> - 12x Serevite Ore, 6x Draconium Ore</p>
+<h3 class="gdskill">45 - 51</h3>
+<p>1x <a class="rare" href="https://www.wowhead.com/item=190482" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_knife_1h_dragonquest_b_02.jpg"/>Draconium Stiletto</a> - 12x Serevite Ore, 6x Draconium Ore<br/>
+2x <a class="rare" href="https://www.wowhead.com/item=201952" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_shoulder_plate_dragonquest_b_01.jpg"/>Explorer's Expert Spaulders</a> - 24x Serevite Ore, 12x Draconium Ore</p>
+<h3 class="gdskill">50 - 65</h3>
+<p>1x <a class="rare" href="https://www.wowhead.com/spell=367598" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_mace_2h_dragondungeon_c_01.jpg"/>Draconium Great Mace</a> - 20x Serevite Ore, 10x Draconium Ore<br/>
+25x <a class="rare" href="https://www.wowhead.com/spell=395883" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_plate_dragonquest_b_01.jpg"/>Explorer's Expert Helm</a> - 350x Serevite Ore, 175x Draconium Ore</p>
+<p>The Helm recipe will be green for the last few points, so you might have to make more.</p>
+<p><a name="65-100"></a></p>
+<h3 class="gdskill">65 - 100</h3>
+<p>From this point, almost every recipe that give you skill point requires a <a class="epic" href="https://www.wowhead.com/item=190453" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_misc_titansspark_color1.jpg"/>Spark of Ingenuity</a>. This crafting reagent Binds on Pickup (BoP), so you can't just buy it from the Auction House.</p>
+<p>Below is a step-by-step guide on how to get <a class="epic" href="https://www.wowhead.com/item=190453" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_misc_titansspark_color1.jpg"/>Spark of Ingenuity</a> to level your profession. Step 1 is the most time-consuming, but it's account-wide, and it's something you probably already completed.</p>
+<h3>Step 1. #Dragonflight campaign quests</h3>
+<p>To get Spark of Ingenuity,<b> you must complete the Dragonflight main story campaign quests until you unlock World Quests. This is ACCOUNT-WIDE, so you only need to complete these quests with one of your characters.</b> If you open your quest log, you will find these quests at the top in the campaign section under the "Dragonflight" title.</p>
+<ul>
+<li>Complete the Dragonflight campaign quests until you get <a href="https://www.wowhead.com/quest=71232" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Renown of the Dragon Isles</a> from <a href="https://www.wowhead.com/npc=187678" rel="nofollow noopener noreferrer" target="_blank">Alexstrasza the Life-Binder</a>.</li>
+<li>Talk to <a href="https://www.wowhead.com/npc=196499" rel="nofollow noopener noreferrer" target="_blank">Therazal</a> to complete <a href="https://www.wowhead.com/quest=71232" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Renown of the Dragon Isles</a>.</li>
+</ul>
+<h3>Step 2. #Engine of Innovation Questline</h3>
+<p>Pick up the <a href="https://www.wowhead.com/quest=72773" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Learning Ingenuity</a> quest from <a href="https://www.wowhead.com/npc=196499" rel="nofollow noopener noreferrer" target="_blank">Therazal</a>. This quest will start the Engine of Innovation Questline that will award you with Spark of Ingenuity.</p>
+<p>Talk to <a href="https://www.wowhead.com/npc=196066" rel="nofollow noopener noreferrer" target="_blank">Greyzik Cobblefinger</a> to complete <a href="https://www.wowhead.com/quest=72773" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Learning Ingenuity</a> and pick up the <a href="https://www.wowhead.com/quest=70180" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Jump-Start? Jump-Starting!</a> quest.</p>
+<p><b>If you have already completed the Engine of Innovation Questline with one of your characters, you don't have to do it again. Talk to <a href="https://www.wowhead.com/npc=196066" rel="nofollow noopener noreferrer" target="_blank">Greyzik Cobblefinger</a> to skip the quests,</b> and then talk to <a href="https://www.wowhead.com/npc=196475" rel="nofollow noopener noreferrer" target="_blank">Maiden of Inspiration</a> to get your 5x <a class="epic" href="https://www.wowhead.com/item=190453" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_misc_titansspark_color1.jpg"/>Spark of Ingenuity</a>.</p>
+<p>Otherwise, you must complete the entire Engine of Innovation Questline until you get all five <a class="epic" href="https://www.wowhead.com/item=190453" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_misc_titansspark_color1.jpg"/>Spark of Ingenuity</a>.</p>
+<h3>Step 3. #Spending Knowledge Points and Crafting Bracers</h3>
+<p>Put your first 20 points in the Armorsmithing specialization like this:</p>
+<ol>
+<li>Put 10 points into Armorsmithing.</li>
+<li>Learn the Fine-Armor sub-specialization, then put 10 points into Fine-Armor.</li>
+<li>Learn the Vambraces sub-specizalization. This will teach you the <a class="epic" href="https://www.wowhead.com/spell=367601" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_bracer_plate_dragonpvp_d_01.jpg"/>Primal Molten Vambraces</a> recipe.</li>
+</ol>
+<p>Craft 5x <a class="epic" href="https://www.wowhead.com/spell=367601" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_bracer_plate_dragonpvp_d_01.jpg"/>Primal Molten Vambraces</a> - 70x <a class="rare" href="https://www.wowhead.com/item=189541" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_blacksmithing_craftedbar_primalmoltenalloy.jpg"/>Primal Molten Alloy</a></p>
+<p>You can make any other Primal Molten armor if you have more knowledge points to spend. You can learn the other recipes the same way in the other sub-specializations.</p>
+<h3>Step 4. #Getting more Sparks</h3>
+<p>To level to 100, you will need another 8x <a class="epic" href="https://www.wowhead.com/item=190453" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_misc_titansspark_color1.jpg"/>Spark of Ingenuity</a>. Unfortunately, you can't get more than 5 on one character. However, <strong>you can use the crafting order system to send crafting orders to your characters</strong>, so you can get more from your alts or by creating trial characters.</p>
+<p><b>Creating a trial character</b></p>
+<p>If you have two level 58 alt characters, you can skip this part and use them instead of creating trials.</p>
+<ol>
+<li>Go to the character selection screen and click "Create New Character" in the bottom left corner.</li>
+<li>On the character creation page, tick the "Class Trial" box in the bottom left corner.</li>
+<li>Choose any class and talents, then create your Character.</li>
+<li>Go to the portal room in Orgrimmar/Stormwind and click on the Valdrakken portal.</li>
+</ol>
+<p><b>Skipping quests to get 5x Sparks</b></p>
+<ol>
+<li>Talk to <a href="https://www.wowhead.com/npc=196066" rel="nofollow noopener noreferrer" target="_blank">Greyzik Cobblefinger</a> about skipping the quests, and then talk to <a href="https://www.wowhead.com/npc=196475" rel="nofollow noopener noreferrer" target="_blank">Maiden of Inspiration</a>.</li>
+<li>Talk to the crafting order NPC <a href="https://www.wowhead.com/npc=199342" rel="nofollow noopener noreferrer" target="_blank">Clerk Silverpaw</a> in Valdrakken.</li>
+<li>Click on Armor -&gt; Plate -&gt; Wrist, then click "Search" and pick <a class="epic" href="https://www.wowhead.com/spell=367601" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_bracer_plate_dragonpvp_d_01.jpg"/>Primal Molten Vambraces</a>.</li>
+<li><b>Change Public Order to Personal Order in the top right</b>, then type in your main character name.</li>
+<li>You don't have to fill in materials besides the Spark of Ingenuity in the "Spark" slot. You can fill the rest of the materials with your main.</li>
+<li>Log in with your main, and go to the Blacksmithing crafting table in Valdrakken. (scroll back to the crafting order section above in the guide if you don't know where it is)</li>
+<li>Open your profession window and click the Crafting Orders tab at the bottom.</li>
+<li>Click on the Personal Tab and complete the <a class="epic" href="https://www.wowhead.com/spell=367601" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_bracer_plate_dragonpvp_d_01.jpg"/>Primal Molten Vambraces</a> crafting orders from your alts.</li>
+<li>Repeat these steps above until you reach 100.</li>
+</ol>
+</article>
+</main>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

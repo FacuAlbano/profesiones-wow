@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="Best Mining spec builds for Midnight, how to spend your Knowledge Points, all weekly and one-time KP sources, and treasure locations with maps." name="description"/>
+<meta content="Midnight Mining Specialization Builds &amp; Knowledge Guide" property="og:title"/>
+<meta content="Best Mining spec builds for Midnight, how to spend your Knowledge Points, all weekly and one-time KP sources, and treasure locations with maps." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/midnight/mining-specialization-guide-and-builds" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>Midnight Mining Specialization Builds &amp; Knowledge Guide</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=K4Ppf26rJbiD5PDYdLLA4pWcog9yazQtzGcGRW_IjrU-1771996644.730036-1.0.1.1-YzdDiWX177jWrOZScPDRc5rGXgnmKp9j.eGTjHeQUAw" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--3">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#knowledge">Knowledge Points</a></li>
+<li><a href="#treasures">Treasure Locations</a></li>
+<li><a href="#specializations">Specialization Builds</a></li>
+<li><a href="#alternative-builds">Over-LODED &amp; Dazzling Thorium</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">Midnight Mining Specialization Builds &amp; Knowledge Guide</h1>
+<article>
+<p><img align="left" alt="Mining" height="64" src="../../images/icons/professions/mining.png" style="margin-right: 8px;" width="64"/>This guide covers the best Mining specialization builds for Midnight, how to spend your Knowledge Points phase by phase, and where to find all weekly and one-time KP sources including treasure locations with maps. I also go over what to prioritize first, which trees are worth rushing, and when it makes sense to branch into Over-LODED or Dazzling Thorium-focused paths.</p>
+<h2 class="line-header">Leveling, Buffs &amp; Farming</h2>
+<p>This guide only focuses on knowledge points and specializations. I highly recommend reading my other guide that covers consumables, leveling routes, farming tips, and more:</p>
+<p class="text-align-center">
+<a class="gblock" href="../../guides/wow-mining-leveling-guide/index.html">        
+        Leveling, Buffs &amp; Farming Guide
+    </a>
+</p>
+<h2 class="line-header" id="knowledge">Mining Knowledge Points</h2>
+<p>You can collect around <b>81 Knowledge Points</b> in week one from these sources:</p>
+<div class="table-container">
+<table class="tbl-data">
+<thead>
+<tr>
+<th>Source</th>
+<th>KP</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><b>First Gather Discoveries</b></td>
+<td>25</td>
+<td>1 KP each time you mine a new deposit type for the first time. There are 25 total: 3 base ores, 3 rich deposits, 3 seams, 12 elemental deposits (4 variants per ore), and 4 overloads.</td>
+</tr>
+<tr>
+<td><b>Amani Book</b></td>
+<td>10</td>
+<td><a class="rare" href="https://www.wowhead.com/item=250924" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_professionbook_mining_orig.jpg"/>Whisper of the Loa: Mining</a> sold by Magovu in Zul'Aman. (Amani Tribe renown)</td>
+</tr>
+<tr>
+<td><b>Abundance Book</b></td>
+<td>10</td>
+<td><a class="rare" href="https://www.wowhead.com/item=250444" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_professionbook_mining_orig.jpg"/>Echo of Abundance: Mining</a> from the Abundance event.</td>
+</tr>
+<tr>
+<td><b>8 Mining Treasures</b></td>
+<td>24</td>
+<td>3 KP each, scattered across all zones. (See maps below the table)</td>
+</tr>
+<tr>
+<td><b>Treatise</b></td>
+<td>1</td>
+<td><a class="rare" href="https://www.wowhead.com/item=245762" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_professionbook_mining_orig.jpg"/>Thalassian Treatise on Mining</a> from Inscription Crafting Order.</td>
+</tr>
+<tr>
+<td><b>Weekly Trainer Quest</b></td>
+<td>3</td>
+<td>Weekly quest from the profession trainer. Rewards <a class="rare" href="https://www.wowhead.com/item=263463" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_professionbook_mining_color1.jpg"/>Thalassian Miner's Notes</a></td>
+</tr>
+<tr>
+<td><b>Weekly Gathering Drops</b></td>
+<td>~8</td>
+<td>Knowledge items that randomly drop while mining. You'll loot 5x <a class="rare" href="https://www.wowhead.com/item=237496" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_blackironore.jpg"/>Igneous Rock Specimen</a> (1 KP each), then a <a class="epic" href="https://www.wowhead.com/item=237506" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_glowingazeritegeode.jpg"/>Septarian Nodule</a> (3 KP) as the final drop for the week.</td>
+</tr>
+<tr>
+<td><b>Darkmoon Faire</b></td>
+<td>3</td>
+<td>Monthly, not weekly. A quick <a href="../../wowguides/darkmoon-faire-profession-quests/index.html">profession quest</a> for +3 Knowledge Points and +2 Profession Skill when the Faire is in town. The Faire starts on the Sunday before the first Monday of each month.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3>Weekly Sources (~12 KP/week)</h3>
+<p>After the first week, your recurring weekly sources are:</p>
+<ul>
+<li><b>Trainer Quest:</b> 3 KP per week</li>
+<li><b>Gathering Drops:</b> ~8 KP per week (keep mining and they'll drop naturally)</li>
+<li><b>Inscription Treatise:</b> 1 KP per week (submit a public crafting order since they're BoP, or craft on an Inscription alt)</li>
+<li><b>Darkmoon Faire:</b> 3 KP per month (not weekly, but grab it when the Faire is up)</li>
+</ul>
+<p>Unlike crafting professions, Mining does <b>not</b> get weekly chest drops. Your main weekly source is just mining deposits and the trainer quest.</p>
+<h3>Knowledge Catchup</h3>
+<p>If you fall behind on Knowledge, <a class="rare" href="https://www.wowhead.com/item=237507" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_datacrystal09.jpg"/>Cloudy Quartz</a> (1 KP) can drop while mining as a catchup item. This works the same as in The War Within, where you get extra drops if you're behind on Knowledge compared to the current maximum. These don't have a weekly cap. You'll get them until you're fully caught up.</p>
+<h2 class="line-header" id="treasures">Mining Treasure Locations</h2>
+<p>There are 8 Mining treasures scattered across Eversong Woods, Zul'Aman, Harandar, and Voidstorm. Each treasure gives 3 Knowledge Points for a total of 24 KP.</p>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Treasure</th>
+<th>Zone</th>
+<th>Map</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://www.wowhead.com/beta/object=525910" rel="nofollow noopener noreferrer" target="_blank">Solid Ore Punchers</a></td>
+<td>Eversong Woods</td>
+<td><button class="btn-map" data-coords="38, 45.4" data-map-img="/images/maps/normal/eversong-woods.jpg" data-title="Solid Ore Punchers" data-zone="2395" data-zone-name="Eversong Woods">Map</button></td>
+</tr>
+<tr>
+<td><a href="https://www.wowhead.com/beta/object=525908" rel="nofollow noopener noreferrer" target="_blank">Amani Expert's Chisel</a></td>
+<td>Zul'Aman</td>
+<td><button class="btn-map" data-coords="33.4, 65.9" data-map-img="/images/maps/normal/atalaman.jpg" data-title="Amani Expert's Chisel" data-zone="2536" data-zone-name="Atal'Aman">Map</button></td>
+</tr>
+<tr>
+<td><a href="https://www.wowhead.com/beta/object=525912" rel="nofollow noopener noreferrer" target="_blank">Spelunker's Lucky Charm</a></td>
+<td>Zul'Aman</td>
+<td><button class="btn-map" data-coords="42, 46.5" data-map-img="/images/maps/normal/zulaman.jpg" data-title="Spelunker's Lucky Charm" data-zone="2437" data-zone-name="Zul'Aman">Map</button></td>
+</tr>
+<tr>
+<td><a href="https://www.wowhead.com/beta/object=525906" rel="nofollow noopener noreferrer" target="_blank">Spare Expedition Torch</a></td>
+<td>Harandar</td>
+<td><button class="btn-map" data-coords="38.8, 65.9" data-map-img="/images/maps/normal/harandar.jpg" data-title="Spare Expedition Torch" data-zone="2413" data-zone-name="Harandar">Map</button></td>
+</tr>
+<tr>
+<td><a href="https://www.wowhead.com/beta/object=525907" rel="nofollow noopener noreferrer" target="_blank">Star Metal Deposit</a></td>
+<td>Voidstorm</td>
+<td><button class="btn-map" data-coords="41.8, 38.3" data-map-img="/images/maps/normal/voidstorm.jpg" data-title="Star Metal Deposit" data-zone="2405" data-zone-name="Voidstorm">Map</button></td>
+</tr>
+<tr>
+<td><a href="https://www.wowhead.com/beta/object=525913" rel="nofollow noopener noreferrer" target="_blank">Miner's Guide to Voidstorm</a></td>
+<td>Voidstorm</td>
+<td><button class="btn-map" data-coords="30.5, 69.1" data-map-img="/images/maps/normal/slayers-rise.jpg" data-title="Miner's Guide to Voidstorm" data-zone="2444" data-zone-name="Slayer's Rise">Map</button></td>
+</tr>
+<tr>
+<td><a href="https://www.wowhead.com/beta/object=525909" rel="nofollow noopener noreferrer" target="_blank">Glimmering Void Pearl</a></td>
+<td>Voidstorm</td>
+<td><button class="btn-map" data-coords="28.7, 38.5" data-map-img="/images/maps/normal/slayers-rise.jpg" data-title="Glimmering Void Pearl" data-zone="2444" data-zone-name="Slayer's Rise">Map</button></td>
+</tr>
+<tr>
+<td><a href="https://www.wowhead.com/beta/object=525911" rel="nofollow noopener noreferrer" target="_blank">Lost Voidstorm Satchel</a></td>
+<td>Voidstorm</td>
+<td><button class="btn-map" data-coords="54.2, 51.5" data-map-img="/images/maps/normal/slayers-rise.jpg" data-title="Lost Voidstorm Satchel" data-zone="2444" data-zone-name="Slayer's Rise">Map</button></td>
+</tr>
+</tbody>
+</table>
+</div>
+<details class="details-macro">
+<summary>TomTom Waypoints &amp; Treasure Check Macro</summary>
+<div class="details-macro-content">
+<h4>TomTom Waypoints</h4>
+<div class="code-copy">
+<div class="code-header">Copy all, then type <code>/ttpaste</code> in-game</div>
+<button class="btn-copy" data-clipboard-text="/way #2395 38.0, 45.4 Solid Ore Punchers (Mining)
+/way #2536 33.4, 65.9 Amani Expert's Chisel (Mining)
+/way #2437 42.0, 46.5 Spelunker's Lucky Charm (Mining)
+/way #2413 38.8, 65.9 Spare Expedition Torch (Mining)
+/way #2405 41.8, 38.3 Star Metal Deposit (Mining)
+/way #2444 30.5, 69.1 Miner's Guide to Voidstorm (Mining)
+/way #2444 28.7, 38.5 Glimmering Void Pearl (Mining)
+/way #2444 54.2, 51.5 Lost Voidstorm Satchel (Mining)"><svg viewbox="0 0 24 24"><rect height="13" rx="2" width="13" x="9" y="9"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+<pre>/way #2395 38.0, 45.4 Solid Ore Punchers (Mining)
+/way #2536 33.4, 65.9 Amani Expert's Chisel (Mining)
+/way #2437 42.0, 46.5 Spelunker's Lucky Charm (Mining)
+/way #2413 38.8, 65.9 Spare Expedition Torch (Mining)
+/way #2405 41.8, 38.3 Star Metal Deposit (Mining)
+/way #2444 30.5, 69.1 Miner's Guide to Voidstorm (Mining)
+/way #2444 28.7, 38.5 Glimmering Void Pearl (Mining)
+/way #2444 54.2, 51.5 Lost Voidstorm Satchel (Mining)</pre>
+</div>
+<h4>Treasure Check Macro</h4>
+<div class="code-copy">
+<div class="code-header">Paste into chat - <code>true</code> = collected</div>
+<button class="btn-copy" data-clipboard-text="/run local f,p=C_QuestLog.IsQuestFlaggedCompleted,print p(&quot;Solid Ore:&quot;,f(89147)) p(&quot;Amani:&quot;,f(89149)) p(&quot;Spelunker's:&quot;,f(89145)) p(&quot;Spare:&quot;,f(89151)) p(&quot;Star Metal:&quot;,f(89150)) p(&quot;Miner's:&quot;,f(89144)) p(&quot;Glimmering:&quot;,f(89148)) p(&quot;Lost:&quot;,f(89146))"><svg viewbox="0 0 24 24"><rect height="13" rx="2" width="13" x="9" y="9"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+<div class="code-wrap">/run local f,p=C_QuestLog.IsQuestFlaggedCompleted,print p("Solid Ore:",f(89147)) p("Amani:",f(89149)) p("Spelunker's:",f(89145)) p("Spare:",f(89151)) p("Star Metal:",f(89150)) p("Miner's:",f(89144)) p("Glimmering:",f(89148)) p("Lost:",f(89146))</div>
+</div>
+</div></details>
+<h2 class="line-header" id="specializations">Specialization Builds</h2>
+<p>Here's what I recommend for spending your points step by step. The goal is to unlock the biggest quality-of-life power first, then stack skill where it gives the best return. I'll keep it simple and break it down by phases so you can follow it as your KP comes in each week.</p>
+<h3>Phase 1: Unlock Mounted Mining (0-40 points)</h3>
+<p>In The War Within, delaying mounted mining was often better early because the rare ore gains from other specs were stronger. In Midnight, that tradeoff is way smaller, this tree gives useful skill for fewer points, and <b>it's much harder to avoid mobs</b>. So unlocking mounted mining right away is hands down the best move.</p>
+<p>Put 40 points into the <b>Meticulous Mining</b> root node. This unlocks the ability to mine while mounted.</p>
+<p class="text-align-center"><img alt="midnight mining specialization Meticulous Mining mounted mining tree" class="lightbox guide-img" height="882" src="../../images/midnight/mining-spec-1.jpg" width="1138"/></p>
+<h3>Phase 2: Ore Skill (40-90 points)</h3>
+<p>Now go into <b>Plentiful Ores</b>. Put 50 points into the root node to gain extra skill for all ore types. All ores are found in all zones, so you can farm in any zone with this. It's not like War Within where some ores were missing in some zones.</p>
+<p class="text-align-center"><img alt="Mining Plentiful Ores skill specialization tree" class="lightbox guide-img" height="882" src="../../images/midnight/mining-spec-2.jpg" width="1138"/></p>
+<h3>Phase 3: Fill Out Ores (90-140 points)</h3>
+<p>Now you can start filling out the ore-specific nodes in Plentiful Ores. Each one gives you more skill for that ore type, which means more Gold Quality from those nodes. I recommend spreading your points evenly across the ores you want to focus on, rather than maxing one out first. This way you can keep your options open and adjust based on how the market evolves.</p>
+<p><b>Note:</b> If one ore is significantly more expensive than the others, max that one out first instead of spreading evenly.</p>
+<p class="text-align-center"><img alt="Mining ore-specific nodes filled out in Plentiful Ores" class="lightbox guide-img" height="882" src="../../images/midnight/mining-spec-3.jpg" width="1138"/></p>
+<h3>Phase 4: Finishing the Build</h3>
+<p>At this point you've got mounted mining and good ore skill. From here you can fill in the rest however you want. Here's my priority:</p>
+<ol>
+<li>Max each ore type to get more Gold Quality ores.</li>
+<li>1x Over-LODED sub-spec where you farm the most.</li>
+<li>Rich Deposits sub-spec in Meticulous Mining (extra skill for rich nodes)</li>
+<li>Rest wherever you want</li>
+</ol>
+<h2 class="line-header" id="alternative-builds">Over-LODED &amp; Dazzling Thorium</h2>
+<p>Here are some thoughts on alternative spec paths and when you might want to pick them.</p>
+<h3>Dazzling Thorium Build</h3>
+<p>When you max out a specific ore in Plentiful Ores (40 points), you get an increased Dazzling Thorium drop rate from that ore type. If Dazzling Thorium ends up really expensive, maxing one ore first can be worth it because you also get passive skill for that ore.</p>
+<p>But I don't think this will be Null Stone 2.0 like in War Within. The problem there was that until you talented the last node, everyone got far fewer Null Stones, and Null Stones were used in a lot of crafting reagents. This time Dazzling Thorium is mostly used for gear, so I think demand won't be that high, and players will also get full ones from the start.</p>
+<h3>Over-LODED</h3>
+<p>If motes end up being crazy expensive, this spec could be worth rushing early. You get extra motes from Over-LODing, and if those are selling for a lot, the value adds up fast. But <b>it's risky to go all-in without knowing mote prices first</b>. I'd wait until the market stabilizes before committing points here.</p>
+<p>I tested each Over-LODED sub-tree maxed out. Here are the results.</p>
+<h4>CD reduction</h4>
+<p><b>You get two charges at 40 points in the root node</b>. Having two charges is actually nice because you're basically always reducing the cooldown while mining. Without two charges, you'd run into situations where your Over-LODE is ready but there's no infused deposit around, so you're just mining normal deposits without reducing anything. With two charges, you can keep one banked and still reduce the cooldown with the other one.</p>
+<div class="table-container">
+<table class="tbl-data">
+<thead>
+<tr>
+<th>Spec Investment</th>
+<th>CD Reduction</th>
+<th>Applies To</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Base (no points)</td>
+<td>30 min</td>
+<td>All deposits</td>
+</tr>
+<tr>
+<td>Maxed Root Only</td>
+<td>33 min 36 sec</td>
+<td>All deposits</td>
+</tr>
+<tr>
+<td>Maxed Sub-spec Only</td>
+<td>39 min</td>
+<td>Only that infused deposit type</td>
+</tr>
+<tr>
+<td>Both Maxed</td>
+<td>42 min 36 sec</td>
+<td>Only that infused deposit type</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h4>Sub-spec Bonuses</h4>
+<p><b>Lightfused</b> and <b>Voidbound</b> give the biggest buffs since they double your motes. <b>Primal</b> is decent with 2 extra ticks (40% more). <b>Wild</b> doesn't increase motes but does give more ore drops from Rumbling Orelings when you unlock it, so it's actually not that bad to unlock, but it's not worth to spend 40 points in it.</p>
+<p>You need 5 points to unlock your first sub-spec and another 40 to fully max out.</p>
+<div class="table-container">
+<table class="tbl-data">
+<thead>
+<tr>
+<th>Type</th>
+<th>Unlocking (5 points)</th>
+<th>+40 Points into the Sub-spec</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><b>Lightfused</b></td>
+<td>Simply unlocking this doubles the light motes you can catch from a normal gather, going from 2x 1-2 motes to 4x 1-2.</td>
+<td>Overloading spawns even more light motes, but it buffs the spawn count so much that it's impossible to catch all of them. They still deal damage, so you'd actually die trying to grab them all.</td>
+</tr>
+<tr>
+<td><b>Wild</b></td>
+<td>Rumbling Orelings drop roughly double the ore, but they don't drop more motes.</td>
+<td>Overloading Perception buff duration doubles (5 min → 10 min).</td>
+</tr>
+<tr>
+<td><b>Primal</b></td>
+<td>The slow is weaker on you, so basically worthless talent.</td>
+<td>Ticks 2 more times, so it drains 70% HP total and you get 1-2 motes for each of the 7 ticks.</td>
+</tr>
+<tr>
+<td><b>Voidbound</b></td>
+<td>Your overload ability become a different spell after using the portal and you can portal back with it. It's just not worth using in its current form.</td>
+<td>Void chunks give more motes, it goes from 1-2 to 2-4.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</article>
+</main>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

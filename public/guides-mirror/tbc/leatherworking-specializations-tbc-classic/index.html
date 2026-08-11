@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="Once you reach Leatherworking skill level 225 and character level 40, you can choose one of the three Leatherworking specializations Dragonscale, Elemental or Tribal. Each specialization gives access to a specific set of patterns." name="description"/>
+<meta content="Guide to Leatherworking Specializations in TBC Classic" property="og:title"/>
+<meta content="Once you reach Leatherworking skill level 225 and character level 40, you can choose one of the three Leatherworking specializations Dragonscale, Elemental or Tribal. Each specialization gives access to a specific set of patterns." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/tbc/leatherworking-specializations-tbc-classic" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>Guide to Leatherworking Specializations in TBC Classic</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=.mBVZSb8VQLmQHovM3IJVKdspcigtJtp.UHMUsyQ8Ew-1771996695.0647528-1.0.1.1-jwvQAPufWQrEw3DLRo3d0AoMTKH.wqaw5MdUZwiZdOQ" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--4">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#which">Best Leatherworking Specialization in TBC Classic</a></li>
+<li><a href="#recipes">Full List of Recipes</a></li>
+<li><a href="#dragonscale">Dragonscale Quest</a></li>
+<li><a href="#elemental">Elemental Quest</a></li>
+<li><a href="#tribal">Tribal Quest</a></li>
+<li><a href="#changing">Changing Your specialization</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">Guide to Leatherworking Specializations in TBC Classic</h1>
+<article>
+<p>Once you reach Leatherworking skill level 225 and character level 40, you can choose one of the three Leatherworking specializations: Dragonscale, Elemental or Tribal. Each specialization gives access to a specific set of patterns.</p>
+<p>This guide will show you the patterns you can craft with each specialization and guide you through the process of choosing a specialization.</p>
+<h2 class="gtitle" id="which">Best Leatherworking Specialization in TBC Classic</h2>
+<p>Choosing a specialization is pretty straightforward because <b>every item created by specializations is Bind on Pickup</b>, meaning only you can equip them. Every other item can be crafted and worn by every specialization. Even the Classic-era recipes have had their specialization requirement removed, and you can craft all of them with all three specializations. So, basically, you should choose a specialization based on what your class and spec can use.</p>
+<ul class="textul">
+<li><b>Resto</b> and <b>Balance Druids</b>: Tribal</li>
+<li><b>Rogues</b> and <b>Feral Druids</b>: Elemental</li>
+<li><b>Enhancement</b> and <b>Elemental Shamans</b>: Dragonscale</li>
+<li><b>Hunters</b> can choose both Elemental or Dragonscale. Elemental will give you more damage, but you will have lower mana. Also, some people might not want to wear leather armor.</li>
+</ul>
+<h2 class="gtitle" id="recipes">Full List of Recipes</h2>
+<p>Your Leatherworking Specialization trainers teach the recipes for each specialization. You can find the exact location of each trainer if you scroll down a bit in the guide.</p>
+<div class="tab-container">
+<div class="tabs">
+<button class="tab-button active" data-tab="leatherworking-recipes-tab-1">Dragonscale</button>
+<button class="tab-button" data-tab="leatherworking-recipes-tab-2">Elemental</button>
+<button class="tab-button" data-tab="leatherworking-recipes-tab-3">Tribal</button>
+</div>
+<div class="tab-content active" id="leatherworking-recipes-tab-1" role="tabpanel">
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<th>Item</th>
+<th>Skill</th>
+<th>Materials</th>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/tbc/spell=35575" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_chest_plate08.jpg"/>Ebon Netherscale Breastplate</a>
+</td><td>375
+                        </td><td>8x <a class="white" href="https://www.wowhead.com/tbc/item=23793" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_11.jpg"/>Heavy Knothide Leather</a>, 30x <a class="white" href="https://www.wowhead.com/tbc/item=29548" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_monsterscales_10.jpg"/>Nether Dragonscales</a><br/>
+                            16x <a class="zold" href="https://www.wowhead.com/tbc/item=21884" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_fire.jpg"/>Primal Fire</a>, 16x <a class="zold" href="https://www.wowhead.com/tbc/item=22456" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_shadow.jpg"/>Primal Shadow</a>, 2x <a class="rare" href="https://www.wowhead.com/tbc/item=23572" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_nether.jpg"/>Primal Nether</a>
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/tbc/spell=35577" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_bracer_19.jpg"/>Ebon Netherscale Bracers</a>
+</td><td>375
+                        </td><td>4x <a class="white" href="https://www.wowhead.com/tbc/item=23793" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_11.jpg"/>Heavy Knothide Leather</a>, 18x <a class="white" href="https://www.wowhead.com/tbc/item=29548" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_monsterscales_10.jpg"/>Nether Dragonscales</a><br/>
+                            8x <a class="zold" href="https://www.wowhead.com/tbc/item=21884" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_fire.jpg"/>Primal Fire</a>, 8x <a class="zold" href="https://www.wowhead.com/tbc/item=22456" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_shadow.jpg"/>Primal Shadow</a>
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/tbc/spell=35576" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_belt_29.jpg"/>Ebon Netherscale Belt</a>
+</td><td>375
+                        </td><td>6x <a class="white" href="https://www.wowhead.com/tbc/item=23793" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_11.jpg"/>Heavy Knothide Leather</a>, 24x <a class="white" href="https://www.wowhead.com/tbc/item=29548" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_monsterscales_10.jpg"/>Nether Dragonscales</a><br/>
+                            12x <a class="zold" href="https://www.wowhead.com/tbc/item=21884" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_fire.jpg"/>Primal Fire</a>, 12x <a class="zold" href="https://www.wowhead.com/tbc/item=22456" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_shadow.jpg"/>Primal Shadow</a>, 1x <a class="rare" href="https://www.wowhead.com/tbc/item=23572" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_nether.jpg"/>Primal Nether</a>
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/tbc/spell=35580" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_chest_plate07.jpg"/>Netherstrike Breastplate</a>
+</td><td>375
+                        </td><td>8x <a class="white" href="https://www.wowhead.com/tbc/item=23793" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_11.jpg"/>Heavy Knothide Leather</a>, 30x <a class="white" href="https://www.wowhead.com/tbc/item=29548" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_monsterscales_10.jpg"/>Nether Dragonscales</a><br/>
+                            16x <a class="zold" href="https://www.wowhead.com/tbc/item=22457" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_mana.jpg"/>Primal Mana</a>, 16x <a class="zold" href="https://www.wowhead.com/tbc/item=22451" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_air.jpg"/>Primal Air</a>, 2x <a class="rare" href="https://www.wowhead.com/tbc/item=23572" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_nether.jpg"/>Primal Nether</a>
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/tbc/spell=35584" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_bracer_12.jpg"/>Netherstrike Bracers</a>
+</td><td>375
+                        </td><td>4x <a class="white" href="https://www.wowhead.com/tbc/item=23793" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_11.jpg"/>Heavy Knothide Leather</a>, 18x <a class="white" href="https://www.wowhead.com/tbc/item=29548" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_monsterscales_10.jpg"/>Nether Dragonscales</a><br/>
+                            8x <a class="zold" href="https://www.wowhead.com/tbc/item=22457" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_mana.jpg"/>Primal Mana</a>, 8x <a class="zold" href="https://www.wowhead.com/tbc/item=22451" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_air.jpg"/>Primal Air</a>
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/tbc/spell=35582" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_belt_03.jpg"/>Netherstrike Belt</a>
+</td><td>375
+                        </td><td>6x <a class="white" href="https://www.wowhead.com/tbc/item=23793" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_11.jpg"/>Heavy Knothide Leather</a>, 24x <a class="white" href="https://www.wowhead.com/tbc/item=29548" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_monsterscales_10.jpg"/>Nether Dragonscales</a><br/>
+                            12x <a class="zold" href="https://www.wowhead.com/tbc/item=22457" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_mana.jpg"/>Primal Mana</a>, 12x <a class="zold" href="https://www.wowhead.com/tbc/item=22451" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_air.jpg"/>Primal Air</a>, 1x <a class="rare" href="https://www.wowhead.com/tbc/item=23572" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_nether.jpg"/>Primal Nether</a>
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/tbc/spell=36079" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_chest_plate06.jpg"/>Golden Dragonstrike Breastplate</a><br/>
+                            (lvl 65)
+                        </td><td>330
+                        </td><td>20x <a class="white" href="https://www.wowhead.com/tbc/item=21887" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_10.jpg"/>Knothide Leather</a>, 8x <a class="white" href="https://www.wowhead.com/tbc/item=15416" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_monsterscales_07.jpg"/>Black Dragonscale</a>, 3x <a class="zold" href="https://www.wowhead.com/tbc/item=21884" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_fire.jpg"/>Primal Fire</a><br/>
+                            2x <a class="white" href="https://www.wowhead.com/tbc/item=14341" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_shadow_antimagicshell.jpg"/>Rune Thread</a>
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/tbc/spell=36076" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_pants_plate_20.jpg"/>Dragonstrike Leggings</a><br/>
+                            (lvl 45)
+                        </td><td>260
+                        </td><td>10x <a class="white" href="https://www.wowhead.com/tbc/item=8170" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_02.jpg"/>Rugged Leather</a>, 10x <a class="white" href="https://www.wowhead.com/tbc/item=8165" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_monsterscales_17.jpg"/>Worn Dragonscale</a>, 2x <a class="white" href="https://www.wowhead.com/tbc/item=7077" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_fire_lavaspawn.jpg"/>Heart of Fire</a><br/>
+                            2x <a class="white" href="https://www.wowhead.com/tbc/item=8172" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_pelt_bear_01.jpg"/>Cured Thick Hide</a>, 1x <a class="white" href="https://www.wowhead.com/tbc/item=14341" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_shadow_antimagicshell.jpg"/>Rune Thread</a>
+</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="tab-content" id="leatherworking-recipes-tab-2" role="tabpanel">
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<th>Item</th>
+<th>Skill</th>
+<th>Materials</th>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/tbc/spell=35589" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_chest_cloth_45.jpg"/>Primalstrike Vest</a>
+</td><td>375
+                        </td><td>8x <a class="white" href="https://www.wowhead.com/tbc/item=23793" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_11.jpg"/>Heavy Knothide Leather</a>, 6x <a class="rare" href="https://www.wowhead.com/tbc/item=23571" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_nature_lightningoverload.jpg"/>Primal Might</a>, 2x <a class="rare" href="https://www.wowhead.com/tbc/item=23572" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_nether.jpg"/>Primal Nether</a>
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/tbc/spell=35591" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_bracer_07.jpg"/>Primalstrike Bracers</a>
+</td><td>375
+                        </td><td>4x <a class="white" href="https://www.wowhead.com/tbc/item=23793" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_11.jpg"/>Heavy Knothide Leather</a>, 3x <a class="rare" href="https://www.wowhead.com/tbc/item=23571" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_nature_lightningoverload.jpg"/>Primal Might</a>
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/tbc/spell=35590" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_belt_03.jpg"/>Primalstrike Belt</a>
+</td><td>375
+                        </td><td>6x <a class="white" href="https://www.wowhead.com/tbc/item=23793" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_11.jpg"/>Heavy Knothide Leather</a>, 5x <a class="rare" href="https://www.wowhead.com/tbc/item=23571" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_nature_lightningoverload.jpg"/>Primal Might</a>, 1x <a class="rare" href="https://www.wowhead.com/tbc/item=23572" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_nether.jpg"/>Primal Nether</a>
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/tbc/spell=36077" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_chest_cloth_07.jpg"/>Primalstorm Breastplate</a><br/>
+                            (lvl 65)
+                        </td><td>330
+                        </td><td>20x <a class="white" href="https://www.wowhead.com/tbc/item=21887" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_10.jpg"/>Knothide Leather</a>, 2x <a class="zold" href="https://www.wowhead.com/tbc/item=22451" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_air.jpg"/>Primal Air</a>, 2x <a class="zold" href="https://www.wowhead.com/tbc/item=22452" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_earth.jpg"/>Primal Earth</a><br/>
+                            2x <a class="white" href="https://www.wowhead.com/tbc/item=14341" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_shadow_antimagicshell.jpg"/>Rune Thread</a>
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/tbc/spell=36074" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_pants_leather_03.jpg"/>Blackstorm Leggings</a><br/>
+                            (lvl 45)
+                        </td><td>260
+                        </td><td>10x <a class="white" href="https://www.wowhead.com/tbc/item=8170" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_02.jpg"/>Rugged Leather</a>, 8x <a class="white" href="https://www.wowhead.com/tbc/item=7081" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_nature_cyclone.jpg"/>Breath of Wind</a>, 2x <a class="white" href="https://www.wowhead.com/tbc/item=8172" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_pelt_bear_01.jpg"/>Cured Thick Hide</a><br/>
+                            1x <a class="white" href="https://www.wowhead.com/tbc/item=14341" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_shadow_antimagicshell.jpg"/>Rune Thread</a>
+</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="tab-content" id="leatherworking-recipes-tab-3" role="tabpanel">
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<th>Item</th>
+<th>Skill</th>
+<th>Materials</th>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/tbc/spell=35585" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_chest_leather_01.jpg"/>Windhawk Hauberk</a>
+</td><td>375
+                        </td><td>8x <a class="white" href="https://www.wowhead.com/tbc/item=23793" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_11.jpg"/>Heavy Knothide Leather</a>, 20x <a class="white" href="https://www.wowhead.com/tbc/item=29547" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_monsterscales_06.jpg"/>Wind Scales</a>, 16x <a class="zold" href="https://www.wowhead.com/tbc/item=22451" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_air.jpg"/>Primal Air</a><br/>
+                            3x <a class="rare" href="https://www.wowhead.com/tbc/item=23571" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_nature_lightningoverload.jpg"/>Primal Might</a>, 2x <a class="rare" href="https://www.wowhead.com/tbc/item=23572" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_nether.jpg"/>Primal Nether</a>
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/tbc/spell=35588" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_bracer_07.jpg"/>Windhawk Bracers</a>
+</td><td>375
+                        </td><td>4x <a class="white" href="https://www.wowhead.com/tbc/item=23793" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_11.jpg"/>Heavy Knothide Leather</a>, 12x <a class="white" href="https://www.wowhead.com/tbc/item=29547" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_monsterscales_06.jpg"/>Wind Scales</a>, 8x <a class="zold" href="https://www.wowhead.com/tbc/item=22451" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_air.jpg"/>Primal Air</a><br/>
+                            1x <a class="rare" href="https://www.wowhead.com/tbc/item=23571" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_nature_lightningoverload.jpg"/>Primal Might</a>
+</td></tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/tbc/spell=35587" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_belt_03.jpg"/>Windhawk Belt</a>
+</td><td>375
+                        </td><td>6x <a class="white" href="https://www.wowhead.com/tbc/item=23793" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_11.jpg"/>Heavy Knothide Leather</a>, 16x <a class="white" href="https://www.wowhead.com/tbc/item=29547" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_monsterscales_06.jpg"/>Wind Scales</a>, 12x <a class="zold" href="https://www.wowhead.com/tbc/item=22451" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_air.jpg"/>Primal Air</a><br/>
+                            2x <a class="rare" href="https://www.wowhead.com/tbc/item=23571" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_nature_lightningoverload.jpg"/>Primal Might</a>, 1x <a class="rare" href="https://www.wowhead.com/tbc/item=23572" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_nether.jpg"/>Primal Nether</a>
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/tbc/spell=36078" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_chest_cloth_06.jpg"/>Living Crystal Breastplate</a><br/>
+                            (lvl 65)
+                        </td><td>330
+                        </td><td>20x <a class="white" href="https://www.wowhead.com/tbc/item=21887" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_10.jpg"/>Knothide Leather</a>, 12x <a class="white" href="https://www.wowhead.com/tbc/item=25699" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_12.jpg"/>Crystal Infused Leather</a>, 3x <a class="zold" href="https://www.wowhead.com/tbc/item=21886" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_primal_life.jpg"/>Primal Life</a><br/>
+                            2x <a class="white" href="https://www.wowhead.com/tbc/item=14341" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_shadow_antimagicshell.jpg"/>Rune Thread</a>
+</td></tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/tbc/spell=36075" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_pants_leather_03.jpg"/>Wildfeather Leggings</a><br/>
+                            (lvl 45)
+                        </td><td>260
+                        </td><td>10x <a class="white" href="https://www.wowhead.com/tbc/item=8170" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_02.jpg"/>Rugged Leather</a>, 40x <a class="white" href="https://www.wowhead.com/tbc/item=8168" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_feather_02.jpg"/>Jet Black Feather</a>, 4x <a class="white" href="https://www.wowhead.com/tbc/item=8153" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_03.jpg"/>Wildvine</a><br/>
+                            2x <a class="white" href="https://www.wowhead.com/tbc/item=8172" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_pelt_bear_01.jpg"/>Cured Thick Hide</a>, 1x <a class="white" href="https://www.wowhead.com/tbc/item=14341" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_shadow_antimagicshell.jpg"/>Rune Thread</a>
+</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<h2 class="gtitle" id="dragonscale">1. Dragonscale Leatherworking Quest</h2>
+<p>To learn Dragonscale Leatherworking, you'll need to craft 2x <a class="zold" href="https://www.wowhead.com/tbc/spell=10525" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_chest_leather_02.jpg"/>Tough Scorpid Breastplate</a>, 2x<a class="zold" href="https://www.wowhead.com/tbc/spell=10542" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_gauntlets_24.jpg"/>Tough Scorpid Gloves</a>, and get 10x <a class="white" href="https://www.wowhead.com/tbc/item=8165" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_monsterscales_17.jpg"/>Worn Dragonscale</a>, then deliver them to <a href="https://www.wowhead.com/tbc/npc=7866" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Peter Galen</a> / <a href="https://www.wowhead.com/tbc/npc=7867" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Thorkaf Dragoneye</a>.</p>
+<h3>1.1. Total materials required</h3>
+<ul>
+<li>36x <a class="white" href="https://www.wowhead.com/tbc/item=4304" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_08.jpg"/>Thick Leather</a></li>
+<li>40x <a class="white" href="https://www.wowhead.com/tbc/item=8154" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_monsterscales_02.jpg"/>Scorpid Scale</a></li>
+<li>12x <a class="white" href="https://www.wowhead.com/tbc/item=4291" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_fabric_silk_02.jpg"/>Silken Thread</a></li>
+<li>10x <a class="white" href="https://www.wowhead.com/tbc/item=8165" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_monsterscales_17.jpg"/>Worn Dragonscale</a></li>
+</ul>
+<h3>1.2. Recipes</h3>
+<p>You can buy both recipes from the Auction House if you don't want to farm them.</p>
+<ul class="textul">
+<li><a class="zold" href="https://www.wowhead.com/tbc/item=8395" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_06.jpg"/>Pattern: Tough Scorpid Breastplate</a> is dropped by <a href="https://www.wowhead.com/tbc/npc=5618" rel="nofollow noopener noreferrer" target="_blank">Wastewander Bandit</a> in Tanaris.</li>
+<li><a class="zold" href="https://www.wowhead.com/tbc/item=8398" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_06.jpg"/>Pattern: Tough Scorpid Gloves</a> is dropped by <a href="https://www.wowhead.com/tbc/npc=5616" rel="nofollow noopener noreferrer" target="_blank">Wastewander Thief</a> also in Tanaris.</li>
+</ul>
+<p><img class="maps" height="300" src="../../images/classic/dragonscale-leatherworking-tanaris.jpg" width="750"/></p>
+<h3>1.3. Dragonscale Leatherworking trainers</h3>
+<p>Once you crafted the 4 items, go to <a href="https://www.wowhead.com/tbc/npc=7866" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Peter Galen</a> / <a href="https://www.wowhead.com/tbc/npc=7867" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Thorkaf Dragoneye</a>, then accept and complete the Dragonscale Leatherworking quest.</p>
+<div class="tab-container">
+<div class="tabs">
+<button class="tab-button active" data-tab="dragonscale-tab-1"><img height="20" src="../../images/icons/alliance-m.png" style="margin-right: 8px;" width="20"/>Alliance</button>
+<button class="tab-button" data-tab="dragonscale-tab-2"><img height="20" src="../../images/icons/horde-m.png" style="margin-right: 8px;" width="20"/>Horde</button>
+</div>
+<div class="tab-content active" id="dragonscale-tab-1" role="tabpanel">
+<p>You can find the Alliance Dragonscale Leatherworking Trainer <a href="https://www.wowhead.com/tbc/npc=7866" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Peter Galen</a> at the Ruins of Eldarath in Azshara. /way 37, 65</p>
+<p><img class="maps" height="490" src="../../images/classic/dragonscale-leatherworking-trainer-alliance.jpg" width="750"/></p>
+</div>
+<div class="tab-content" id="dragonscale-tab-2" role="tabpanel">
+<p>You can find the Horde Dragonscale Leatherworking Trainer <a href="https://www.wowhead.com/tbc/npc=7867" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Thorkaf Dragoneye</a> in Badlands. /way 62.6 57.6</p>
+<p><img class="maps" height="490" loading="lazy" src="../../images/classic/dragonscale-leatherworking-trainer-horde.jpg" width="750"/></p>
+</div>
+</div>
+<h2 class="gtitle" id="elemental">2. Elemental Leatherworking Quest</h2>
+<p>To learn Elemental Leatherworking, you have to deliver the following items to the Elemental Leatherworking Trainer:</p>
+<ul>
+<li>2x <a class="white" href="https://www.wowhead.com/tbc/item=7079" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_orb_01.jpg"/>Globe of Water</a></li>
+<li>2x <a class="white" href="https://www.wowhead.com/tbc/item=7077" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_fire_lavaspawn.jpg"/>Heart of Fire</a></li>
+<li>2x <a class="white" href="https://www.wowhead.com/tbc/item=7075" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_stone_05.jpg"/>Core of Earth</a></li>
+<li>2x <a class="white" href="https://www.wowhead.com/tbc/item=7081" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_nature_cyclone.jpg"/>Breath of Wind</a></li>
+</ul>
+<h3>2.1. Elemental Leatherworking Trainer</h3>
+<div class="tab-container">
+<div class="tabs">
+<button class="tab-button active" data-tab="elemental-tab-1"><img height="20" src="../../images/icons/alliance-m.png" style="margin-right: 8px;" width="20"/>Alliance</button>
+<button class="tab-button" data-tab="elemental-tab-2"><img height="20" src="../../images/icons/horde-m.png" style="margin-right: 8px;" width="20"/>Horde</button>
+</div>
+<div class="tab-content active" id="elemental-tab-1" role="tabpanel">
+<p>You can find the Alliance Elemental Leatherworking Trainer <a href="https://www.wowhead.com/tbc/npc=7868" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Sarah Tanner</a> in Searing Gorge. /way 63.6 75.8</p>
+<p><img class="maps" height="490" loading="lazy" src="../../images/classic/elemental-leatherworking-trainer-alliance.jpg" width="750"/></p>
+</div>
+<div class="tab-content" id="elemental-tab-2" role="tabpanel">
+<p>You can find the Horde Elemental Leatherworking Trainer <a href="https://www.wowhead.com/tbc/npc=7869" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Brumn Winterhoof</a> in Arathi Highlands. /way 28.2 45.0</p>
+<p><img class="maps" height="490" loading="lazy" src="../../images/classic/elemental-leatherworking-trainer-horde.jpg" width="750"/></p>
+</div>
+</div>
+<h2 class="gtitle" id="tribal">3. Tribal Leatherworking Quest</h2>
+<p>To become a Tribal Leatherworker, you must first complete the prerequisite Wild Leather quests.</p>
+<h3>3.1. Total materials required</h3>
+<ul>
+<li>214x <a class="white" href="https://www.wowhead.com/tbc/item=4304" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_leatherscrap_08.jpg"/>Thick Leather</a></li>
+<li>112x <a class="white" href="https://www.wowhead.com/tbc/item=8167" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_monsterscales_11.jpg"/>Turtle Scale</a></li>
+<li>11x <a class="white" href="https://www.wowhead.com/tbc/item=8153" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_03.jpg"/>Wildvine</a></li>
+<li>2x <a class="white" href="https://www.wowhead.com/tbc/item=8172" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_pelt_bear_01.jpg"/>Cured Thick Hide</a></li>
+</ul>
+<h3>3.2. Wild Leather quests</h3>
+<p><b>Make sure that you have all the needed materials before you head out</b>, or you will have to travel back to the Auction House to buy more.</p>
+<p>Go to Feralas and find <a href="https://www.wowhead.com/tbc/npc=7852" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Pratt McGrubben</a> / <a href="https://www.wowhead.com/tbc/npc=7854" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Jangdor Swiftstrider</a>.</p>
+<p>Complete all 7 of the following quests:</p>
+<ul>
+<li><a href="https://www.wowhead.com/tbc/quest=2854" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Wild Leather Armor</a> - This will open up the next five.</li>
+<li><a href="https://www.wowhead.com/tbc/quest=2856" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Wild Leather Vest</a></li>
+<li><a href="https://www.wowhead.com/tbc/quest=2855" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Wild Leather Shoulders</a></li>
+<li><a href="https://www.wowhead.com/tbc/quest=2859" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Wild Leather Leggings</a></li>
+<li><a href="https://www.wowhead.com/tbc/quest=2857" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Wild Leather Helmet</a></li>
+<li><a href="https://www.wowhead.com/tbc/quest=2858" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Wild Leather Boots</a></li>
+<li><a href="https://www.wowhead.com/tbc/quest=2860" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Master of the Wild Leather</a> - You will get this once you complete all 6 quests above.</li>
+</ul>
+<p>The <a class="white" href="https://www.wowhead.com/tbc/item=8385" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Pattern: Turtle Scale Gloves</a> is the only recipe that you have to buy. The rest of them are taught by your trainer. The quest giver NPC sells the recipe, but it's a limited supply item, so you have to wait if someone bought it before you. The re-stock time is random, but it's around 30 minutes. (or buy it from the Auction House)</p>
+<p>Go to Darnassus / Thunder Bluff, find <a href="https://www.wowhead.com/tbc/npc=4212" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Telonis</a> / <a href="https://www.wowhead.com/tbc/npc=3007" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Una</a> and complete the last quest <a href="https://www.wowhead.com/tbc/quest=2860" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Master of the Wild Leather</a>.</p>
+<h3>3.3. Tribal Leatherworking Trainers</h3>
+<p>Craft 1x <a class="zold" href="https://www.wowhead.com/tbc/spell=10544" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_chest_cloth_06.jpg"/>Wild Leather Vest</a> and 1x <a class="zold" href="https://www.wowhead.com/tbc/spell=10546" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helmet_10.jpg"/>Wild Leather Helmet</a> and deliver them to <a href="https://www.wowhead.com/tbc/npc=7870" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Caryssia Moonhunter</a> / <a href="https://www.wowhead.com/tbc/npc=7871" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Se'Jib</a> to learn Tribal Leatherworking.</p>
+<div class="tab-container">
+<div class="tabs">
+<button class="tab-button active" data-tab="tribal-tab-1"><img height="20" src="../../images/icons/alliance-m.png" style="margin-right: 8px;" width="20"/>Alliance</button>
+<button class="tab-button" data-tab="tribal-tab-2"><img height="20" src="../../images/icons/horde-m.png" style="margin-right: 8px;" width="20"/>Horde</button>
+</div>
+<div class="tab-content active" id="tribal-tab-1" role="tabpanel">
+<p>You can find the Alliance Tribal Leatherworking Trainer <a href="https://www.wowhead.com/tbc/npc=7870" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/alliance.png" width="15"/>Caryssia Moonhunter</a> in Feralas. /way 89.4 46.4</p>
+<p><img class="maps" height="490" loading="lazy" src="../../images/classic/tribal-leatherworking-trainer-alliance.jpg" width="750"/></p>
+</div>
+<div class="tab-content" id="tribal-tab-2" role="tabpanel">
+<p>You can find the Horde Tribal Leatherworking Trainer <a href="https://www.wowhead.com/tbc/npc=7871" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/horde.png" width="15"/>Se'Jib</a> in Stranglethorn Vale. /way 36.6 34.2</p>
+<p><img class="maps" height="490" loading="lazy" src="../../images/classic/tribal-leatherworking-trainer-horde.jpg" width="750"/></p>
+</div>
+</div>
+<h2 class="gtitle" id="changing">Changing Leatherworking Specialization</h2>
+<p>Changing your current specializations will cost 100 gold at level 70 and 50 gold at level 60.</p>
+<ol>
+<li>To change your Leatherworking specialization, <strong>you first have to talk to the trainer that taught your current specialization</strong> and click on <strong>"I wish to unlearn...."</strong> (trainer locations above).</li>
+<li>Now go to Steamwheedle Port in Tanaris and click on the "Soothsaying for Dummies" book located inside a hut. You can see the exact location marked in the picture below.</li>
+</ol>
+<p><img class="maps" height="300" loading="lazy" src="../../images/classic/changing-leatherworking-specialization.jpg" width="750"/></p>
+</article>
+</main>
+<aside class="left-sidebar-menu sidebar-sticky">
+<nav>
+<h4>Quick Links</h4>
+<ul>
+<li><a href="../../tbc/alchemy-leveling-guide-burning-crusade-classic/index.html">Alchemy</a></li>
+<li><a href="../../tbc/blacksmithing-leveling-guide-burning-crusade-classic/index.html">Blacksmithing</a></li>
+<li><a href="../../tbc/enchanting-leveling-guide-burning-crusade-classic/index.html">Enchanting</a></li>
+<li><a href="../../tbc/engineering-leveling-guide-burning-crusade-classic/index.html">Engineering</a></li>
+<li><a href="../../tbc/jewelcrafting-leveling-guide-burning-crusade-classic/index.html">Jewelcrafting</a></li>
+<li><a href="../../tbc/leatherworking-leveling-guide-burning-crusade-classic/index.html">Leatherworking</a></li>
+<li><a href="../../tbc/tailoring-leveling-guide-burning-crusade-classic/index.html">Tailoring</a></li>
+<li><a href="../../tbc/herbalism-leveling-guide-tbc-classic/index.html">Herbalism</a></li>
+<li><a href="../../tbc/mining-leveling-guide-tbc-classic/index.html">Mining</a></li>
+<li><a href="../../tbc/skinning-leveling-guide-tbc-classic/index.html">Skinning</a></li>
+<li><a href="../../tbc/first-aid-leveling-guide-burning-crusade-classic/index.html">First Aid</a></li>
+<li><a href="../../tbc/fishing-and-cooking-leveling-guide-burning-crusade-classic/index.html">Fishing+Cooking</a></li>
+<li><a href="../../tbc/cooking-leveling-guide-tbc-classic/index.html">Cooking</a></li>
+<li><a href="../../tbc/fishing-leveling-guide-burning-crusade-classic/index.html">Fishing</a></li>
+<li><a href="../../tbc/lockpicking-leveling-guide-tbc-classic/index.html">Lockpicking</a></li>
+</ul>
+</nav>
+</aside>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

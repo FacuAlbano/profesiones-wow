@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="This Cataclysm Classic Alchemy Leveling guide will show you the fastest way to level your Alchemy skill up from 1 to 525 in Cataclysm Classic." name="description"/>
+<meta content="Cataclysm Classic Alchemy Leveling Guide 1-525" property="og:title"/>
+<meta content="This Cataclysm Classic Alchemy Leveling guide will show you the fastest way to level your Alchemy skill up from 1 to 525 in Cataclysm Classic." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/cataclysm/alchemy-leveling-guide-cataclysm-classic" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>Cataclysm Classic Alchemy Leveling Guide 1-525</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=cWpoFWFAZImTrY8C09_5Yy2BiGQzI8K6.tU2Gx2cMLM-1771997399.558174-1.0.1.1-e0Gy29wrZePWdQZqmtwkwA9lWkC58BFqQlETmdgL8yA" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--4">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#mats">Materials required</a></li>
+<li><a href="#cataclysm-alchemy-trainers">Alchemy Trainers</a></li>
+<li><a href="#1">1-60 #Apprentice</a></li>
+<li><a href="#60">60-140 #Journeyman</a></li>
+<li><a href="#140">140-210 #Expert</a></li>
+<li><a href="#210">210-300 #Artisan</a></li>
+<li><a href="#300">300-350 #TBC</a></li>
+<li><a href="#350">350-425 #WotLK</a></li>
+<li><a href="#425">425-525 #Cataclysm Classic</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">Cataclysm Classic Alchemy Leveling Guide 1-525</h1>
+<article>
+<p><a name="top"></a><img align="left" height="64" src="../../images/icons/professions/alchemy.png" style="margin-right: 8px;" width="64"/>This Cataclysm Classic Alchemy Leveling guide will show you the fastest way to level your Alchemy skill up from 1 to 525 in Cataclysm Classic.</p>
+<p class="zygor">I recommend trying <a href="https://zygorguides.com/ref/Peterwp/">Zygor's 1-85 Leveling Guide</a> if you are still leveling your character or you just started a new alt. The guide will help you to reach level 85 a lot faster.</p>
+<h2 class="gtitle" id="mats">Approximate Materials Required</h2>
+<p>Many yellow recipes are used in the guide, which means you won't gain skill points every time. I added 10-20 extra herbs for most of these recipes, but it's still possible you will have to get a few more if you have the worst luck.</p>
+<h3>Classic</h3>
+<ul class="list-grid">
+<li>65x <a class="white" href="https://www.wowhead.com/cata/item=2447" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_flower_02.jpg"/>Peacebloom</a></li>
+<li>65x <a class="white" href="https://www.wowhead.com/cata/item=765" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_10.jpg"/>Silverleaf</a></li>
+<li>100x <a class="white" href="https://www.wowhead.com/cata/item=2450" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_root_01.jpg"/>Briarthorn</a></li>
+<li>35x <a class="white" href="https://www.wowhead.com/cata/item=2453" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_01.jpg"/>Bruiseweed</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/cata/item=785" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_talisman_03.jpg"/>Mageroyal</a></li>
+<li>50x <a class="white" href="https://www.wowhead.com/cata/item=3820" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_11.jpg"/>Stranglekelp</a></li>
+<li>35x <a class="white" href="https://www.wowhead.com/cata/item=3357" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_root_02.jpg"/>Liferoot</a></li>
+<li>35x <a class="white" href="https://www.wowhead.com/cata/item=3356" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_03.jpg"/>Kingsblood</a></li>
+<li>35x <a class="white" href="https://www.wowhead.com/cata/item=3821" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_15.jpg"/>Goldthorn</a></li>
+<li>5x <a class="white" href="https://www.wowhead.com/cata/item=3355" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_flower_01.jpg"/>Wild Steelbloom</a></li>
+<li>30x <a class="white" href="https://www.wowhead.com/cata/item=8838" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_18.jpg"/>Sungrass</a></li>
+<li>40x <a class="white" href="https://www.wowhead.com/cata/item=3358" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_08.jpg"/>Khadgar's Whisker</a></li>
+<li>4x <a class="white" href="https://www.wowhead.com/cata/item=3575" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_iron.jpg"/>Iron Bar</a></li>
+<li>1x <a class="white" href="https://www.wowhead.com/cata/item=9262" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_sapphire_03.jpg"/>Black Vitriol</a></li>
+<li>4x <a class="white" href="https://www.wowhead.com/cata/item=8831" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_17.jpg"/>Purple Lotus</a></li>
+<li>4x <a class="white" href="https://www.wowhead.com/cata/item=4625" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_19.jpg"/>Firebloom</a></li>
+<li>10x <a class="white" href="https://www.wowhead.com/cata/item=8839" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_14.jpg"/>Blindweed</a></li>
+<li>55x <a class="white" href="https://www.wowhead.com/cata/item=13464" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_sansamroot.jpg"/>Golden Sansam</a></li>
+<li>44x <a class="white" href="https://www.wowhead.com/item=8846" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_16.jpg"/>Gromsblood</a></li>
+<li>40x <a class="white" href="https://www.wowhead.com/item=13466" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_plaguebloom.jpg"/>Sorrowmoss</a></li>
+<li>15x <a class="white" href="https://www.wowhead.com/cata/item=13463" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_dreamfoil.jpg"/>Dreamfoil</a></li>
+<li>14x <a class="white" href="https://www.wowhead.com/cata/item=13465" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_mountainsilversage.jpg"/>Mountain Silversage</a></li>
+<li>10x <a class="white" href="https://www.wowhead.com/item=13467" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_icecap.jpg"/>Icecap</a></li>
+<li>15x <a class="white" href="https://www.wowhead.com/cata/item=13464" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_sansamroot.jpg"/>Golden Sansam</a> / 15x <a class="white" href="https://www.wowhead.com/cata/item=13463" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_dreamfoil.jpg"/>Dreamfoil</a> / 15x <a class="white" href="https://www.wowhead.com/cata/item=13465" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_mountainsilversage.jpg"/>Mountain Silversage</a> (you only need 15 from one)</li>
+</ul>
+<h3>TBC</h3>
+<ul>
+<li>35x <a class="white" href="https://www.wowhead.com/cata/item=22785" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_felweed.jpg"/>Felweed</a></li>
+<li>5x <a class="white" href="https://www.wowhead.com/cata/item=22789" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_terrocone.jpg"/>Terocone</a></li>
+<li>45x <a class="white" href="https://www.wowhead.com/cata/item=22786" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_dreamingglory.jpg"/>Dreaming Glory</a></li>
+<li>10x <a class="white" href="https://www.wowhead.com/cata/item=22791" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_netherbloom.jpg"/>Netherbloom</a></li>
+</ul><h3>WotLK</h3>
+<ul>
+<li>20x <a class="white" href="https://www.wowhead.com/cata/item=36907" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_talandrasrose.jpg"/>Talandra's Rose</a></li>
+<li>5x <a class="white" href="https://www.wowhead.com/cata/item=40199" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_fish_55.jpg"/>Pygmy Suckerfish</a></li>
+<li>85x <a class="white" href="https://www.wowhead.com/cata/item=36901" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_goldclover.jpg"/>Goldclover</a></li>
+<li>35x <a class="white" href="https://www.wowhead.com/cata/item=36904" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_tigerlily.jpg"/>Tiger Lily</a></li>
+<li>30x <a class="white" href="https://www.wowhead.com/cata/item=36903" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_evergreenmoss.jpg"/>Adder's Tongue</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/cata/item=36906" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_icethorn.jpg"/>Icethorn</a></li>
+<li>40x <a class="white" href="https://www.wowhead.com/cata/item=36905" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_whispervine.jpg"/>Lichbloom</a></li>
+</ul><h3>Cataclysm (425-525)</h3><ul>
+<li>80x <a class="white" href="https://www.wowhead.com/cata/item=52983" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_cinderbloom.jpg"/>Cinderbloom</a></li>
+<li>25x <a class="white" href="https://www.wowhead.com/cata/item=52984" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_stormvine.jpg"/>Stormvine</a></li>
+<li>16x <a class="white" href="https://www.wowhead.com/cata/item=52985" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_azsharasveil.jpg"/>Azshara's Veil</a></li>
+<li>25x <a class="white" href="https://www.wowhead.com/cata/item=52986" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_heartblossom.jpg"/>Heartblossom</a></li>
+<li>5x <a class="white" href="https://www.wowhead.com/cata/item=52329" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_volatilelife_green.jpg"/>Volatile Life</a></li>
+<li>10x <a class="white" href="https://www.wowhead.com/cata/item=52987" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_twilightjasmine.jpg"/>Twilight Jasmine</a></li>
+<li>15x <a class="white" href="https://www.wowhead.com/cata/item=52988" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_whiptail.jpg"/>Whiptail</a></li>
+<li>15x <a class="zold" href="https://www.wowhead.com/cata/item=52181" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior5.jpg"/>Hessonite</a></li>
+<li>15x <a class="zold" href="https://www.wowhead.com/cata/item=52182" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior2.jpg"/>Jasper</a></li>
+<li>15x <a class="zold" href="https://www.wowhead.com/cata/item=52179" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior.jpg"/>Alicite</a></li>
+<li>15x <a class="zold" href="https://www.wowhead.com/cata/item=52178" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior6.jpg"/>Zephyrite</a> and 15x <a class="white" href="https://www.wowhead.com/cata/item=52985" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_azsharasveil.jpg"/>Azshara's Veil</a> <strong>OR </strong>15x <a class="zold" href="https://www.wowhead.com/cata/item=52180" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemsuperior3.jpg"/>Nightstone</a> and 15x <a class="white" href="https://www.wowhead.com/cata/item=52987" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_twilightjasmine.jpg"/>Twilight Jasmine</a></li>
+</ul><h2 class="gtitle" id="cataclysm-alchemy-trainers">Alchemy Trainers</h2>
+<div class="row guidegrid">
+<div class="col-xs-12 col-sm-12 col-md-6 guiderow">
+<p><b>Horde trainers:</b></p>
+<ul>
+<li><a href="../../npc/classic/yelmak/index.html"><img height="15" src="../../images/icons/horde.png" width="15"/>Yelmak</a> in Orgrimmar.</li>
+<li><a href="../../npc/classic/doctor-herbert-halsey/index.html"><img height="15" src="../../images/icons/horde.png" width="15"/>Doctor Herbert Halsey</a> in Undercity.</li>
+<li><a href="../../npc/classic/bena-winterhoof/index.html"><img height="15" src="../../images/icons/horde.png" width="15"/>Bena Winterhoof</a> in Thunder Bluff</li>
+<li><a href="../../npc/classic/camberon/index.html"><img height="15" src="../../images/icons/horde.png" width="15"/>Camberon</a> in Silvermoon City</li>
+<li><a href="https://www.wowhead.com/mop-classic/npc=1386" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" height="15" src="../../images/icons/horde.png" width="15"/>Rogvar</a> in Swamp of Sorrows.</li>
+</ul>
+</div>
+<div class="col-xs-12 col-sm-12 col-md-6 guiderow">
+<p><b>Alliance trainers:</b></p>
+<ul>
+<li><a href="../../npc/classic/tally-berryfizz/index.html"><img height="15" src="../../images/icons/alliance.png" width="15"/>Tally Berryfizz</a> in Ironforge.</li>
+<li><a href="../../npc/classic/lilyssia-nightbreeze/index.html"><img height="15" src="../../images/icons/alliance.png" width="15"/>Lilyssia Nightbreeze</a> in Stormwind City.</li>
+<li><a href="../../npc/classic/ainethil/index.html"><img height="15" src="../../images/icons/alliance.png" width="15"/>Ainethil</a> in Darnassus.</li>
+<li><a href="../../npc/classic/lucc/index.html"><img height="15" src="../../images/icons/alliance.png" width="15"/>Lucc</a> in The Exodar.</li>
+</ul>
+</div>
+</div>
+<h2 class="gtitle" id="1">Leveling Cataclysm Classic Alchemy</h2>
+<h3 class="gdskill">1 - 140</h3>
+<ul class="gd">
+<li><b>1-60</b><br/>
+	65x <a class="white" href="https://www.wowhead.com/cata/item=118" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_49.jpg"/>Minor Healing Potion</a> - 65 Peacebloom, 65 Silverleaf
+<p>You'll need these later, so keep all of them.</p><p>The <a class="white" href="https://www.wowhead.com/cata/item=3371" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_alchemy_leadedvial.jpg"/>Crystal Vial</a> is sold by Alchemy supply vendors, don't buy them from the Auction House.</p>
+</li>
+</ul>
+<p><a name="60"></a></p>
+<h3 class="gd3">Journeyman Alchemy</h3>
+<p>Visit your trainer and learn Journeyman Alchemy. (Requires character level 10)</p>
+<ul class="gd">
+<li><b>60 - 110</b><br/>
+	65x <a class="white" href="https://www.wowhead.com/cata/item=858" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_50.jpg"/>Lesser Healing Potion</a> - 65 Minor Healing Potion, 65 Briarthorn</li>
+</ul>
+<ul class="gd">
+<li><b>110 - 140</b><br/>
+	35x <a class="white" href="https://www.wowhead.com/cata/item=929" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_51.jpg"/>Healing Potion</a> - 35 Bruiseweed, 35 Briarthorn</li>
+</ul>
+<h2 class="gtitle" id="140">Expert Alchemy</h2>
+<p>Visit your trainer and learn Expert Alchemy. (Requires level 20)</p>
+<h3 class="gdskill">140 - 210</h3>
+<ul class="gd">
+<li><b>140 - 155</b><br/>
+	20x <a class="white" href="https://www.wowhead.com/cata/item=3385" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_71.jpg"/>Lesser Mana Potion</a> - 20 Mageroyal, 20 Stranglekelp
+<p>This recipe will be yellow for the last 10 points, so you might have to make a few extra.</p><p>Make <a class="white" href="https://www.wowhead.com/cata/spell=7837" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_38.jpg"/>Fire Oil</a> if you don't have <a class="white" href="https://www.wowhead.com/cata/item=3820" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_11.jpg"/>Stranglekelp</a> or if <a class="white" href="https://www.wowhead.com/cata/item=6359" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_monsterhead_01.jpg"/>Firefin Snapper</a> is cheap. You could also continue to make more <a class="white" href="https://www.wowhead.com/cata/spell=3447" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_51.jpg"/>Healing Potion</a>.</p>
+</li></ul>
+<ul class="gd">
+<li><b>155 - 185</b><br/>
+	35x <a class="white" href="https://www.wowhead.com/cata/item=1710" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_52.jpg"/>Greater Healing Potion</a> - 35 Liferoot, 35 Kingsblood
+<p>If you made <a class="white" href="https://www.wowhead.com/cata/spell=7837" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_38.jpg"/>Fire Oil</a>, you could use it to make <a class="white" href="https://www.wowhead.com/cata/spell=7845" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_33.jpg"/>Elixir of Firepower</a></p>
+</li></ul>
+<ul class="gd">
+<li><b>185 - 210</b><br/>
+	30x <a class="white" href="https://www.wowhead.com/cata/item=8949" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_93.jpg"/>Elixir of Agility</a> - 30 Stranglekelp, 30 Goldthorn
+<p>If you don't have that many Goldthorn, make <a class="white" href="https://www.wowhead.com/cata/spell=3452" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_72.jpg"/>Mana Potion</a> or <a class="white" href="https://www.wowhead.com/cata/spell=3448" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_18.jpg"/>Lesser Invisibility Potion</a> up to around 195.</p><p>If you don't have any Goldthorn at all, you can make <a class="white" href="https://www.wowhead.com/cata/spell=7259" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_06.jpg"/>Nature Protection Potion</a> between 190-215</p><p><a class="white" href="https://www.wowhead.com/cata/item=6057" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Nature Protection Potion</a> is sold by <a href="https://www.wowhead.com/cata/item=6057" rel="nofollow" target="_blank">these vendors</a>. It's a limited supply item, so it can take a while to respawn when someone else purchases the recipe before you.</p>
+</li></ul>
+<h2 class="gtitle" id="210">Artisan Alchemy </h2>
+<p>Visit your trainer and learn Artisan Alchemy. (Requires level 35)</p>
+<h3 class="gdskill">210 - 300</h3>
+<ul class="gd">
+<li><b>210 - 215</b><br/>
+	5x <a class="white" href="https://www.wowhead.com/cata/item=8951" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_65.jpg"/>Elixir of Greater Defense</a> - 5 Steelbloom, 5 Goldthorn</li>
+</ul>
+<ul class="gd">
+<li><b>215-239</b><br/>
+	28x <a class="white" href="https://www.wowhead.com/spell=11457" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_53.jpg"/>Superior Healing Potion</a> - 28 Sungrass, 28 Khadgar's Whisker
+<p>This recipe will be yellow for the last few points, so you might have to make a few extra.</p>
+</li></ul>
+<ul class="gd">
+<li><b>239 - 240</b><br/>
+	1x <a class="zold" href="https://www.wowhead.com/cata/spell=11459" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_orb_01.jpg"/>Philosopher's Stone</a> - 4 Iron Bar, 1 Black Vitriol, 4 Purple Lotus, 4 Firebloom
+<p>You will need this for Alchemy transmutes, so keep it. (don't have to equip it)</p><p>The recipe is sold by <a href="https://www.wowhead.com/wotlk/npc=5594" rel="nofollow noopener noreferrer" target="_blank">Alchemist Pestlezugg</a> in Tanaris.</p>
+</li></ul>
+<ul class="gd">
+<li><b>240-250</b><br/>
+	10x <a class="white" href="https://www.wowhead.com/spell=11465" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_10.jpg"/>Elixir of Greater Intellect</a> - 10 Khadgar's Whisker, 10 Blindweed</li>
+</ul>
+<ul class="gd">
+<li><b>250-270</b><br/>
+	22x <a class="white" href="https://www.wowhead.com/spell=11478" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_53.jpg"/>Elixir of Detect Demon</a> - 44 Gromsblood
+<p>This recipe will be yellow for the last few points, so you might have to make a few extra.</p><p>You can make <a class="white" href="https://www.wowhead.com/spell=17553" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_74.jpg"/>Superior Mana Potion</a> between 260-270 if you have some Sungrass and Blindweed left.</p>
+</li>
+</ul>
+<ul class="gd">
+<li><b>270-285</b><br/>
+	15x <a class="white" href="https://www.wowhead.com/spell=17555" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_29.jpg"/>Elixir of the Sages</a> - 30 Sorrowmoss, 15 Dreamfoil</li>
+</ul>
+<ul class="gd">
+<li><b>285-295</b><br/>
+	14x <a class="white" href="https://www.wowhead.com/spell=17556" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_54.jpg"/>Major Healing Potion</a> - 28 Golden Sansam, 14 Mountain Silversage</li>
+</ul>
+<ul class="gd">
+<li><b>295-300</b><br/>
+	5x <a class="white" href="https://www.wowhead.com/spell=17572" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_31.jpg"/>Purification Potion</a> - 10 Icecap, 10 Sorrowmoss</li>
+</ul>
+<h2 class="gtitle" id="300">Master Alchemy (300-350)</h2>
+<p>Visit your trainer and learn Master Alchemy. (Requires level 50)</p>
+<h3 class="gdskill">300 - 350</h3>
+<ul class="gd">
+<li><b>300 - 315</b><br/>
+	Make 15 from one of these:
+	<ul>
+<li>15x <a class="white" href="https://www.wowhead.com/cata/spell=33732" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_40.jpg"/>Volatile Healing Potion</a> - 15 Golden Sansam, 15 Felweed</li>
+<li>15x <a class="white" href="https://www.wowhead.com/cata/spell=33740" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_96.jpg"/>Adept's Elixir</a> - 15 Dreamfoil, 15 Felweed</li>
+<li>15x <a class="white" href="https://www.wowhead.com/cata/spell=33738" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_58.jpg"/>Onslaught Elixir</a> - 15 Mountain Silversage, 15 Felweed</li>
+</ul>
+</li>
+</ul>
+<ul class="gd">
+<li><b>315 - 330</b><br/>
+	25x <a class="white" href="https://www.wowhead.com/cata/spell=28545" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_142.jpg"/>Elixir of Healing Power</a> - 25 Golden Sansam, 25 Dreaming Glory</li>
+</ul>
+<ul class="gd">
+<li><b>330 - 335</b><br/>
+	5x <a class="white" href="https://www.wowhead.com/cata/spell=39638" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_155.jpg"/>Elixir of Draenic Wisdom</a> - 5 Terocone, 5 Felweed
+<p>Make <a class="white" href="https://www.wowhead.com/cata/spell=45061" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_28.jpg"/>Mad Alchemist's Potion</a> if you have a lot of Ragveil.</p>
+</li></ul>
+<ul class="gd">
+<li><b>335 - 340</b><br/>
+	5x <a class="white" href="https://www.wowhead.com/cata/spell=28551" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_131.jpg"/>Super Healing Potion</a> - 10 Netherbloom, 5 Felweed
+<p>Make the previous recipe five more times if you don't have Netherbloom.</p>
+</li></ul>
+<ul class="gd">
+<li><b>340 - 350</b><br/>
+	10x <a class="white" href="https://www.wowhead.com/cata/spell=28555" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_137.jpg"/>Super Mana Potion</a> - 20 Dreaming Glory, 10 Felweed
+<p><a class="white" href="https://www.wowhead.com/cata/item=22907" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Recipe: Super Mana Potion</a> is sold by <a href="../../npc/classic/daga-ramba/index.html"><img height="15" src="../../images/icons/horde.png" width="15"/>Daga Ramba</a> and <a href="../../npc/classic/haalrun/index.html"><img height="15" src="../../images/icons/alliance.png" width="15"/>Haalrun</a>.</p>
+</li></ul>
+<h2 class="gtitle" id="350">Grand Master Alchemy (350-425)</h2>
+<p>Visit your trainer and learn Grand Master Alchemy. (Requires level 65)</p>
+<h3 class="gdskill">350 - 400</h3>
+<ul class="gd">
+<li><b>350 - 360</b><br/>
+	10x <a class="white" href="https://www.wowhead.com/cata/spell=53838" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_120.jpg"/>Resurgent Healing Potion</a> - 20 Goldclover</li>
+</ul>
+<ul class="gd">
+<li><b>360 - 365</b><br/>
+	5x <a class="white" href="https://www.wowhead.com/cata/spell=53839" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_126.jpg"/>Icy Mana Potion</a> - 10 Talandra's Rose</li>
+</ul>
+<ul class="gd">
+<li><b>365 - 375</b><br/>
+	10x <a class="white" href="https://www.wowhead.com/cata/spell=53842" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_alchemy_potion_05.jpg"/>Spellpower Elixir</a> - 10 Goldclover, 10 Tiger Lily</li>
+</ul>
+<ul class="gd">
+<li><b>375 - 380</b><br/>
+	5x <a class="white" href="https://www.wowhead.com/cata/spell=53812" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_07.jpg"/>Pygmy Oil</a> - 5 Pygmy Suckerfish</li>
+</ul>
+<ul class="gd">
+<li><b>380 - 385</b><br/>
+	5x <a class="white" href="https://www.wowhead.com/cata/spell=53900" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_alchemy_elixir_03.jpg"/>Potion of Nightmares</a> - 5 Goldclover, 10 Talandra's Rose</li>
+</ul>
+<ul class="gd">
+<li><b>385 - 395</b><br/>
+	12x <a class="white" href="https://www.wowhead.com/cata/spell=54218" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_165.jpg"/>Elixir of Mighty Strength</a> - 24 Tiger Lily</li>
+</ul>
+<ul class="gd">
+<li><b>395 - 400</b><br/>
+	5x <a class="white" href="https://www.wowhead.com/cata/spell=53840" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_162.jpg"/>Elixir of Mighty Agility</a> - 10 Goldclover, 10 Adder's Tongue</li>
+</ul>
+<h3 class="gdskill">400 - 425</h3>
+<ul class="gd">
+<li><b>400 - 405</b><br/>
+	One of these two:<br/>
+	8x <a class="white" href="https://www.wowhead.com/cata/spell=53840" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_162.jpg"/>Elixir of Mighty Agility</a> - 16 Goldclover, 16 Adder's Tongue<br/>
+	8x <a class="white" href="https://www.wowhead.com/cata/spell=60367" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_161.jpg"/>Elixir of Mighty Thoughts</a> - 16 Deadnettle, 8 Talandra's Rose</li>
+</ul>
+<ul class="gd">
+<li><b>405 - 415</b><br/>
+	10x <a class="white" href="https://www.wowhead.com/cata/spell=53905" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_alchemy_elixir_empty.jpg"/>Indestructible Potion</a> - 20 Icethorn</li>
+</ul>
+<ul class="gd">
+<li><b>415 - 425</b><br/>
+	This recipe turns green at 422, so you might need to make more than 20.
+	<p>20x <a class="white" href="https://www.wowhead.com/cata/spell=53837" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_alchemy_elixir_02.jpg"/>Runic Mana Potion</a> - 20 Goldclover, 40 Lichbloom</p>
+</li>
+</ul>
+<h2 class="gtitle" id="425">Cataclysm Classic Alchemy (425-525)</h2>
+<p>Visit your trainer and learn the new Cataclysm Classic Alchemy skill.</p>
+<h3 class="gdskill">425 - 475</h3>
+<ul class="gd">
+<li><b>425-450</b><br/>
+	27x <a class="white" href="https://www.wowhead.com/cata/item=67415" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_potiona4.jpg"/>Draught of War</a> - 27 Cinderbloom</li>
+</ul>
+<ul class="gd">
+<li><b>450-455</b><br/>
+	5x <a class="white" href="https://www.wowhead.com/cata/item=58084" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potiond_5.jpg"/>Ghost Elixir</a> -10 Cinderbloom</li>
+</ul>
+<ul class="gd">
+<li><b>455-460</b><br/>
+	5x <a class="white" href="https://www.wowhead.com/cata/item=58142" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potionf_3.jpg"/>Deathblood Venom</a> - 10 Stormvine</li>
+</ul>
+<ul class="gd">
+<li><b>460-465</b><br/>
+	5x <a class="white" href="https://www.wowhead.com/cata/item=58091" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potiond_3.jpg"/>Volcanic Potion</a> - 5 Cinderbloom, 5 Azshara's Veil</li>
+</ul>
+<ul class="gd">
+<li><b>465-475</b><br/>
+	11x <a class="white" href="https://www.wowhead.com/cata/item=58092" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_potiona3.jpg"/>Elixir of the Cobra</a> - 11 Cinderbloom, 11 Azshara's Veil
+<p>You can also make <a class="white" href="https://www.wowhead.com/cata/spell=80486" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potionf_1.jpg"/>Deepstone Oil</a> between 470-475 and turn the Deepstone Oils into <a class="white" href="https://www.wowhead.com/cata/spell=80487" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potiond_6.jpg"/>Mysterious Potion</a>. You should reach around 477 with this method.</p>
+</li></ul>
+<h3>Alchemy Specializations</h3>
+<p>Once you reach Alchemy skill 475 and level 75, you may begin a quest to learn one of three specializations: <a href="https://www.wowhead.com/cata/quest=29067" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Potion Master</a>, <a href="https://www.wowhead.com/cata/quest=29481" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Elixir Master</a>, or <a href="https://www.wowhead.com/cata/quest=29482" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Transmutation Master</a>.</p>
+<h3 class="gdskill">475 - 525</h3>
+<ul class="gd">
+<li><b>475-480</b><br/>
+	5x <a class="white" href="https://www.wowhead.com/cata/spell=80488" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potionf_5.jpg"/>Elixir of Deep Earth</a> - 10 Heartblossom</li>
+</ul>
+<ul class="gd">
+<li><b>480-490</b><br/>
+	10x <a class="white" href="https://www.wowhead.com/cata/spell=80491" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potionf_6.jpg"/>Elixir of Impossible Accuracy</a> - 10 Heartblossom, 10 Cinderbloom
+<p>Make <a class="white" href="https://www.wowhead.com/cata/spell=80494" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_potionsetc.jpg"/>Mythical Mana Potion</a> if Whiptail is cheaper than Heartblossom.</p>
+</li></ul>
+<ul class="gd">
+<li><b>490-495</b><br/>
+	5x <a class="white" href="https://www.wowhead.com/cata/spell=80496" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potiond_1.jpg"/>Golemblood Potion</a> - 5 Heartblossom, 5 Volatile Life</li>
+</ul>
+<ul class="gd">
+<li><b>495-505</b><br/>
+	10x <a class="white" href="https://www.wowhead.com/cata/spell=80498" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_potionsetf.jpg"/>Mythical Healing Potion</a> - 10 Twilight Jasmine</li>
+</ul>
+<ul class="gd">
+<li><b>505-510</b><br/>
+	Craft your epic Alchemy trinket now if you need it and skip the recipe below. If not, craft this instead:	
+<p>5x <a class="rare" href="https://www.wowhead.com/cata/spell=80251" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemnormal1.jpg"/>Transmute: Dream Emerald</a> - 15x Jasper, 15x Stormvine</p></li>
+</ul>
+<ul class="gd">
+<li><b>510-515</b><br/>
+		5x <a class="rare" href="https://www.wowhead.com/cata/spell=80250" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemnormal.jpg"/>Transmute: Ember Topaz</a> - 15x Hessonite, 15x Cinderbloom</li>
+</ul>
+<ul class="gd">
+<li><b>515-520</b><br/>
+	Make five from one of these two:
+	<p>5x <a class="rare" href="https://www.wowhead.com/cata/spell=80248" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemnormal4.jpg"/>Transmute: Demonseye</a> - 15 Nightstone, 15 Twilight Jasmine<br/>
+	5x <a class="rare" href="https://www.wowhead.com/cata/spell=80246" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemnormal2.jpg"/>Transmute: Ocean Sapphire</a> - 15 Zephyrite, 15 Azshara's Veil</p>
+</li>
+</ul>
+<h4>Darkmoon Faire Free +5 Profession Skill</h4>
+<p>Check your Calendar in-game to see if the Darkmoon Faire is open. The event is available every two weeks. It starts on Sunday and lasts for a week.</p>
+<p>During the event, you can complete quests for each profession and gain <b>+5 skill points</b> for each. <a href="../../cataclysm/darkmoon-faire-profession-quests-cataclysm-classic/index.html">Click here</a> to read more about the quests.</p>
+<ul class="gd">
+<li><b>520-525</b><br/>
+	5x <a class="rare" href="https://www.wowhead.com/cata/spell=80247" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_uncutgemnormal5.jpg"/>Transmute: Amberjewel</a> - 15 Alicite, 15 Whiptail</li>
+</ul>
+<p><br/>
+Congratulations on reaching 525! Please <a href="../../contact/index.html" rel="nofollow">send feedback</a> about the guide if you think there are parts I could improve or if you found typos, errors, or wrong material numbers!</p>
+<p class="text-align-center"><a href="#top">(Return to Top)</a></p>
+</article>
+</main>
+<aside class="left-sidebar-menu sidebar-sticky">
+<nav>
+<h4>Quick Links</h4>
+<ul>
+<li><a href="../../cataclysm/alchemy-leveling-guide-cataclysm-classic/index.html">Alchemy</a></li>
+<li><a href="../../cataclysm/blacksmithing-leveling-guide-cataclysm-classic/index.html">Blacksmithing</a></li>
+<li><a href="../../cataclysm/enchanting-leveling-guide-cataclysm-classic/index.html">Enchanting</a></li>
+<li><a href="../../cataclysm/engineering-leveling-guide-cataclysm-classic/index.html">Engineering</a></li>
+<li><a href="../../cataclysm/inscription-leveling-guide-cataclysm-classic/index.html">Inscription</a></li>
+<li><a href="../../cataclysm/jewelcrafting-leveling-guide-cataclysm-classic/index.html">Jewelcrafting</a></li>
+<li><a href="../../cataclysm/leatherworking-leveling-guide-cataclysm-classic/index.html">Leatherworking</a></li>
+<li><a href="../../cataclysm/tailoring-leveling-guide-cataclysm-classic/index.html">Tailoring</a></li>
+<li><a href="../../cataclysm/herbalism-leveling-guide-cataclysm-classic/index.html">Herbalism</a></li>
+<li><a href="../../cataclysm/mining-leveling-guide-cataclysm-classic/index.html">Mining</a></li>
+<li><a href="../../cataclysm/skinning-leveling-guide-cataclysm-classic/index.html">Skinning</a></li>
+<li><a href="../../cataclysm/first-aid-leveling-guide-cataclysm-classic/index.html">First Aid</a></li>
+<li><a href="../../cataclysm/fishing-and-cooking-leveling-guide-cataclysm-classic/index.html">Fishing+Cooking</a></li>
+<li><a href="../../cataclysm/cooking-leveling-guide-cataclysm-classic/index.html">Cooking</a></li>
+<li><a href="../../cataclysm/fishing-leveling-guide-cataclysm-classic/index.html">Fishing</a></li>
+<li><a href="../../cataclysm/archaeology-leveling-guide-cataclysm-classic/index.html">Archaeology</a></li>
+</ul>
+</nav>
+</aside>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

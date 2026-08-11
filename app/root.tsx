@@ -30,7 +30,7 @@ export const links = () => [
 
 const DEFAULT_TITLE = "Profesiones WoW - Guías en español | eldonqu";
 const DEFAULT_DESCRIPTION =
-  "Guías de profesiones de World of Warcraft en español. The War Within y más expansiones.";
+  "Guías de profesiones de World of Warcraft en español. La Guerra Interior y más expansiones.";
 
 export function meta() {
   return [
@@ -102,7 +102,7 @@ export function ErrorBoundary({ error }: { error: unknown }) {
     details =
       error.status === 404
         ? "La página solicitada no se encontró."
-        : error.statusText || details;
+        : error.statusText || "Ha ocurrido un error en el servidor.";
   } else if (import.meta.env.DEV && error instanceof Error) {
     details = error.message;
     stack = error.stack;

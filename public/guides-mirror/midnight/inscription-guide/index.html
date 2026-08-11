@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="Midnight Inscription guide with all Knowledge Points (weekly sources and 8 one-time treasures), specializations, and full recipe lists for weapons, Darkmoon cards, contracts, treatises, missives, reagents, and House Decor." name="description"/>
+<meta content="Midnight Inscription Guide: Recipes &amp; Knowledge Points" property="og:title"/>
+<meta content="Midnight Inscription guide with all Knowledge Points (weekly sources and 8 one-time treasures), specializations, and full recipe lists for weapons, Darkmoon cards, contracts, treatises, missives, reagents, and House Decor." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/midnight/inscription-guide" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>Midnight Inscription Guide: Recipes &amp; Knowledge Points</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=CT1lIXp9k1ZRvMqNuhB9qzJc3c2PaJLejhawqRe6EqI-1771996636.1881907-1.0.1.1-MQu2naVfQbzfVVSXftNVV1juOtP6Pm26ptlwxhyLDGg" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--3">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#changes">Midnight Inscription Changes</a></li>
+<li><a href="#weekly-knowledge">Weekly Knowledge</a></li>
+<li><a href="#treasures">One-Time Knowledge Treasures</a></li>
+<li><a href="#specializations">Inscription Specializations</a></li>
+<li><a href="#profession-equipment">Profession Equipment</a></li>
+<li><a href="#renown-recipes">Renown Recipes</a></li>
+<li><a href="#weapons">Weapons</a></li>
+<li><a href="#darkmoon">Darkmoon Cards</a></li>
+<li><a href="#contracts">Contracts</a></li>
+<li><a href="#treatises">Treatises</a></li>
+<li><a href="#missives">Missives</a></li>
+<li><a href="#reagents">Reagents &amp; Consumables</a></li>
+<li><a href="#decor">House Decor</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">Midnight Inscription Guide: Recipes &amp; Knowledge Points</h1>
+<article>
+<p>This guide covers all of Midnight Inscription. You'll find every weekly and one-time Knowledge source (with coordinates, TomTom commands, and check macros), profession equipment, renown-gated recipes, and full recipe lists for weapons, Darkmoon cards, contracts, treatises, missives, reagents, and House Decor.</p>
+<p>If you need help leveling Inscription from 1 to 100, check out my leveling guide:</p>
+<p class="text-align-center">
+<a class="gblock" href="../../guides/wow-inscription-leveling-guide/index.html">
+        Midnight Inscription Leveling Guide
+    </a>
+</p>
+<h2 class="line-header" id="changes">Midnight Inscription Changes</h2>
+<p>These are the notable Inscription changes in Midnight. If you played The War Within, most of the system is the same, so this section focuses on what is different.</p>
+<ul class="guide-list">
+<li><b>Artisan Scribe's Moxie</b> - The BoP currency <a class="rare" href="https://www.wowhead.com/item=210814" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color3.jpg"/>Artisan's Acuity</a> that you got from earning profession Knowledge in The War Within has been changed to a profession-specific currency, <a class="white" href="https://www.wowhead.com/currency=3261" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color2.jpg"/>Artisan Scribe's Moxie</a>. You can now only use it for Inscription-specific recipes.</li>
+<li><b>No More Bronze Quality Reagents</b> - Bronze-quality reagents and consumables have been removed in Midnight. All reagents and consumables now only have two quality levels: Silver and Gold. This means you will always get at least a Silver-quality item, and you can use your Concentration right away to craft Gold-quality items. Weapons, profession equipment, and Darkmoon trinkets still have 5 ranks.</li>
+<li><b>Epic Profession Tools</b> - New Epic-quality profession tools are available in Midnight, providing more secondary stats than Rare tools. Both Epic and Rare tools provide the same base Skill bonus.</li>
+<li><b>Bows</b> - Inscription can now craft bows, giving hunters an alternative to Engineering, which was the only profession that could craft ranged weapons in The War Within.</li>
+<li><b>Darkmoon Card Crafting</b> - In The War Within, Darkmoon cards only dropped from mobs. In Midnight, crafting is back. You create individual cards through the new Darkmoon Curiosity specialization, collect all 8 of a suit into a deck, and craft a Darkmoon Dominion trinket (ilvl 220, 5 ranks) from it. Each suit also has a matching Darkmoon Sigil embellishment.</li>
+</ul>
+<h2 class="line-header" id="weekly-knowledge">Weekly Inscription Knowledge in Midnight</h2>
+<p>In Midnight, there are four weekly sources of profession Knowledge, giving you 20-25 Knowledge Points per week. But this is only an estimate, because Patron Orders require crafting specific items at high quality, so your actual weekly total will be lower if you don't have the recipe or can't hit the quality target.</p>
+<div class="table-container">
+<table class="tbl-desc">
+<thead>
+<tr>
+<th>Source</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><b>Patron Crafting Orders (~24 KP)</b></td>
+<td>Patron orders are the main source of Knowledge Points. You will receive multiple orders throughout the week. Some of them will reward you with <a class="rare" href="https://www.wowhead.com/item=246329" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_nullstone_cosmicvoid.jpg"/>Glimmer of Midnight Inscription Knowledge</a>, but not all orders give Knowledge Points.</td>
+</tr>
+<tr>
+<td><b>Weekly Quest (2 KP)</b></td>
+<td>Your profession trainer will offer a weekly quest that asks you to complete 3 Crafting Orders. This rewards a <a class="rare" href="https://www.wowhead.com/item=263457" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_professionbook_inscription_color1.jpg"/>Thalassian Scribe's Journal</a> worth 2 Knowledge Points and resets every week.</td>
+</tr>
+<tr>
+<td><b>Weekly Drops (4 KP)</b></td>
+<td>Each week, you can loot 1 of each of the following items from treasures scattered around the new zones: <a class="rare" href="https://www.wowhead.com/item=259196" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_inscriptions_ink_gold.jpg"/>Brilliant Phoenix Ink</a> and <a class="rare" href="https://www.wowhead.com/item=259197" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_inscriptions_vantusrune_lightgreen.jpg"/>Loa-Blessed Rune</a>.</td>
+</tr>
+<tr>
+<td><b>Inscription Treatise (1-2 KP)</b></td>
+<td>Inscribers craft Thalassian Treatises for every profession, and can use <a class="rare" href="https://www.wowhead.com/item=245757" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_profession_book_inscription.jpg"/>Thalassian Treatise on Inscription</a> weekly for 1 Knowledge Point. These are bind-on-pickup (BoP) but Warbound, so you can craft extras and send them to alts. If you fully unlock the Calm Hands specialization, you earn an additional Knowledge Point from your treatise (2 KP total).</td>
+</tr>
+<tr>
+<td><b>Darkmoon Faire (3 KP / month)</b></td>
+<td>Once a month, the Darkmoon Faire comes to town and you can complete a quick profession quest for +3 Knowledge Points and +2 Profession Skill. It's not a weekly source, but don't skip it. The Faire starts on the Sunday before the first Monday of each month.</td>
+</tr>
+<tr>
+<td><b>Catch-up System</b></td>
+<td>If you fall behind or start late, you will receive <a class="rare" href="https://www.wowhead.com/item=246328" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_cosmicvoid_orb.jpg"/>Flicker of Midnight Inscription Knowledge</a> instead of <a class="rare" href="https://www.wowhead.com/item=246329" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_nullstone_cosmicvoid.jpg"/>Glimmer of Midnight Inscription Knowledge</a> from Patron Orders. Flickers give more Knowledge Points than Glimmers, so you will catch up quickly. Once you are caught up, you will start receiving Glimmers again.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 class="line-header" id="treasures">One-Time Inscription Knowledge in Midnight</h2>
+<p>These are one-time sources of Inscription Knowledge Points. Once you collect them, they are gone forever on that character.</p>
+<h3>Renown Knowledge Book</h3>
+<p><a class="rare" href="https://www.wowhead.com/item=258411" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_professionbook_inscription_color2.jpg"/>Traditions of the Haranir: Inscription</a> is sold by the Haranir Renown Quartermaster.</p>
+<h3>Midnight Inscription Treasures</h3>
+<p>There are 8 Inscription treasures scattered across the Midnight zones. Each one gives 3 Knowledge Points, for a total of 24 extra points. One treasure location has not been found yet on beta.</p>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Treasure</th>
+<th>Zone</th>
+<th>Map</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://www.wowhead.com/object=525931" rel="nofollow noopener noreferrer" target="_blank">Songwriter's Pen</a></td>
+<td>Silvermoon City</td>
+<td><button class="btn-map" data-coords="47.7, 50.4" data-map-img="/images/maps/normal/silvermoon-city.jpg" data-title="Songwriter's Pen" data-zone="2393" data-zone-name="Silvermoon City">Map</button></td>
+</tr>
+<tr>
+<td><a href="https://www.wowhead.com/object=525930" rel="nofollow noopener noreferrer" target="_blank">Songwriter's Quill</a></td>
+<td>Eversong Woods</td>
+<td><button class="btn-map" data-coords="40.3, 61.2" data-map-img="/images/maps/normal/eversong-woods.jpg" data-title="Songwriter's Quill" data-zone="2395" data-zone-name="Eversong Woods">Map</button></td>
+</tr>
+<tr>
+<td><a href="https://www.wowhead.com/object=525935" rel="nofollow noopener noreferrer" target="_blank">Spare Ink</a></td>
+<td>Eversong Woods</td>
+<td><button class="btn-map" data-coords="48.3, 75.6" data-map-img="/images/maps/normal/eversong-woods.jpg" data-title="Spare Ink" data-zone="2395" data-zone-name="Eversong Woods">Map</button></td>
+</tr>
+<tr>
+<td><a href="https://www.wowhead.com/object=525936" rel="nofollow noopener noreferrer" target="_blank">Leather-Bound Techniques</a></td>
+<td>Zul'Aman</td>
+<td><button class="btn-map" data-coords="40.5, 49.4" data-map-img="/images/maps/normal/zulaman.jpg" data-title="Leather-Bound Techniques" data-zone="2437" data-zone-name="Zul'Aman">Map</button></td>
+</tr>
+<tr>
+<td><a href="https://www.wowhead.com/object=525933" rel="nofollow noopener noreferrer" target="_blank">Leftover Sanguithorn Pigment</a></td>
+<td>Harandar</td>
+<td><button class="btn-map" data-coords="52.7, 50" data-map-img="/images/maps/normal/harandar.jpg" data-title="Leftover Sanguithorn Pigment" data-zone="2413" data-zone-name="Harandar">Map</button></td>
+</tr>
+<tr>
+<td><a href="https://www.wowhead.com/object=525934" rel="nofollow noopener noreferrer" target="_blank">Intrepid Explorer's Marker</a></td>
+<td>Harandar</td>
+<td><button class="btn-map" data-coords="52.4, 52.6" data-map-img="/images/maps/normal/harandar.jpg" data-title="Intrepid Explorer's Marker" data-zone="2413" data-zone-name="Harandar">Map</button></td>
+</tr>
+<tr>
+<td><a href="https://www.wowhead.com/object=525937" rel="nofollow noopener noreferrer" target="_blank">Void-Touched Quill</a></td>
+<td>Voidstorm</td>
+<td><button class="btn-map" data-coords="60.7, 84.3" data-map-img="/images/maps/normal/slayers-rise.jpg" data-title="Void-Touched Quill" data-zone="2444" data-zone-name="Voidstorm, Slayer's Rise">Map</button></td>
+</tr>
+<tr>
+<td>Half-Baked Techniques</td>
+<td>Location not found yet</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</div>
+<details class="details-macro">
+<summary>TomTom Waypoints &amp; Treasure Check Macro</summary>
+<div class="details-macro-content">
+<h4>TomTom Waypoints</h4>
+<div class="code-copy">
+<div class="code-header">Copy all, then type <code>/ttpaste</code> in-game</div>
+<button class="btn-copy" data-clipboard-text="/way #2393 47.7, 50.4 Songwriter's Pen
+/way #2395 40.3, 61.2 Songwriter's Quill
+/way #2395 48.3, 75.6 Spare Ink
+/way #2437 40.5, 49.4 Leather-Bound Techniques
+/way #2413 52.7, 50.0 Leftover Sanguithorn Pigment
+/way #2413 52.4, 52.6 Intrepid Explorer's Marker
+/way #2444 60.7, 84.3 Void-Touched Quill"><svg viewbox="0 0 24 24"><rect height="13" rx="2" width="13" x="9" y="9"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+<pre>/way #2393 47.7, 50.4 Songwriter's Pen
+/way #2395 40.3, 61.2 Songwriter's Quill
+/way #2395 48.3, 75.6 Spare Ink
+/way #2437 40.5, 49.4 Leather-Bound Techniques
+/way #2413 52.7, 50.0 Leftover Sanguithorn Pigment
+/way #2413 52.4, 52.6 Intrepid Explorer's Marker
+/way #2444 60.7, 84.3 Void-Touched Quill</pre>
+</div>
+<h4>Treasure Check Macro</h4>
+<div class="code-copy">
+<div class="code-header">Paste into chat - <code>true</code> = collected</div>
+<button class="btn-copy" data-clipboard-text="/run local f,p=C_QuestLog.IsQuestFlaggedCompleted,print p(&quot;Songwriter's Pen:&quot;,f(89073)) p(&quot;Songwriter's Quill:&quot;,f(89074)) p(&quot;Spare:&quot;,f(89069)) p(&quot;Leather-Bound:&quot;,f(89068)) p(&quot;Leftover:&quot;,f(89071)) p(&quot;Intrepid:&quot;,f(89070)) p(&quot;Void-Touched:&quot;,f(89067))"><svg viewbox="0 0 24 24"><rect height="13" rx="2" width="13" x="9" y="9"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+<div class="code-wrap">/run local f,p=C_QuestLog.IsQuestFlaggedCompleted,print p("Songwriter's Pen:",f(89073)) p("Songwriter's Quill:",f(89074)) p("Spare:",f(89069)) p("Leather-Bound:",f(89068)) p("Leftover:",f(89071)) p("Intrepid:",f(89070)) p("Void-Touched:",f(89067))</div>
+</div>
+</div>
+</details>
+<h2 class="line-header" id="specializations">Inscription Specializations</h2>
+<p>There are four specialization trees available. You unlock access to them at Inscription skill levels 25, 50, 60, and 75.</p>
+<ul class="guide-list">
+<li><b>Blueprints</b> - Staves, bows, and off-hands for players, plus profession tools for Alchemy, Cooking, and Inscription.</li>
+<li><b>Calm Hands</b> - Crafting stats (Multicraft, Resourcefulness, Ingenuity), plus a bonus Knowledge Point from your weekly Treatise.</li>
+<li><b>Perfected Products</b> - Quality improvements for milling, inks, ciphers, missives, contracts, and vantus runes.</li>
+<li><b>Darkmoon Curiosity</b> - Darkmoon cards, trinkets, and sigil embellishments for all four suits (Blood, Hunt, Rot, Void).</li>
+</ul>
+<p>I have a separate guide that walks through the best builds for each playstyle with step-by-step Knowledge Point allocation.</p>
+<p class="text-align-center">
+<a class="gblock" href="../../midnight/inscription-specialization-guide-and-builds/index.html">        
+        Midnight Inscription Specialization Guide &amp; Best Builds
+    </a>
+</p>
+<h2 class="line-header" id="profession-equipment">Profession Equipment</h2>
+<p>Epic profession tools are new in Midnight. In The War Within, professions only had Green and Rare tools. Epic tools give the same Skill as Rare, but have higher secondary stats like Resourcefulness, Multicraft, and Ingenuity.</p>
+<h3>Profession Gear for Scribes</h3>
+<p>To fully gear your Scribe you need items from 2 professions. Your tool (Quill) is crafted by Inscription itself, and both accessories (Spectacles and Magnifying Glass) come from Jewelcrafting.</p>
+<div class="table-container wrap">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Slot</th>
+<th>Crafted By</th>
+<th>Green Quality</th>
+<th>Blue Quality</th>
+<th>Epic Quality</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tool</td>
+<td>Inscription</td>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230022" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_1h_scribesquill_b_01_silver.jpg"/>Hobbyist Scribe's Quill</a></td>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230025" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_1h_scribesquill_b_01_gold.jpg"/>Sin'dorei Quill</a></td>
+<td><a class="epic" href="https://www.wowhead.com/spell=1264552" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_1h_scribesquill_b_01_silver.jpg"/>Gilded Sin'dorei Quill</a></td>
+</tr>
+<tr>
+<td>Accessory</td>
+<td>Jewelcrafting</td>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230494" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_armor_scribesspecs_b_01_gold.jpg"/>Bold Biographer's Bifocals</a></td>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230498" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_armor_scribesspecs_b_01_silver.jpg"/>Sin'dorei Scribe's Spectacles</a></td>
+<td><a class="epic" href="https://www.wowhead.com/spell=1242463" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helm_armor_scribesspecs_b_01_silver.jpg"/>Flawless Text Scrutinizers</a></td>
+</tr>
+<tr>
+<td>Accessory</td>
+<td>Jewelcrafting</td>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230493" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_jewelcrafting_inscription_magnifyingglass_blue.jpg"/>Fantastic Font Focuser</a></td>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230497" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_jewelcrafting_inscription_magnifyingglass_yellow.jpg"/>Improved Right-Handed Magnifying Glass</a></td>
+<td><a class="epic" href="https://www.wowhead.com/spell=1242462" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_jewelcrafting_inscription_magnifyingglass_red.jpg"/>Thalassian Scribe's Crystalline Lens</a></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Green tools are learned from the trainer. Blue tools come from the Blueprints specialization. Epic tool recipes are sold by Lelorian in Silvermoon City for 150 <a class="white" href="https://www.wowhead.com/currency=3261" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_gearcraft_artisansmettle_color2.jpg"/>Artisan Scribe's Moxie</a> each.</p>
+<p><b>Consider having two tools.</b> Milling does not benefit from Multicraft, but almost everything else does. If you want to min-max your profits, keep a Resourcefulness tool for milling and a Multicraft tool for crafting inks, reagents, missives, and everything else. Swap between them depending on what you're doing.</p>
+<h3>Craftable Profession Equipment</h3>
+<p>Inscription crafts tools for 3 professions including itself. Here are all the profession tools you can make for other players.</p>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Profession</th>
+<th>Green Quality</th>
+<th>Blue Quality</th>
+<th>Epic Quality</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Alchemy</td>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230021" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_alchemy_90_modifiedreagent_yellow.jpg"/>Hobbyist Alchemist's Mixing Rod</a></td>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230024" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_alchemy_90_modifiedreagent_purple.jpg"/>Sin'dorei Alchemist's Mixing Rod</a></td>
+<td><a class="epic" href="https://www.wowhead.com/spell=1264550" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_alchemy_90_modifiedreagent_purple.jpg"/>Gilded Alchemist's Mixing Rod</a></td>
+</tr>
+<tr>
+<td>Cooking</td>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230020" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_1h_mixingspoon_b_01.jpg"/>Hobbyist Rolling Pin</a></td>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230023" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_1h_rollingpin_b_01.jpg"/>Sin'dorei Rolling Pin</a></td>
+<td><a class="epic" href="https://www.wowhead.com/spell=1264551" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_1h_rollingpin_b_01.jpg"/>Gilded Sin'dorei Rolling Pin</a></td>
+</tr>
+<tr>
+<td>Inscription</td>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230022" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_1h_scribesquill_b_01_silver.jpg"/>Hobbyist Scribe's Quill</a></td>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230025" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_1h_scribesquill_b_01_gold.jpg"/>Sin'dorei Quill</a></td>
+<td><a class="epic" href="https://www.wowhead.com/spell=1264552" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_1h_scribesquill_b_01_silver.jpg"/>Gilded Sin'dorei Quill</a></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 class="line-header" id="renown-recipes">Renown Recipes</h2>
+<p>Several Inscription recipes are sold by Renown vendors, including faction Contracts and House Decor items. All require Renown Rank 5 with the corresponding faction. Contracts give bonus reputation from World Quests.</p>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Recipe</th>
+<th>Description</th>
+<th>Faction</th>
+<th>Vendor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230052" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_scroll1_color3.jpg"/>Contract: The Amani Tribe</a></td>
+<td>+Rep from World Quests</td>
+<td>Amani Tribe (Rank 5)</td>
+<td>Magovu</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230053" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_scroll1_color4.jpg"/>Contract: The Hara'ti</a></td>
+<td>+Rep from World Quests</td>
+<td>Hara'ti (Rank 5)</td>
+<td>Naynar</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1248630" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/7417091.jpg"/>Harandar Signpost</a></td>
+<td>House Decor</td>
+<td>Hara'ti (Rank 5)</td>
+<td>Naynar</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1248631" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/7489663.jpg"/>Magnificent Towering Bookcase</a></td>
+<td>House Decor</td>
+<td>Hara'ti (Rank 5)</td>
+<td>Naynar</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230051" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_scroll1_color1.jpg"/>Contract: The Silvermoon Court</a></td>
+<td>+Rep from World Quests</td>
+<td>Silvermoon Court (Rank 5)</td>
+<td>Caeris Fairdawn</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230054" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_scroll1_color2.jpg"/>Contract: The Singularity</a></td>
+<td>+Rep from World Quests</td>
+<td>The Singularity (Rank 5)</td>
+<td>Void Researcher Anomander</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1248621" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/7483291.jpg"/>Floating Void-Touched Tome</a></td>
+<td>House Decor</td>
+<td>The Singularity (Rank 5)</td>
+<td>Void Researcher Anomander</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 class="line-header" id="weapons">Weapons</h2>
+<p>Inscription crafts staves, off-hands, and bows. Rare weapons are learned from the trainer. Epic weapons are unlocked through the <b>Blueprints</b> specialization.</p>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Recipe</th>
+<th>Type</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=1230060" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_2h_dungeonharronir_c_02.jpg"/>Aln'hara Cane</a></td>
+<td>Staff</td>
+<td>Spec: Blueprints</td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=1230061" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_offhand_1h_dungeonharronir_c_01.jpg"/>Aln'hara Lantern</a></td>
+<td>Off-Hand</td>
+<td>Spec: Blueprints</td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=1230059" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_2h_dungeonharronir_c_01.jpg"/>Aln'hara Pikestaff</a></td>
+<td>Staff</td>
+<td>Spec: Blueprints</td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=1230062" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_bow_1h_dungeonharronir_c_01.jpg"/>Aln'hara Sprigshot</a></td>
+<td>Bow</td>
+<td>Spec: Blueprints</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230055" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_2h_dungeonharronir_c_01.jpg"/>Faunatender's Baton</a></td>
+<td>Staff</td>
+<td>Trainer (20)</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230058" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_bow_1h_dungeonharronir_c_01.jpg"/>Faunatender's Trust</a></td>
+<td>Bow</td>
+<td>Trainer (35)</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230056" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_2h_dungeonharronir_c_02.jpg"/>Floratender's Crutch</a></td>
+<td>Staff</td>
+<td>Trainer (20)</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230057" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_offhand_1h_dungeonharronir_c_01.jpg"/>Rootwarden's Lamp</a></td>
+<td>Off-Hand</td>
+<td>Trainer (20)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3>Competitor's Weapons (PvP)</h3>
+<p>These PvP weapons and trinkets are sold by Mirvedon in Silvermoon City.</p>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Recipe</th>
+<th>Type</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1260760" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_bow_1h_questbloodelf_b_01.jpg"/>Thalassian Competitor's Bow</a></td>
+<td>Bow</td>
+<td>Vendor: <a href="../../midnight/npc/mirvedon/index.html">Mirvedon</a> (Silvermoon City)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230067" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_warrior_endlessrage.jpg"/>Thalassian Competitor's Emblem</a></td>
+<td>Trinket</td>
+<td>Vendor: <a href="../../midnight/npc/mirvedon/index.html">Mirvedon</a> (Silvermoon City)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230068" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_token_argentdawn3.jpg"/>Thalassian Competitor's Insignia of Alacrity</a></td>
+<td>Trinket</td>
+<td>Vendor: <a href="../../midnight/npc/mirvedon/index.html">Mirvedon</a> (Silvermoon City)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230064" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_offhand_1h_undergroundquest_b_01.jpg"/>Thalassian Competitor's Lamp</a></td>
+<td>Off-Hand</td>
+<td>Vendor: <a href="../../midnight/npc/mirvedon/index.html">Mirvedon</a> (Silvermoon City)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230069" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_pvp_gladiatormedallion.jpg"/>Thalassian Competitor's Medallion</a></td>
+<td>Trinket</td>
+<td>Vendor: <a href="../../midnight/npc/mirvedon/index.html">Mirvedon</a> (Silvermoon City)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230066" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_polearm_2h_questbloodelf_b_01.jpg"/>Thalassian Competitor's Pillar</a></td>
+<td>Polearm</td>
+<td>Vendor: <a href="../../midnight/npc/mirvedon/index.html">Mirvedon</a> (Silvermoon City)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230065" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_2h_questbloodelf_b_01.jpg"/>Thalassian Competitor's Staff</a></td>
+<td>Staff</td>
+<td>Vendor: <a href="../../midnight/npc/mirvedon/index.html">Mirvedon</a> (Silvermoon City)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 class="line-header" id="darkmoon">Darkmoon Cards</h2>
+<p>Darkmoon cards are one of Inscription's signature products. In The War Within, cards only dropped from mobs and were exclusive to Scribes. In Midnight, crafting is back. You create individual cards through the Darkmoon Curiosity specialization, collect all 8 cards of a suit, and combine them into a deck that becomes a trinket.</p>
+<h3>How It Works</h3>
+<p>There are four suits: Blood, Hunt, Rot, and Void. Each suit has 8 cards and its own set of crafting recipes from the Darkmoon Curiosity spec. The flow is:</p>
+<p style="text-align:center; font-weight:700; font-size:1.05em;">Craft Cards → Collect 8 into a Deck → Use Deck to Craft Trinket</p>
+<h4>Inscribe</h4>
+<p>Each suit has an Inscribe recipe (e.g. <a class="white" href="https://www.wowhead.com/spell=1230085" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_inscription.jpg"/>Inscribe: Blood</a>) that creates a random card from that suit. You can use <a class="rare" href="https://www.wowhead.com/item=245801" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_inscriptions_ink_blue.jpg"/>Munsell Ink</a>, <a class="rare" href="https://www.wowhead.com/item=245805" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_inscriptions_ink_darkorange.jpg"/>Sienna Ink</a> or <a class="zold" href="https://www.wowhead.com/item=251923" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_everburningignition_blue.jpg"/>Thalassian Essence of the Faire</a> as the reagent.</p>
+<h4>Transcribe</h4>
+<p>Each suit also has a Transcribe recipe (e.g. <a class="white" href="https://www.wowhead.com/spell=1230084" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ui_profession_inscription.jpg"/>Transcribe: Blood</a>) that swaps an existing card for a different random one from the same suit. This costs an Essence, so use it to target the specific card you are missing.</p>
+<p>Both cards and <a class="zold" href="https://www.wowhead.com/item=251923" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_everburningignition_blue.jpg"/>Thalassian Essence of the Faire</a> also drop from world content for all players, not just Scribes. Once you have all 8 cards of a suit, click them to combine into a deck. The deck itself is a usable trinket at a lower item level, so anyone can equip it right away.</p>
+<h3>Darkmoon Dominion Trinkets</h3>
+<p>A Scribe can upgrade the deck into a Darkmoon Dominion trinket (ilvl 220, 5 ranks). If you're a Scribe, you craft it yourself. Non-Scribes can send their deck to a Scribe through a crafting order. All recipes come from the Darkmoon Curiosity specialization.</p>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Recipe</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=1230070" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_inscriptions_darkmoondominions_hunt.jpg"/>Darkmoon Dominion: Blood</a></td>
+<td>Spec: Darkmoon Curiosity</td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=1230072" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_inscriptions_darkmoondominions_bloom.jpg"/>Darkmoon Dominion: Hunt</a></td>
+<td>Spec: Darkmoon Curiosity</td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=1230071" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_inscriptions_darkmoondominions_rot.jpg"/>Darkmoon Dominion: Rot</a></td>
+<td>Spec: Darkmoon Curiosity</td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/spell=1230073" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_inscriptions_darkmoondominions_void.jpg"/>Darkmoon Dominion: Void</a></td>
+<td>Spec: Darkmoon Curiosity</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3>Darkmoon Sigils (Embellishments)</h3>
+<p>Darkmoon Sigils are optional reagents that add embellishment effects to crafted gear. They require a full deck to craft. You can wear up to 2 embellished items at a time.</p>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Recipe</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230074" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_inscriptions_darkmoonsigil_hunt.jpg"/>Darkmoon Sigil: Blood</a></td>
+<td>Spec: Darkmoon Curiosity</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230076" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_inscriptions_darkmoonsigil_bloom.jpg"/>Darkmoon Sigil: Hunt</a></td>
+<td>Spec: Darkmoon Curiosity</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230075" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_inscriptions_darkmoonsigil_rot.jpg"/>Darkmoon Sigil: Rot</a></td>
+<td>Spec: Darkmoon Curiosity</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230077" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_inscriptions_darkmoonsigil_void.jpg"/>Darkmoon Sigil: Void</a></td>
+<td>Spec: Darkmoon Curiosity</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 class="line-header" id="contracts">Contracts</h2>
+<p>Contracts give bonus reputation with a faction every time you complete a World Quest in Midnight zones. You can only sign one contract per week, and the effect is shared across your Warband. All contract recipes are learned from Renown vendors at Rank 5.</p>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Recipe</th>
+<th>Faction</th>
+<th>Vendor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230052" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_scroll1_color3.jpg"/>Contract: The Amani Tribe</a></td>
+<td>Amani Tribe (Rank 5)</td>
+<td>Magovu (Zul'Aman)</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230053" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_scroll1_color4.jpg"/>Contract: The Hara'ti</a></td>
+<td>Hara'ti (Rank 5)</td>
+<td>Naynar (Harandar)</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230051" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_scroll1_color1.jpg"/>Contract: The Silvermoon Court</a></td>
+<td>Silvermoon Court (Rank 5)</td>
+<td>Caeris Fairdawn (Eversong Woods)</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230054" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_scroll1_color2.jpg"/>Contract: The Singularity</a></td>
+<td>The Singularity (Rank 5)</td>
+<td>Void Researcher Anomander (Voidstorm)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 class="line-header" id="treatises">Treatises</h2>
+<p>Treatises are weekly Knowledge Point items for every profession. You craft the Inscription treatise from the Calm Hands specialization, and discover the others while crafting any treatise.</p>
+<h3>Profession Treatises</h3>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Recipe</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230034" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_profession_book_alchemy.jpg"/>Thalassian Treatise on Alchemy</a></td>
+<td>Discovery: Crafting Thalassian Treatises</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230026" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_profession_book_blacksmithing.jpg"/>Thalassian Treatise on Blacksmithing</a></td>
+<td>Discovery: Crafting Thalassian Treatises</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230030" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_profession_book_enchanting.jpg"/>Thalassian Treatise on Enchanting</a></td>
+<td>Discovery: Crafting Thalassian Treatises</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230036" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_professionbook_engineering_color2.jpg"/>Thalassian Treatise on Engineering</a></td>
+<td>Discovery: Crafting Thalassian Treatises</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230028" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_profession_book_herbalism.jpg"/>Thalassian Treatise on Herbalism</a></td>
+<td>Discovery: Crafting Thalassian Treatises</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230032" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_profession_book_inscription.jpg"/>Thalassian Treatise on Inscription</a></td>
+<td>Spec: Calm Hands</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230029" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_profession_book_jewelcrafting.jpg"/>Thalassian Treatise on Jewelcrafting</a></td>
+<td>Discovery: Crafting Thalassian Treatises</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230031" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_profession_book_leatherworking.jpg"/>Thalassian Treatise on Leatherworking</a></td>
+<td>Discovery: Crafting Thalassian Treatises</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230027" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_professionbook_mining_orig.jpg"/>Thalassian Treatise on Mining</a></td>
+<td>Discovery: Crafting Thalassian Treatises</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230035" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialization_professionbook_skinning_color1.jpg"/>Thalassian Treatise on Skinning</a></td>
+<td>Discovery: Crafting Thalassian Treatises</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230033" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_profession_book_tailoring.jpg"/>Thalassian Treatise on Tailoring</a></td>
+<td>Discovery: Crafting Thalassian Treatises</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 class="line-header" id="missives">Missives</h2>
+<p>Missives are optional reagents used in crafting to choose specific secondary stats on gear and profession equipment. Combat stat missives go on weapons and armor, while profession stat missives go on profession tools and accessories.</p>
+<h3>Combat Stats</h3>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Recipe</th>
+<th>Stats</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230042" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_repcontracts_scroll_02_uprez.jpg"/>Thalassian Missive of the Aurora</a></td>
+<td>Crit + Versatility</td>
+<td>Trainer (25)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230041" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_repcontracts_scroll_02_uprez_color2.jpg"/>Thalassian Missive of the Feverflare</a></td>
+<td>Haste + Mastery</td>
+<td>Trainer (25)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230040" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_repcontracts_scroll_02_uprez_color3.jpg"/>Thalassian Missive of the Fireflash</a></td>
+<td>Crit + Haste</td>
+<td>Trainer (35)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230039" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_repcontracts_scroll_02_uprez_color4.jpg"/>Thalassian Missive of the Harmonious</a></td>
+<td>Mastery + Versatility</td>
+<td>Trainer (35)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230038" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_repcontracts_scroll_02_uprez_color2.jpg"/>Thalassian Missive of the Peerless</a></td>
+<td>Crit + Mastery</td>
+<td>Trainer (45)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230037" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_repcontracts_scroll_02_uprez_color5.jpg"/>Thalassian Missive of the Quickblade</a></td>
+<td>Haste + Versatility</td>
+<td>Trainer (45)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3>Profession Stats</h3>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Recipe</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230046" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_repcontracts_80_warscroll_fortitude_uprez.jpg"/>Thalassian Missive of Crafting Speed</a></td>
+<td>Vendor: Lelorian (Silvermoon City)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230043" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_repcontracts_80_warscroll_fortitude_uprez_color5.jpg"/>Thalassian Missive of Deftness</a></td>
+<td>Vendor: Lelorian (Silvermoon City)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230045" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_repcontracts_80_warscroll_fortitude_uprez_color2.jpg"/>Thalassian Missive of Finesse</a></td>
+<td>Vendor: Lelorian (Silvermoon City)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230049" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_repcontracts_80_scroll_uprez.jpg"/>Thalassian Missive of Ingenuity</a></td>
+<td>Vendor: Lelorian (Silvermoon City)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230047" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_repcontracts_80_scroll_uprez_color2.jpg"/>Thalassian Missive of Multicraft</a></td>
+<td>Vendor: Lelorian (Silvermoon City)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230044" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_repcontracts_80_warscroll_fortitude_uprez_color3.jpg"/>Thalassian Missive of Perception</a></td>
+<td>Vendor: Lelorian (Silvermoon City)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1230048" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_inscription2_repcontracts_80_scroll_uprez_color1.jpg"/>Thalassian Missive of Resourcefulness</a></td>
+<td>Vendor: Lelorian (Silvermoon City)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 class="line-header" id="reagents">Reagents &amp; Consumables</h2>
+<p>These are the inks, pigments, and other crafting materials that Inscription produces. You also get Vantus Runes for raid content and Midnight Milling to process herbs.</p>
+<h3>Reagents</h3>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Recipe</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230018" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Codified Azeroot</a></td>
+<td>Trainer (25)</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230017" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_inscriptions_ink_blue.jpg"/>Munsell Ink</a></td>
+<td>Trainer (15)</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230016" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_inscriptions_ink_darkorange.jpg"/>Sienna Ink</a></td>
+<td>Trainer (10)</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230019" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_10_specialreagentfoozles_primalistrune_wind.jpg"/>Soul Cipher</a></td>
+<td>Trainer (20)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3>Vantus Rune</h3>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Recipe</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1230050" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_inscriptions_vantusrune_gold.jpg"/>Vantus Rune: Radiant</a></td>
+<td>Trainer (50)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 class="line-header" id="decor">House Decor</h2>
+<p>Inscription crafts various furniture and decorations for player housing. These recipes come from different vendors and sources across the Midnight zones.</p>
+<div class="table-container">
+<table class="tbl-minimal tbl-center">
+<thead>
+<tr>
+<th>Recipe</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1248621" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/7483291.jpg"/>Floating Void-Touched Tome</a></td>
+<td>Vendor: Void Researcher Anomander (Voidstorm)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1248625" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/7483348.jpg"/>Gilded Eversong Book</a></td>
+<td>Vendor: Lelorian (Silvermoon City)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1248630" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/7417091.jpg"/>Harandar Signpost</a></td>
+<td>Vendor: Naynar (Harandar)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1248622" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/7483339.jpg"/>Homely Sin'dorei Shelf</a></td>
+<td>Vendor: Lelorian (Silvermoon City)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1248627" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/7483354.jpg"/>Homely Wall Shelves</a></td>
+<td>Trainer (1)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1248623" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/7483342.jpg"/>Lively Songwriter's Quill</a></td>
+<td>Vendor: Lelorian (Silvermoon City)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1248631" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/7489663.jpg"/>Magnificent Towering Bookcase</a></td>
+<td>Vendor: Naynar (Harandar)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1248624" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/7483345.jpg"/>Opened Sin'dorei Scroll</a></td>
+<td>Vendor: Lelorian (Silvermoon City)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1248620" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/7483336.jpg"/>Restful Bronze Bench</a></td>
+<td>Drop: Victorious Stormarion Pinnacle Cache</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1248626" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/7483351.jpg"/>Sin'dorei Phoenix Quill</a></td>
+<td>Vendor: Ranger Allorn (Eversong Woods)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1248619" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/7483332.jpg"/>Sturdy Ren'dorei Cask</a></td>
+<td>Vendor: Construct V'anore (Silvermoon City)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1248628" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/7487099.jpg"/>Wild Hanging Scroll</a></td>
+<td>Vendor: Construct V'anore (Silvermoon City)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</article>
+</main>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

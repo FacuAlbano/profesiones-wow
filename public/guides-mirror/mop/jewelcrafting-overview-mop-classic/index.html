@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="A complete guide to Jewelcrafting in Mists of Pandaria Classic, including profession bonuses, gem cuts, crafted items, and reputation recipes." name="description"/>
+<meta content="MoP Classic Jewelcrafting Guide - Bonuses, Recipes &amp; Gems" property="og:title"/>
+<meta content="A complete guide to Jewelcrafting in Mists of Pandaria Classic, including profession bonuses, gem cuts, crafted items, and reputation recipes." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/mop/jewelcrafting-overview-mop-classic" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>MoP Classic Jewelcrafting Guide - Bonuses, Recipes &amp; Gems</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=m7pp0e.vPKfunte4y1iKTUISv.nyIzYMqnflKRHxjLc-1771997323.0902-1.0.1.1-15bcds2DKrwWbp5hwr2WBaX3v4ZlPHjifXcCz8zUuxE" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--3">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#bonus">Profession Bonus</a></li>
+<li><a href="#prospecting">Prospecting in MoP Classic</a></li>
+<li><a href="#gem-cuts">Gem Cuts</a></li>
+<li><a href="#jewelry">Rings &amp; Necklaces</a></li>
+<li><a href="#mounts">Panther Mounts</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">MoP Classic Jewelcrafting Guide - Bonuses, Recipes &amp; Gems</h1>
+<article>
+<p>Jewelcrafting in MoP Classic focuses on powerful gem cuts, early-game rings and necklaces, JC-only gems, and the popular panther mounts. Prospecting Ghost Iron fuels most crafts, and reputation unlocks add high-value recipes.</p>
+<p>If you're looking to level up Jewelcrafting, check out my separate leveling guide here:</p>
+<p class="text-align-center">
+<a class="gblock" href="../../mop/jewelcrafting-leveling-guide-mop-classic/index.html">MoP Jewelcrafting Leveling Guide</a>
+</p>
+<h2 class="gtitle" id="bonus">Profession Bonus</h2>
+<p>Prospecting yields <a class="white" href="https://www.wowhead.com/mop-classic/item=90407" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_diamond_03.jpg"/>Sparkling Shard</a> that combine into <a class="rare" href="https://www.wowhead.com/mop-classic/item=76734" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/creatureportrait_sc_eyeofacherus_02.jpg"/>Serpent's Eye</a>. Cut Serpent’s Eyes into JC-only gems (limit 2 equipped).</p>
+<div class="table-container">
+<table>
+<thead>
+<tr><th>Cut</th><th>Stats</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/mop-classic/spell=122675/bold-serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_dragonseye05.jpg"/> Bold Serpent's Eye</a></td>
+<td>+320 Str</td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/mop-classic/spell=122676/brilliant-serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_dragonseye05.jpg"/> Brilliant Serpent's Eye</a></td>
+<td>+320 Int</td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/mop-classic/spell=122674/delicate-serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_dragonseye05.jpg"/> Delicate Serpent's Eye</a></td>
+<td>+320 Agi</td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/mop-classic/spell=122685/flashing-serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_dragonseye05.jpg"/> Flashing Serpent's Eye</a></td>
+<td>+480 Parry</td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/mop-classic/spell=122683/precise-serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_dragonseye05.jpg"/> Precise Serpent's Eye</a></td>
+<td>+480 Exp</td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/mop-classic/spell=122684/fractured-serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_dragonseye03.jpg"/> Fractured Serpent's Eye</a></td>
+<td>+480 Mastery</td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/mop-classic/spell=122682/quick-serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_dragonseye03.jpg"/> Quick Serpent's Eye</a></td>
+<td>+480 Haste</td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/mop-classic/spell=122680/smooth-serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_dragonseye03.jpg"/> Smooth Serpent's Eye</a></td>
+<td>+480 Crit Strike</td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/mop-classic/spell=122679/subtle-serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_dragonseye03.jpg"/> Subtle Serpent's Eye</a></td>
+<td>+480 Dodge</td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/mop-classic/spell=122681/rigid-serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_dragonseye04.jpg"/> Rigid Serpent's Eye</a></td>
+<td>+480 Hit</td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/mop-classic/spell=122678/solid-serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_dragonseye04.jpg"/> Solid Serpent's Eye</a></td>
+<td>+480 Stam</td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/mop-classic/spell=122677/sparkling-serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_dragonseye04.jpg"/> Sparkling Serpent's Eye</a></td>
+<td>+480 Spirit</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 class="gtitle" id="prospecting">Prospecting in MoP Classic</h2>
+<p>The table below lists each new prospected ore, required skill, and drop chances for common and rare gems. <i>Total Common %</i> and <i>Total Rare %</i> show the combined odds for each gem type.</p>
+<p><b>Common:</b> Prospecting 5 ores always gives at least one common gem, sometimes two, so totals can exceed 100%.</p>
+<p><b>Rare:</b> Rare gems have a separate drop roll, shown as <i>Total Rare %</i>, and appear in addition to common gems.</p>
+<table>
+<tbody>
+<tr>
+<th>5 x Ore</th>
+<th>Skill</th>
+<th>Total Common %</th>
+<th>Total Rare %</th>
+<th>Common</th>
+<th>Rare</th>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/mop-classic/item=72092" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_ghostiron.jpg"/>Ghost Iron Ore</a></td>
+<td class="text-align-center">500</td>
+<td class="text-align-center">~144%</td>
+<td class="text-align-center">30%</td>
+<td rowspan="2">
+<ul>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76134" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_topazrough_03.jpg"/>Sunstone</a> 24%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76130" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_opalrough_03.jpg"/>Tiger Opal</a> 24%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76133" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_saphirerough_03.jpg"/>Lapis Lazuli</a> 24%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76136" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_rubyrough_03.jpg"/>Pandarian Garnet</a> 24%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76135" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_amethystrough_03.jpg"/>Roguestone</a> 24%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76137" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_emeraldrough_03.jpg"/>Alexandrite</a> 24%</li>
+</ul>
+</td>
+<td rowspan="2">
+<ul>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76138" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_blue.jpg"/>River's Heart</a> (5%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76131" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_red.jpg"/>Primordial Ruby</a> (5%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76139" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_green.jpg"/>Wild Jade</a> (5%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76142" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_yellow.jpg"/>Sun's Radiance</a> (5%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76140" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_orange.jpg"/>Vermilion Onyx</a> (5%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76141" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_purple.jpg"/>Imperial Amethyst</a> (5%)</li>
+</ul>
+</td>
+</tr>
+<tr>
+<td><a class="white" href="https://www.wowhead.com/mop-classic/item=72093" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_manticyte.jpg"/>Kyparite</a></td>
+<td class="text-align-center">550</td>
+<td class="text-align-center">~144%</td>
+<td class="text-align-center">30%</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/mop-classic/item=72094" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_trilliumblack.jpg"/>Black Trillium Ore</a><br/> <a class="zold" href="https://www.wowhead.com/mop-classic/item=72103" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_trilliumwhite.jpg"/>White Trillium Ore</a></td>
+<td class="text-align-center">600</td>
+<td class="text-align-center">~102%</td>
+<td class="text-align-center">~102%</td>
+<td>
+<ul>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76134" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_topazrough_03.jpg"/>Sunstone</a> 17%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76130" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_opalrough_03.jpg"/>Tiger Opal</a> 17%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76133" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_saphirerough_03.jpg"/>Lapis Lazuli</a> 17%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76136" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_rubyrough_03.jpg"/>Pandarian Garnet</a> 17%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76135" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_amethystrough_03.jpg"/>Roguestone</a> 17%</li>
+<li><a class="zold" href="https://www.wowhead.com/mop-classic/item=76137" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_emeraldrough_03.jpg"/>Alexandrite</a> 17%</li>
+</ul>
+</td>
+<td>
+<ul>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76138" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_blue.jpg"/>River's Heart</a> (17%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76131" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_red.jpg"/>Primordial Ruby</a> (17%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76139" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_green.jpg"/>Wild Jade</a> (17%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76142" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_yellow.jpg"/>Sun's Radiance</a> (17%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76140" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_orange.jpg"/>Vermilion Onyx</a> (17%)</li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=76141" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_purple.jpg"/>Imperial Amethyst</a> (17%)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<h2 class="gtitle" id="gem-cuts">Gem Cuts in MoP Classic (All Gem Types)</h2>
+<div class="tab-container">
+<div class="tabs">
+<button class="tab-button active" data-tab="tab-1"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_metagem_cut.jpg"/>Meta</button>
+<button class="tab-button" data-tab="tab-2"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_red.jpg"/>Red</button>
+<button class="tab-button" data-tab="tab-3"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_orange.jpg"/>Orange</button>
+<button class="tab-button" data-tab="tab-4"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_yellow.jpg"/>Yellow</button>
+<button class="tab-button" data-tab="tab-5"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_green.jpg"/>Green</button>
+<button class="tab-button" data-tab="tab-6"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_blue.jpg"/>Blue</button>
+<button class="tab-button" data-tab="tab-7"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_purple.jpg"/>Purple</button>
+</div>
+<div class="tab-content active" id="tab-1">
+<div class="table-container">
+<table>
+<thead>
+<tr><th>Cut</th><th>Stats</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107753/agile-primal-diamond" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_metagem_cut.jpg"/> Agile Primal Diamond</a></td>
+<td>+216 Agi / 3% Crit Effect</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107754/austere-primal-diamond" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_metagem_cut.jpg"/> Austere Primal Diamond</a></td>
+<td>+216 Agi / 2% Armor</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107756/burning-primal-diamond" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_metagem_cut.jpg"/> Burning Primal Diamond</a></td>
+<td>+216 Int / 3% Crit Effect</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107757/destructive-primal-diamond" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_metagem_cut.jpg"/> Destructive Primal Diamond</a></td>
+<td>+432 Crit Strike / 1% Spell Reflect</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107758/effulgent-primal-diamond" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_metagem_cut.jpg"/> Effulgent Primal Diamond</a></td>
+<td>+324 Stam / Reduces Spell Dmg taken by 2%</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107759/ember-primal-diamond" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_metagem_cut.jpg"/> Ember Primal Diamond</a></td>
+<td>+216 Int / 2% max Mana</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107760/enigmatic-primal-diamond" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_metagem_cut.jpg"/> Enigmatic Primal Diamond</a></td>
+<td>+432 Crit strike / Reduces Snares and Roots by 10%</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107762/eternal-primal-diamond" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_metagem_cut.jpg"/> Eternal Primal Diamond</a></td>
+<td>+432 Dodge / +1% Shield Block value</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107763/fleet-primal-diamond" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_metagem_cut.jpg"/> Fleet Primal Diamond</a></td>
+<td>+432 Master / Minor Run Speed increase</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107764/forlorn-primal-diamond" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_metagem_cut.jpg"/> Forlorn Primal Diamond</a></td>
+<td>+216 Int / Silence Duration reduced by 10%</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107765/impassive-primal-diamond" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_metagem_cut.jpg"/> Impassive Primal Diamond</a></td>
+<td>+432 Crit Strike / Fear Duration reduced by 10%</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107766/powerful-primal-diamond" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_metagem_cut.jpg"/> Powerful Primal Diamond</a></td>
+<td>+324 Stam / Stun Duration reduced by 10%</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107767/reverberating-primal-diamond" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_metagem_cut.jpg"/> Reverberating Primal Diamond</a></td>
+<td>+216 Strength / 3% Crit Effect</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107768/revitalizing-primal-diamond" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_metagem_cut.jpg"/> Revitalizing Primal Diamond</a></td>
+<td>+432 Spirit / 3% Crit Effect</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="tab-content" id="tab-2">
+<div class="table-container">
+<table>
+<thead>
+<tr><th>Cut</th><th>Stats</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107705/bold-primordial-ruby" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_red.jpg"/> Bold Primordial Ruby</a></td>
+<td>+160 Str</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107706/brilliant-primordial-ruby" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_red.jpg"/> Brilliant Primordial Ruby</a></td>
+<td>+160 Int</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107707/delicate-primordial-ruby" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_red.jpg"/> Delicate Primordial Ruby</a></td>
+<td>+160 Agi</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107708/flashing-primordial-ruby" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_red.jpg"/> Flashing Primordial Ruby</a></td>
+<td>+320 Parry</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107709/precise-primordial-ruby" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_red.jpg"/> Precise Primordial Ruby</a></td>
+<td>+320 Exp</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="tab-content" id="tab-3">
+<div class="table-container">
+<table>
+<thead>
+<tr><th>Cut</th><th>Stats</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107715/adept-vermilion-onyx" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_orange.jpg"/> Adept Vermilion Onyx</a></td>
+<td>+80 Agi / +160 Mastery</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107719/deadly-vermilion-onyx" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_orange.jpg"/> Deadly Vermilion Onyx</a></td>
+<td>+80 Agi / +160 Critical Strike</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107720/deft-vermilion-onyx" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_orange.jpg"/> Deft Vermilion Onyx</a></td>
+<td>+80 Agi / +160 Haste</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107725/lucent-vermilion-onyx" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_orange.jpg"/> Lucent Vermilion Onyx</a></td>
+<td>+80 Agi / +80 PvP Resilience</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107726/polished-vermilion-onyx" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_orange.jpg"/> Polished Vermilion Onyx</a></td>
+<td>+80 Agi / +160 Dodge</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107716/artful-vermilion-onyx" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_orange.jpg"/> Artful Vermilion Onyx</a></td>
+<td>+80 Int / +160 Mastery</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107727/potent-vermilion-onyx" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_orange.jpg"/> Potent Vermilion Onyx</a></td>
+<td>+80 Int / +160 Critical Strike</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107728/reckless-vermilion-onyx" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_orange.jpg"/> Reckless Vermilion Onyx</a></td>
+<td>+80 Int / +160 Haste</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107736/willful-vermilion-onyx" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_orange.jpg"/> Willful Vermilion Onyx</a></td>
+<td>+80 Int / +80 PvP Resilience</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107717/champions-vermilion-onyx" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_orange.jpg"/> Champion's Vermilion Onyx</a></td>
+<td>+80 Str / +160 Dodge</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107721/fierce-vermilion-onyx" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_orange.jpg"/> Fierce Vermilion Onyx</a></td>
+<td>+80 Str / +160 Haste</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107723/inscribed-vermilion-onyx" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_orange.jpg"/> Inscribed Vermilion Onyx</a></td>
+<td>+80 Str / +160 Critical Strike</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107730/resplendent-vermilion-onyx" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_orange.jpg"/> Resplendent Vermilion Onyx</a></td>
+<td>+80 Str / +80 PvP Resilience</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107731/skillful-vermilion-onyx" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_orange.jpg"/> Skillful Vermilion Onyx</a></td>
+<td>+80 Str / +160 Mastery</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107718/crafty-vermilion-onyx" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_orange.jpg"/> Crafty Vermilion Onyx</a></td>
+<td>+160 Expertise / +160 Critical Strike</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107724/keen-vermilion-onyx" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_orange.jpg"/> Keen Vermilion Onyx</a></td>
+<td>+160 Expertise / +160 Mastery</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107729/resolute-vermilion-onyx" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_orange.jpg"/> Resolute Vermilion Onyx</a></td>
+<td>+160 Expertise / +160 Dodge</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107734/tenuous-vermilion-onyx" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_orange.jpg"/> Tenuous Vermilion Onyx</a></td>
+<td>+160 Expertise / +80 PvP Resilience</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107735/wicked-vermilion-onyx" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_orange.jpg"/> Wicked Vermilion Onyx</a></td>
+<td>+160 Expertise / +160 Haste</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107722/fine-vermilion-onyx" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_orange.jpg"/> Fine Vermilion Onyx</a></td>
+<td>+160 Parry / +160 Mastery</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107732/splendid-vermilion-onyx" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_orange.jpg"/> Splendid Vermilion Onyx</a></td>
+<td>+160 Parry / +80 PvP Resilience</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107733/stalwart-vermilion-onyx" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_orange.jpg"/> Stalwart Vermilion Onyx</a></td>
+<td>+160 Parry / +160 Dodge</td>
+</tr>
+</tbody>
+</table>
+</div> </div>
+<div class="tab-content" id="tab-4">
+<div class="table-container">
+<table>
+<thead>
+<tr><th>Cut</th><th>Stats</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107710/fractured-suns-radiance" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_yellow.jpg"/> Fractured Sun's Radiance</a></td>
+<td>+320 Mastery</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107711/mystic-suns-radiance" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_yellow.jpg"/> Mystic Sun's Radiance</a></td>
+<td>+80 PvP Resilience</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107712/quick-suns-radiance" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_yellow.jpg"/> Quick Sun's Radiance</a></td>
+<td>+320 Haste</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107713/smooth-suns-radiance" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_yellow.jpg"/> Smooth Sun's Radiance</a></td>
+<td>+320 Crit Strike</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107714/subtle-suns-radiance" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_yellow.jpg"/> Subtle Sun's Radiance</a></td>
+<td>+320 Dodge</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="tab-content" id="tab-5">
+<div class="table-container">
+<table>
+<thead>
+<tr><th>Cut</th><th>Stats</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107739/jagged-wild-jade" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_green.jpg"/> Jagged Wild Jade</a></td>
+<td>+160 Critical Strike / +120 Stam</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=106954/piercing-wild-jade" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_green.jpg"/> Piercing Wild Jade</a></td>
+<td>+160 Critical Strike / +160 Hit</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107743/radiant-wild-jade" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_green.jpg"/> Radiant Wild Jade</a></td>
+<td>+160 Critical Strike / +80 PvP Power</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107744/regal-wild-jade" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_green.jpg"/> Regal Wild Jade</a></td>
+<td>+160 Dodge / +120 Stam</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107737/energized-wild-jade" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_green.jpg"/> Energized Wild Jade</a></td>
+<td>+160 Haste / +160 Spirit</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107738/forceful-wild-jade" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_green.jpg"/> Forceful Wild Jade</a></td>
+<td>+160 Haste / +120 Stam</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=106955/lightning-wild-jade" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_green.jpg"/> Lightning Wild Jade</a></td>
+<td>+160 Haste / +160 Hit</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107745/shattered-wild-jade" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_green.jpg"/> Shattered Wild Jade</a></td>
+<td>+160 Haste / +80 PvP Power</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=106960/balanced-wild-jade" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_green.jpg"/> Balanced Wild Jade</a></td>
+<td>+160 Hit / +80 PvP Resilience</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107740/nimble-wild-jade" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_green.jpg"/> Nimble Wild Jade</a></td>
+<td>+160 Hit / +120 Stam</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=106956/senseis-wild-jade" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_green.jpg"/> Sensei's Wild Jade</a></td>
+<td>+160 Hit / +160 Mastery</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107742/puissant-wild-jade" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_green.jpg"/> Puissant Wild Jade</a></td>
+<td>+160 Mastery / +120 Stam</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=106957/effulgent-wild-jade" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_green.jpg"/> Effulgent Wild Jade</a></td>
+<td>+80 PvP Power / +160 Mastery</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=106961/vivid-wild-jade" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_green.jpg"/> Vivid Wild Jade</a></td>
+<td>+80 PvP Power / +80 PvP Resilience</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107746/steady-wild-jade" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_green.jpg"/> Steady Wild Jade</a></td>
+<td>+80 PvP Resilience / +120 Stam</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=106953/misty-wild-jade" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_green.jpg"/> Misty Wild Jade</a></td>
+<td>+160 Spirit / +160 Critical Strike</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=106962/turbid-wild-jade" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_green.jpg"/> Turbid Wild Jade</a></td>
+<td>+160 Spirit / +80 PvP Resilience</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=106958/zen-wild-jade" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_green.jpg"/> Zen Wild Jade</a></td>
+<td>+160 Spirit / +160 Mastery</td>
+</tr>
+</tbody> </table>
+</div>
+</div>
+<div class="tab-content" id="tab-6">
+<div class="table-container">
+<table>
+<thead>
+<tr><th>Cut</th><th>Stats</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=106950/solid-rivers-heart" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_blue.jpg"/> Solid River's Heart</a></td>
+<td>+240 Stam</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=106949/sparkling-rivers-heart" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_blue.jpg"/> Sparkling River's Heart</a></td>
+<td>+320 Spirit</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=106948/stormy-rivers-heart" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_blue.jpg"/> Stormy River's Heart</a></td>
+<td>+160 PvP Power</td>
+</tr></tbody> </table>
+</div>
+</div>
+<div class="tab-content" id="tab-7">
+<div class="table-container">
+<table>
+<thead>
+<tr><th>Cut</th><th>Stats</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107696/glinting-imperial-amethyst" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_purple.jpg"/> Glinting Imperial Amethyst</a></td>
+<td>+80 Agi / +160 Hit</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107701/shifting-imperial-amethyst" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_purple.jpg"/> Shifting Imperial Amethyst</a></td>
+<td>+80 Agi / +120 Stam</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107693/accurate-imperial-amethyst" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_purple.jpg"/> Accurate Imperial Amethyst</a></td>
+<td>+160 Expertise / +160 Hit</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107697/guardians-imperial-amethyst" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_purple.jpg"/> Guardian's Imperial Amethyst</a></td>
+<td>+160 Exp / +120 Stam</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107698/mysterious-imperial-amethyst" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_purple.jpg"/> Mysterious Imperial Amethyst</a></td>
+<td>+80 Int / +80 PvP Power</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107699/purified-imperial-amethyst" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_purple.jpg"/> Purified Imperial Amethyst</a></td>
+<td>+80 Int / +160 Spirit</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107703/timeless-imperial-amethyst" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_purple.jpg"/> Timeless Imperial Amethyst</a></td>
+<td>+80 Int / +120 Stam</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107704/veiled-imperial-amethyst" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_purple.jpg"/> Veiled Imperial Amethyst</a></td>
+<td>+80 Int / +160 Hit</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107694/defenders-imperial-amethyst" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_purple.jpg"/> Defender's Imperial Amethyst</a></td>
+<td>+160 Parry / +120 Stam</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107700/retaliating-imperial-amethyst" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_purple.jpg"/> Retaliating Imperial Amethyst</a></td>
+<td>+160 Parry / +160 Hit</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107695/etched-imperial-amethyst" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_purple.jpg"/> Etched Imperial Amethyst</a></td>
+<td>+80 Str / +160 Hit</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=107702/sovereign-imperial-amethyst" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_cut_purple.jpg"/> Sovereign Imperial Amethyst</a></td>
+<td>+80 Str / +120 Stam</td>
+</tr>
+</tbody>
+</table>
+</div> </div>
+</div>
+<h2 class="gtitle" id="jewelry">Rings &amp; Necklaces</h2>
+<p>The table below lists all rare-quality necks and rings you can craft, their required materials, and the role they are best suited for.</p>
+<p>The ilvl 450 necks and rings are taught by <a href="https://www.wowhead.com/mop-classic/npc=65098" rel="nofollow noopener noreferrer" target="_blank">Mai the Jade Shaper</a> in The Jade Forest.</p>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>iLvl / Type</th>
+<th>Mats</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/mop-classic/spell=122662/shadowfire-necklace" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_necklace_109.jpg"/> Shadowfire Necklace</a></td>
+<td>384 - Neck</td>
+<td>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=76135/roguestone" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_amethystrough_03.jpg"/> Roguestone</a>,
+        <a class="zold" href="https://www.wowhead.com/mop-classic/item=76137/alexandrite" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_emeraldrough_03.jpg"/> Alexandrite</a>,
+        <a class="zold" href="https://www.wowhead.com/mop-classic/item=76136/pandarian-garnet" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_rubyrough_03.jpg"/> Pandarian Garnet</a>
+</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/mop-classic/spell=122661/ornate-band" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_125.jpg"/> Ornate Band</a></td>
+<td>415 - Ring</td>
+<td>
+<a class="zold" href="https://www.wowhead.com/mop-classic/item=76133/lapis-lazuli" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_saphirerough_03.jpg"/> Lapis Lazuli</a>,
+        <a class="zold" href="https://www.wowhead.com/mop-classic/item=76130/tiger-opal" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_opalrough_03.jpg"/> Tiger Opal</a>,
+        <a class="zold" href="https://www.wowhead.com/mop-classic/item=76134/sunstone" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_topazrough_03.jpg"/> Sunstone</a>
+</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=122670/golembreaker-amulet" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_necklace_70.jpg"/> Golembreaker Amulet</a></td>
+<td>450 - Agility DPS neck</td>
+<td>
+    6x <a class="zold" href="https://www.wowhead.com/mop-classic/item=76136/pandarian-garnet" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_rubyrough_03.jpg"/> Pandarian Garnet</a>,
+    6x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76734/serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/creatureportrait_sc_eyeofacherus_02.jpg"/> Serpent's Eye</a>
+</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=122669/reflection-of-the-sea" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_necklace_106.jpg"/> Reflection of the Sea</a></td>
+<td>450 - Tank neck</td>
+<td>
+    2x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76138/rivers-heart" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_blue.jpg"/> River's Heart</a>,
+    6x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76734/serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/creatureportrait_sc_eyeofacherus_02.jpg"/> Serpent's Eye</a>
+</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=122672/skymage-circle" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_necklace_110.jpg"/> Skymage Circle</a></td>
+<td>450 - Caster neck</td>
+<td>
+    2x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76141/imperial-amethyst" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_purple.jpg"/> Imperial Amethyst</a>,
+    6x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76734/serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/creatureportrait_sc_eyeofacherus_02.jpg"/> Serpent's Eye</a>
+</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=122673/tiger-opal-pendant" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_necklace_108.jpg"/> Tiger Opal Pendant</a></td>
+<td>450 - Healer neck</td>
+<td>
+    6x <a class="zold" href="https://www.wowhead.com/mop-classic/item=76130/tiger-opal" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_opalrough_03.jpg"/> Tiger Opal</a>,
+    6x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76734/serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/creatureportrait_sc_eyeofacherus_02.jpg"/> Serpent's Eye</a>
+</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=122671/widow-chain" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_necklace_63.jpg"/> Widow Chain</a></td>
+<td>450 - Strength DPS neck</td>
+<td>
+    6x <a class="zold" href="https://www.wowhead.com/mop-classic/item=76134/sunstone" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_topazrough_03.jpg"/> Sunstone</a>,
+    6x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76734/serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/creatureportrait_sc_eyeofacherus_02.jpg"/> Serpent's Eye</a>
+</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=122668/band-of-blood" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_145.jpg"/> Band of Blood</a></td>
+<td>450 - Healer ring</td>
+<td>
+    2x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76140/vermilion-onyx" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_orange.jpg"/> Vermilion Onyx</a>,
+    6x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76734/serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/creatureportrait_sc_eyeofacherus_02.jpg"/> Serpent's Eye</a>
+</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=122664/heart-of-the-earth" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_147.jpg"/> Heart of the Earth</a></td>
+<td>450 - Strength DPS ring</td>
+<td>
+    2x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76139/wild-jade" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_green.jpg"/> Wild Jade</a>,
+    6x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76734/serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/creatureportrait_sc_eyeofacherus_02.jpg"/> Serpent's Eye</a>
+</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=122667/lionsfall-ring" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_98.jpg"/> Lionsfall Ring</a></td>
+<td>450 - Caster DPS ring</td>
+<td>
+    2x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76142/suns-radiance" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_yellow.jpg"/> Sun's Radiance</a>,
+    6x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76734/serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/creatureportrait_sc_eyeofacherus_02.jpg"/> Serpent's Eye</a>
+</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=122666/lords-signet" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelry_ring_149.jpg"/> Lord's Signet</a></td>
+<td>450 - Strength DPS ring</td>
+<td>
+    2x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76131/primordial-ruby" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_red.jpg"/> Primordial Ruby</a>,
+    6x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76734/serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/creatureportrait_sc_eyeofacherus_02.jpg"/> Serpent's Eye</a>
+</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/spell=122665/roguestone-shadowband" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_epicring_b2.jpg"/> Roguestone Shadowband</a></td>
+<td>450 - Agility DPS ring</td>
+<td>
+    6x <a class="zold" href="https://www.wowhead.com/mop-classic/item=76135/roguestone" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_amethystrough_03.jpg"/> Roguestone</a>,
+    6x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76734/serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/creatureportrait_sc_eyeofacherus_02.jpg"/> Serpent's Eye</a>
+</td>
+</tr>
+</tbody>
+</table>
+<h2 class="gtitle" id="mounts">Panther Mounts</h2>
+<p>Jewelcrafters can craft four different <b>Panther</b> mounts in MoP Classic. These are Bind on Equip and can be sold to other players.</p>
+<table class="prof-table">
+<thead>
+<tr>
+<th>Item</th>
+<th>Materials</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/item=83088" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_mount_onyxpanther_green.jpg"/>Jade Panther</a></td>
+<td>
+        4x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76139/wild-jade" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_green.jpg"/> Wild Jade</a>,
+        2x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76734/serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/creatureportrait_sc_eyeofacherus_02.jpg"/> Serpent's Eye</a>,
+        20x <a class="rare" href="https://www.wowhead.com/mop-classic/item=83092" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedpearla.jpg"/>Orb of Mystery</a>
+</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/item=83087" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_mount_onyxpanther_red.jpg"/>Ruby Panther</a></td>
+<td>
+        4x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76131/primordial-ruby" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_red.jpg"/> Primordial Ruby</a>,
+        2x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76734/serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/creatureportrait_sc_eyeofacherus_02.jpg"/> Serpent's Eye</a>,
+        20x <a class="rare" href="https://www.wowhead.com/mop-classic/item=83092" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedpearla.jpg"/>Orb of Mystery</a>
+</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/item=83090" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_mount_onyxpanther_blue.jpg"/>Sapphire Panther</a></td>
+<td>
+        4x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76138/rivers-heart" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_blue.jpg"/> River's Heart</a>,
+        2x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76734/serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/creatureportrait_sc_eyeofacherus_02.jpg"/> Serpent's Eye</a>,
+        20x <a class="rare" href="https://www.wowhead.com/mop-classic/item=83092" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedpearla.jpg"/>Orb of Mystery</a>
+</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/item=83089" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_mount_onyxpanther_yellow.jpg"/>Sunstone Panther</a></td>
+<td>
+        4x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76142/suns-radiance" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_x4_rare_uncut_yellow.jpg"/> Sun's Radiance</a>,
+        2x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76734/serpents-eye" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/creatureportrait_sc_eyeofacherus_02.jpg"/> Serpent's Eye</a>,
+        20x <a class="rare" href="https://www.wowhead.com/mop-classic/item=83092" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedpearla.jpg"/>Orb of Mystery</a>
+</td>
+</tr>
+<tr>
+<td><a class="epic" href="https://www.wowhead.com/mop-classic/spell=120045" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_mount_onyxpanther.jpg"/>Jeweled Onyx Panther</a></td>
+<td><a class="rare" href="https://www.wowhead.com/mop-classic/item=83089" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_mount_onyxpanther_yellow.jpg"/>Sunstone Panther</a>, <a class="rare" href="https://www.wowhead.com/mop-classic/item=83088" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_mount_onyxpanther_green.jpg"/>Jade Panther</a>, <a class="rare" href="https://www.wowhead.com/mop-classic/item=83087" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_mount_onyxpanther_red.jpg"/>Ruby Panther</a>, <a class="rare" href="https://www.wowhead.com/mop-classic/item=83090" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_mount_onyxpanther_blue.jpg"/>Sapphire Panther</a></td>
+</tr>
+</tbody>
+</table>
+<p>Panther mount designs are sold by <a href="https://www.wowhead.com/mop-classic/npc=58414" rel="nofollow noopener noreferrer" target="_blank">San Redscale</a> in The Jade Forest. They require reputation with the Order of the Cloud Serpent.</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>Faction</th>
+<th>Reputation</th>
+<th>Notable Recipes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td rowspan="3">Order of the Cloud Serpent</td>
+<td>Honored</td>
+<td>
+<a class="white" href="https://www.wowhead.com/mop-classic/item=83845" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Design: Jade Panther</a>,
+          <a class="white" href="https://www.wowhead.com/mop-classic/item=83830" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Design: Sunstone Panther</a>
+</td>
+</tr>
+<tr>
+<td>Revered</td>
+<td>
+<a class="white" href="https://www.wowhead.com/mop-classic/item=83932" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Design: Sapphire Panther</a>,
+          <a class="white" href="https://www.wowhead.com/mop-classic/item=83931" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Design: Ruby Panther</a>
+</td>
+</tr>
+<tr>
+<td>Exalted</td>
+<td>
+<a class="white" href="https://www.wowhead.com/mop-classic/item=83877" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Design: Jeweled Onyx Panther</a>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</article>
+</main>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

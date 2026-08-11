@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="This Midnight Enchanting leveling guide will show you the fastest and easiest way to level your Midnight Enchanting skill from 1 to 100." name="description"/>
+<meta content="Midnight Enchanting Leveling Guide 1-100" property="og:title"/>
+<meta content="This Midnight Enchanting leveling guide will show you the fastest and easiest way to level your Midnight Enchanting skill from 1 to 100." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/guides/wow-enchanting-leveling-guide" property="og:url"/>
+<!-- Favicons -->
+<link href="../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>Midnight Enchanting Leveling Guide 1-100</title>
+<script async="" src="../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=.VwFsrrDJpLo4e6NnHTo8gOjPbn.yu0jetQ.0Y5Und8-1771997412.6078725-1.0.1.1-SeJ8TCWV8Eznh1InWajsVwlvwwyrW9qc8Vtkr7vVKI8" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../index.html">
+<img alt="" height="40" src="../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../midnight/index.html">Midnight</a></li>
+<li><a href="../the-war-within/index.html">War Within</a></li>
+<li><a href="../classic/index.html">Classic Era</a></li>
+<li><a href="../tbc-classic/index.html">TBC</a></li>
+<li><a href="../mop/index.html">MoP</a></li>
+<li><a href="../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../midnight/index.html">Midnight</a></li>
+<li><a href="../the-war-within/index.html">War Within</a></li>
+<li><a href="../classic/index.html">Classic Era</a></li>
+<li><a href="../tbc-classic/index.html">TBC</a></li>
+<li><a href="../mop/index.html">MoP</a></li>
+<li><a href="../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--4">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#trainer">Enchanting Trainer</a></li>
+<li><a href="#mats">Shopping List</a></li>
+<li><a href="#1-25">Leveling 1 - 25</a></li>
+<li><a href="#specializations">Specializations</a></li>
+<li><a href="#25-62">25 - 62</a></li>
+<li><a href="#62-100">62 - 100</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">Midnight Enchanting Leveling Guide 1-100</h1>
+<article>
+<p><img align="left" height="64" src="../images/icons/professions/enchanting.png" style="margin-right: 8px;" width="64"/>This Midnight Enchanting leveling guide will show you the fastest and easiest way to level your Midnight Enchanting skill from 1 to 100.</p>
+<p>Enchanting can be paired with any profession since it doesn't require a gathering profession to support it. Pairing it with Herbalism, Mining, or Skinning can be a good way to earn extra gold. Tailoring is also a popular choice because it does not require a gathering profession either.</p>
+<p>If you're looking for a full overview of all Enchanting recipes and knowledge sources, or want help picking a specialization, check out these guides:</p>
+<p class="text-align-center">
+<a class="gblock" href="../midnight/enchanting-guide/index.html">
+        Recipes &amp; Knowledge Points
+    </a> <a class="gblock" href="../midnight/enchanting-specialization-guide-and-builds/index.html">
+        Specialization Guide &amp; Builds
+    </a>
+</p>
+<div class="alert-box notice">Looking for the War Within version? <a href="../the-war-within/khaz-algar-enchanting-leveling-guide/index.html">TWW Enchanting Leveling Guide</a></div>
+<h2 class="gtitle" id="trainer">Enchanting Trainer</h2>
+<p>To learn Midnight Enchanting, visit Dolothos in <b>Silvermoon City</b>. He is the Enchanting trainer for the Midnight expansion. You can find the Enchanting Supply vendor <a href="../midnight/npc/lyna/index.html">Lyna</a> right next to him where you can buy Enchanting Vellum, Refulgent Copper Rods, and other supplies.</p>
+<div class="npc-media">
+<div class="media-card">
+<div class="media-header">
+<span class="media-title">Silvermoon City</span>
+<div class="waypoint-actions">
+<button class="btn-waypoint" data-clipboard-text="/way #2393 48 53.9 Dolothos">TomTom</button>
+<button class="btn-waypoint" data-clipboard-text="/run local m=2393;local x=0.48;local y=0.539;C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(m,x,y));C_SuperTrack.SetSuperTrackedUserWaypoint(true)">In-Game Pin</button>
+</div>
+</div>
+<div class="media-content">
+<div class="map-embed" data-coords="48, 53.9" data-map-img="/images/maps/normal/silvermoon-city.jpg" data-title="Dolothos" data-zone="2393" data-zone-name="Silvermoon City">
+<div class="map-zone">Silvermoon City</div>
+<div class="map-image" style="background-image: url('/images/maps/normal/silvermoon-city.jpg');">
+<div class="map-pin" style="left: 48%; top: 53.9%;"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="media-card">
+<div class="media-header">
+<span class="media-title">Dolothos</span>
+</div>
+<div class="media-content">
+<img alt="Dolothos" class="lightbox" height="668" onerror="this.closest('.media-card').style.display='none'" src="../images/npc/midnight/243349.jpg" width="1002"/>
+</div>
+</div>
+</div>
+<h2 class="gtitle" id="mats">Shopping List (1-62)</h2>
+<p>These are the approximate materials you will need to get from 1 to 62. I didn't include 62-100 because there are too many variables at that point. It depends on which recipes you have, AH prices, and your spec choices.</p>
+<p>You will get some Eversinging Dust back from disenchanting the Runed Rods, so the actual amount may be lower. Some steps use yellow recipes, so you might need a few extra crafts.</p>
+<ul>
+<li>~412x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>27x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>6x <a class="rare" href="https://www.wowhead.com/item=236949" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofpurelight_gold.jpg"/>Mote of Light</a></li>
+</ul>
+<h2 class="gtitle" id="1-25">Leveling Midnight Enchanting</h2>
+<h3>Racials</h3>
+<p>Blood Elf characters have +5 Enchanting skill and Kul Tirans have +2 Enchanting skill from their racial traits.</p>
+<p>Any extra Enchanting skill means recipes stay orange longer. You can save some gold by squeezing a few more points out of lower-level recipes.</p>
+<h3>Enchanting Vellum</h3>
+<p>You should put all enchants on an <a class="white" href="https://www.wowhead.com/beta/item=38682" rel="nofollow"><img class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_inscription_armorscroll01.jpg"/>Enchanting Vellum</a> and try selling them at the Auction House.</p>
+<p>When making the enchants, you can <strong>choose the Vellum as the "Optional Target" in your profession window</strong>, so you don't have to click the vellum each time manually. You can buy them from the Enchanting Supply Vendors.</p>
+<h3>Disenchanting</h3>
+<p>If you have any leftover gear from questing, dungeons, world quests, etc., disenchant them before you start leveling as disenchanting can give you skill points up to 25.</p>
+<p>You can use a simple macro to quickly disenchant items without opening your profession window. Just put the macro on your action bar, then hover over an item in your bags and press the keybind:</p>
+<pre><code>/cast Disenchant
+/use Refulgent Copper Rod</code></pre>
+<p><b>Replace the item name with whatever gear you want to disenchant.</b> You can Shift-click an item in your bags while editing the macro to auto-paste its name.</p>
+<h3>First Craft Bonus</h3>
+<p>You will receive 1x Midnight Enchanting Knowledge point each time you craft something for the first time. Midnight Enchanting Knowledge is valuable and has a weekly cap from other sources. So instead of leveling Enchanting first and then returning to craft grey recipes, this leveling guide is designed to get the "First Craft Bonus" from most enchants while they still provide skill points.</p>
+<h3 class="gdskill">1 - 25</h3>
+<p>30x <a class="zold" href="https://www.wowhead.com/beta/spell=1236486" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_1h_enchantingbloodelf_b_01.jpg"/>Runed Refulgent Copper Rod</a> - 30x Refulgent Copper Rod, 150x Eversinging Dust <br/>
+</p>
+<p>You can buy the <a class="white" href="https://www.wowhead.com/beta/item=244174" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_1h_enchantingbloodelf_b_01.jpg"/>Refulgent Copper Rod</a> from the Enchanting Supply vendor near your trainer, <a href="../midnight/npc/lyna/index.html">Lyna.</a></p>
+<p><b>Disenchant the 30 crafted rods</b> for skill points up to 25. You will get around half of your Eversinging Dust back.</p>
+<p>Craft one <a class="rare" href="https://www.wowhead.com/beta/spell=1236083" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_green.jpg"/>Enchant Helm - Rune of Avoidance</a> or <a class="zold" href="https://www.wowhead.com/beta/spell=1236491" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_manaoil_red.jpg"/>Thalassian Phoenix Oil</a> if you were unlucky with the skill gains and did not get to 25. You can craft both if you are at like 23, you will craft these anyway at some point for the First Craft Bonus.</p>
+<h2 class="gtitle" id="specializations">Enchanting Specializations</h2>
+<p>When you hit 25, you will unlock Enchanting specializations. Don't worry about picking one right away. Just keep leveling to around 60 first.</p>
+<p>You'll unlock three specializations by 60 and the fourth at 75, so by the time it matters you'll have most of them available. What actually matters is how you spend your Knowledge Points. Check out my specialization guide for builds and point allocation.</p>
+<p class="text-align-center"><a class="gblock" href="../midnight/enchanting-specialization-guide-and-builds/index.html">Midnight Enchanting Specialization Guide &amp; Best Builds</a></p>
+<h3 class="gdskill" id="25-62">25 - 27</h3>
+<p>Craft these in the <b>same order as listed</b> to get your First Craft Bonuses:</p>
+<p>If you already crafted some of these, just make more <a class="rare" href="https://www.wowhead.com/beta/spell=1236098" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_green.jpg"/>Illusory Adornment - Blooming Light</a> instead.</p>
+<ul class="nostyle">
+<li>1x <a class="rare" href="https://www.wowhead.com/beta/spell=1236083" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_green.jpg"/>Enchant Helm - Rune of Avoidance</a> - 15x Eversinging Dust, 3x Radiant Shard</li>
+<li>1x <a class="zold" href="https://www.wowhead.com/beta/spell=1236491" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_manaoil_red.jpg"/>Thalassian Phoenix Oil</a> - 5x Mote of Light, 1x Sunglass Vial, 5x Eversinging Dust</li>
+</ul>
+<p>You can buy <a class="white" href="https://www.wowhead.com/beta/item=240991" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_alchemy_lightpotion_basic.jpg"/>Sunglass Vial</a> from the Jewelcrafting Supplies vendor, <a href="../midnight/npc/gelanthis/index.html">Gelanthis.</a></p>
+<h3 class="gdskill">27 - 38</h3>
+Craft one from each of these for the First Craft bonus.<ul class="nostyle">
+<li>1x <a class="rare" href="https://www.wowhead.com/beta/spell=1236073" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_green.jpg"/>Enchant Ring - Nature's Wrath</a> - 5x Eversinging Dust</li>
+<li>1x <a class="rare" href="https://www.wowhead.com/beta/spell=1236098" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_green.jpg"/>Illusory Adornment - Blooming Light</a> - 1x Mote of Light, 2x Eversinging Dust</li>
+</ul>
+<p>Then craft around 13 more of the cheaper one.</p>
+<ul class="nostyle">
+<li>13x <a class="rare" href="https://www.wowhead.com/beta/spell=1236073" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_green.jpg"/>Enchant Ring - Nature's Wrath</a> - 65x Eversinging Dust</li>
+<li>13x <a class="rare" href="https://www.wowhead.com/beta/spell=1236098" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_green.jpg"/>Illusory Adornment - Blooming Light</a> - 13x Mote of Light, 26x Eversinging Dust</li>
+</ul>
+<h3 class="gdskill">38 - 40</h3>
+<ul class="nostyle">
+<li>1x <a class="rare" href="https://www.wowhead.com/beta/spell=1236061" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_green.jpg"/>Enchant Shoulders - Flight of the Eagle</a> - 15x Eversinging Dust, 3x Radiant Shard</li>
+<li>1x <a class="rare" href="https://www.wowhead.com/beta/spell=1236055" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_green.jpg"/>Enchant Helm - Hex of Leeching</a> - 15x Eversinging Dust, 3x Radiant Shard</li>
+</ul>
+<h3 class="gdskill">40 - 52</h3>
+<p>These give 3 skill points each.</p>
+<p>4x <a class="rare" href="https://www.wowhead.com/beta/spell=1236489" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_wand_1h_outdoorvoidelf_c_01.jpg"/>Thalassian Spellweaver's Wand</a> - 60x Eversinging Dust, 12x Radiant Shard</p>
+<h3 class="gdskill">52 - 55</h3>
+<p>Craft one from each for the First Craft Bonus:</p>
+<ul class="nostyle">
+<li>1x <a class="rare" href="https://www.wowhead.com/beta/spell=1236058" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_green.jpg"/>Enchant Ring - Amani Mastery</a> - 5x Eversinging Dust</li>
+<li>1x <a class="rare" href="https://www.wowhead.com/beta/spell=1236070" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_green.jpg"/>Enchant Helm - Blessing of Speed</a> - 15x Eversinging Dust, 3x Radiant Shard</li>
+<li>1x <a class="rare" href="https://www.wowhead.com/beta/spell=1236090" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_green.jpg"/>Enchant Shoulders - Thalassian Recovery</a> - 15x Eversinging Dust, 3x Radiant Shard</li>
+</ul>
+<h3>Gleeful Glamours (+24 Knowledge Points)</h3>
+<p>Gleeful Glamours are taught by a different trainer, so this is a good time to stop and craft all of them for the First Craft bonus. I didn't use them earlier in the guide because the 1-55 path is already cheap and you get most of your dust back from disenchanting. Flying back and forth between trainers for a few extra skill points isn't worth the hassle.</p>
+<p>You can learn all Gleeful Glamours from <b>Jennara Sunglow</b> in Silvermoon City. If you are facing the Enchanting trainer, just turn around and fly up to the tower behind you. She is on the second floor.</p>
+<p><b>Total materials for all 24 Gleeful Glamours:</b></p>
+<ul>
+<li>48x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>10x <a class="rare" href="https://www.wowhead.com/item=236951" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofwildmadic_lightgreen.jpg"/>Mote of Wild Magic</a></li>
+<li>8x <a class="rare" href="https://www.wowhead.com/item=236950" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofprimalenergy_darkorange.jpg"/>Mote of Primal Energy</a></li>
+<li>4x <a class="rare" href="https://www.wowhead.com/item=236949" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofpurelight_gold.jpg"/>Mote of Light</a></li>
+<li>2x <a class="rare" href="https://www.wowhead.com/item=236952" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofpurevoid_blue.jpg"/>Mote of Pure Void</a></li>
+</ul>
+<div class="npc-media">
+<div class="media-card">
+<div class="media-header">
+<span class="media-title">Silvermoon City</span>
+<div class="waypoint-actions">
+<button class="btn-waypoint" data-clipboard-text="/way #2393 39.4 51 Jennara Sunglow">TomTom</button>
+<button class="btn-waypoint" data-clipboard-text="/run local m=2393;local x=0.39399999999999996;local y=0.51;C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(m,x,y));C_SuperTrack.SetSuperTrackedUserWaypoint(true)">In-Game Pin</button>
+</div>
+</div>
+<div class="media-content">
+<div class="map-embed" data-coords="39.4, 51" data-map-img="/images/maps/normal/silvermoon-city.jpg" data-title="Jennara Sunglow" data-zone="2393" data-zone-name="Silvermoon City">
+<div class="map-zone">Silvermoon City</div>
+<div class="map-image" style="background-image: url('/images/maps/normal/silvermoon-city.jpg');">
+<div class="map-pin" style="left: 39.4%; top: 51%;"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="media-card">
+<div class="media-header">
+<span class="media-title">Jennara Sunglow</span>
+</div>
+<div class="media-content">
+<img alt="Jennara Sunglow" class="lightbox" height="668" onerror="this.closest('.media-card').style.display='none'" src="../images/npc/midnight/254051.jpg" width="1002"/>
+</div>
+</div>
+</div>
+<h3 class="gdskill">55 - 62</h3>
+<p>9x <a class="rare" href="https://www.wowhead.com/beta/spell=1236058" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_green.jpg"/>Enchant Ring - Amani Mastery</a> - 45x Eversinging Dust</p>
+<p>These will be yellow, so you might have to craft more.</p>
+<h3 class="gdskill" id="62-100">62 - 80</h3>
+<p>You have multiple options for this part depending on which recipes are available to you. If you haven't picked your specializations yet, now is a good time to do so.</p>
+<p class="text-align-center"><a class="gblock" href="../midnight/enchanting-specialization-guide-and-builds/index.html">Midnight Enchanting Specialization Guide &amp; Best Builds</a></p>
+<h3>Consumables</h3>
+<p>If you have access to either of these two recipes, you could get to 80 pretty cheaply. I just don't know how much the AH recipe will cost and I'm not sure it's worth spending 5 spec points to unlock the other one. While the other enchants seem expensive at first, you can usually sell them for profit or at least close to the crafting cost.</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>Recipe</th>
+<th>materials</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1236492" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_manaoil_orange.jpg"/>Oil of Dawn</a></td>
+<td><ul class="nostyle">
+<li>5x <a class="rare" href="https://www.wowhead.com/item=236949" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofpurelight_gold.jpg"/>Mote of Light</a></li>
+<li>2x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>1x <a class="white" href="https://www.wowhead.com/item=240991" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_alchemy_lightpotion_basic.jpg"/>Sunglass Vial</a></li>
+<li>5x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+</ul></td>
+<td>Spec: Transitories, Tonics, and Tools (5) - Excellent Expendables (0)</td>
+</tr>
+<tr>
+<td><a class="zold" href="https://www.wowhead.com/spell=1236493" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_manaoil_purple.jpg"/>Smuggler's Enchanted Edge</a></td>
+<td><ul class="nostyle">
+<li>5x <a class="rare" href="https://www.wowhead.com/item=236950" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofprimalenergy_darkorange.jpg"/>Mote of Primal Energy</a></li>
+<li>  2x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>  1x <a class="white" href="https://www.wowhead.com/item=240991" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_alchemy_lightpotion_basic.jpg"/>Sunglass Vial</a></li>
+<li>  5x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+</ul></td>
+<td>Auction House</td>
+</tr>
+</tbody>
+</table></div>
+<h3>Enchants</h3>
+<p>If you can't get any of the consumable recipes above, from here on you will be crafting a mix of ring, helm, and shoulder enchants to reach 80. Enchanting recipes seem to be a bit more expensive this time around and there is no clear cheapest one that I would recommend to mass craft.</p>
+<p>I think it's best to <b>craft at least 1 from each recipe you have</b>, and then try to sell them and craft more of whichever sells the best. This way you can usually at least get your crafting cost back, compared to spamming just one recipe that is much harder to sell.</p>
+<p>Once the expansion progresses a bit, there will probably be a clear cheapest option to spam craft, but for now I would recommend just crafting a mix of enchants and selling them at the AH to see which one sells best.</p>
+<p><a class="rare" href="https://www.wowhead.com/spell=1236080" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_purple.jpg"/>Enchant Weapon - Worldsoul Aegis</a> stays orange all the way up to 100, so if you cannot get any of the other options, you can just craft this one until 100.</p>
+<div class="tab-container">
+<div class="tabs">
+<button class="tab-button active" data-tab="tab-rings">Rings</button>
+<button class="tab-button" data-tab="tab-helms">Helms</button>
+<button class="tab-button" data-tab="tab-shoulders">Shoulders</button>
+<button class="tab-button" data-tab="tab-chest">Chest</button>
+<button class="tab-button" data-tab="tab-weapons">Weapons</button>
+</div>
+<div class="tab-content active" id="tab-rings">
+<table>
+<thead>
+<tr>
+<th>Enchant</th>
+<th>Materials</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236089" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Ring - Silvermoon's Tenacity</a></td>
+<td><ul class="nostyle">
+<li>15x <a class="rare" href="https://www.wowhead.com/item=236949" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofpurelight_gold.jpg"/>Mote of Light</a></li>
+<li>2x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>15x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>3x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>1x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Auction House</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236059" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Ring - Eyes of the Eagle</a></td>
+<td><ul class="nostyle">
+<li>15x <a class="rare" href="https://www.wowhead.com/item=236951" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofwildmadic_lightgreen.jpg"/>Mote of Wild Magic</a></li>
+<li>2x <a class="zold" href="https://www.wowhead.com/item=238522" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_animalparts_feathers.jpg"/>Peerless Plumage</a></li>
+<li>2x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>15x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>3x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>1x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Auction House</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236074" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Ring - Nature's Fury</a></td>
+<td><ul class="nostyle">
+<li>15x <a class="rare" href="https://www.wowhead.com/item=236950" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofprimalenergy_darkorange.jpg"/>Mote of Primal Energy</a></li>
+<li>2x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>15x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>3x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>1x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Thalassian Talents → Silvermoon's Spellpower</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236060" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Ring - Zul'jin's Mastery</a></td>
+<td><ul class="nostyle">
+<li>15x <a class="rare" href="https://www.wowhead.com/item=236951" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofwildmadic_lightgreen.jpg"/>Mote of Wild Magic</a></li>
+<li>2x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>15x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>3x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>1x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Vendor: Caeris Fairdawn</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236088" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Ring - Silvermoon's Alacrity</a></td>
+<td><ul class="nostyle">
+<li>15x <a class="rare" href="https://www.wowhead.com/item=236949" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofpurelight_gold.jpg"/>Mote of Light</a></li>
+<li>2x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>15x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>3x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>1x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Amani Augments → Zul'Aman Zeal</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="tab-content" id="tab-helms">
+<table>
+<thead>
+<tr>
+<th>Enchant</th>
+<th>Materials</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236084" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Helm - Empowered Rune of Avoidance</a></td>
+<td><ul class="nostyle">
+<li>20x <a class="rare" href="https://www.wowhead.com/item=236949" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofpurelight_gold.jpg"/>Mote of Light</a></li>
+<li>2x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>10x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Haranir Heightening → Worldsoul Wards</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236056" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Helm - Empowered Hex of Leeching</a></td>
+<td><ul class="nostyle">
+<li>20x <a class="rare" href="https://www.wowhead.com/item=236951" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofwildmadic_lightgreen.jpg"/>Mote of Wild Magic</a></li>
+<li>2x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>10x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Auction House</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236071" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Helm - Empowered Blessing of Speed</a></td>
+<td><ul class="nostyle">
+<li>20x <a class="rare" href="https://www.wowhead.com/item=236950" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofprimalenergy_darkorange.jpg"/>Mote of Primal Energy</a></li>
+<li>2x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>10x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Auction House</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="tab-content" id="tab-shoulders">
+<table>
+<thead>
+<tr>
+<th>Enchant</th>
+<th>Materials</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236062" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Shoulders - Akil'zon's Swiftness</a></td>
+<td><ul class="nostyle">
+<li>20x <a class="rare" href="https://www.wowhead.com/item=236951" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofwildmadic_lightgreen.jpg"/>Mote of Wild Magic</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>10x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Auction House</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236091" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Shoulders - Silvermoon's Mending</a></td>
+<td><ul class="nostyle">
+<li>20x <a class="rare" href="https://www.wowhead.com/item=236949" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofpurelight_gold.jpg"/>Mote of Light</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>10x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Auction House</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236076" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Shoulders - Amirdrassil's Grace</a></td>
+<td><ul class="nostyle">
+<li>20x <a class="rare" href="https://www.wowhead.com/item=236950" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofprimalenergy_darkorange.jpg"/>Mote of Primal Energy</a></li>
+<li>2x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>10x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Thalassian Talents → Eversong Empowerments</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="tab-content" id="tab-chest">
+<table>
+<thead>
+<tr>
+<th>Enchant</th>
+<th>Materials</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236068" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Chest - Mark of the Rootwarden</a></td>
+<td><ul class="nostyle">
+<li>5x <a class="rare" href="https://www.wowhead.com/item=236950" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofprimalenergy_darkorange.jpg"/>Mote of Primal Energy</a></li>
+<li>1x <a class="epic" href="https://www.wowhead.com/item=238530" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_icon_wing01b.jpg"/>Majestic Fin</a></li>
+<li>2x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>15x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>10x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Vendor: Naynar (Harandar)</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236069" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Chest - Mark of the Worldsoul</a></td>
+<td><ul class="nostyle">
+<li>5x <a class="rare" href="https://www.wowhead.com/item=236950" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofprimalenergy_darkorange.jpg"/>Mote of Primal Energy</a></li>
+<li>1x <a class="epic" href="https://www.wowhead.com/item=238529" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_skinning_stormchargedleather1.jpg"/>Majestic Hide</a></li>
+<li>2x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>15x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>10x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Spec: Elevating Equipment</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236082" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Chest - Mark of the Magister</a></td>
+<td><ul class="nostyle">
+<li>5x <a class="rare" href="https://www.wowhead.com/item=236949" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofpurelight_gold.jpg"/>Mote of Light</a></li>
+<li>2x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=239198" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_tailoring_rareclothbolt_purple.jpg"/>Arcanoweave Bolt</a></li>
+<li>15x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>10x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Auction House</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236054" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Chest - Mark of Nalorakk</a></td>
+<td><ul class="nostyle">
+<li>5x <a class="rare" href="https://www.wowhead.com/item=236951" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofwildmadic_lightgreen.jpg"/>Mote of Wild Magic</a></li>
+<li>1x <a class="epic" href="https://www.wowhead.com/item=238528" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_animalparts_claws.jpg"/>Majestic Claw</a></li>
+<li>2x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>15x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>10x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Auction House</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="tab-content" id="tab-weapons">
+<table>
+<thead>
+<tr>
+<th>Enchant</th>
+<th>Materials</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236066" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Weapon - Jan'alai's Precision</a></td>
+<td><ul class="nostyle">
+<li>5x <a class="rare" href="https://www.wowhead.com/item=236951" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofwildmadic_lightgreen.jpg"/>Mote of Wild Magic</a></li>
+<li>1x <a class="epic" href="https://www.wowhead.com/item=238530" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_icon_wing01b.jpg"/>Majestic Fin</a></li>
+<li>4x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>5x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Trainer (55)</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236081" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Weapon - Worldsoul Tenacity</a></td>
+<td><ul class="nostyle">
+<li>5x <a class="rare" href="https://www.wowhead.com/item=236950" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofprimalenergy_darkorange.jpg"/>Mote of Primal Energy</a></li>
+<li>4x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>1x <a class="rare" href="https://www.wowhead.com/item=242610" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_jewelcrafting_rare_gem_uncut_green.jpg"/>Flawless Harandar Peridot</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>10x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Vendor: Naynar (Harandar)</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236067" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Weapon - Berserker's Rage</a></td>
+<td><ul class="nostyle">
+<li>5x <a class="rare" href="https://www.wowhead.com/item=236951" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofwildmadic_lightgreen.jpg"/>Mote of Wild Magic</a></li>
+<li>4x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>1x <a class="rare" href="https://www.wowhead.com/item=242612" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_jewelcrafting_rare_gem_uncut_blue.jpg"/>Flawless Amani Lapis</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>10x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Trainer (20)</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236097" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Weapon - Arcane Mastery</a></td>
+<td><ul class="nostyle">
+<li>5x <a class="rare" href="https://www.wowhead.com/item=236949" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofpurelight_gold.jpg"/>Mote of Light</a></li>
+<li>4x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=239198" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_tailoring_rareclothbolt_purple.jpg"/>Arcanoweave Bolt</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>15x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Trainer (40)</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236094" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Weapon - Flames of the Sin'dorei</a></td>
+<td><ul class="nostyle">
+<li>5x <a class="rare" href="https://www.wowhead.com/item=236949" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofpurelight_gold.jpg"/>Mote of Light</a></li>
+<li>4x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=239201" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_tailoring_rareclothbolt_gold.jpg"/>Sunfire Silk Bolt</a></li>
+<li>25x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>15x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Auction House</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236065" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Weapon - Strength of Halazzi</a></td>
+<td><ul class="nostyle">
+<li>5x <a class="rare" href="https://www.wowhead.com/item=236951" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofwildmadic_lightgreen.jpg"/>Mote of Wild Magic</a></li>
+<li>1x <a class="epic" href="https://www.wowhead.com/item=238528" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_animalparts_claws.jpg"/>Majestic Claw</a></li>
+<li>4x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>5x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Vendor: Magovu (Zul'Aman)</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236095" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Weapon - Acuity of the Ren'dorei</a></td>
+<td><ul class="nostyle">
+<li>5x <a class="rare" href="https://www.wowhead.com/item=236952" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofpurevoid_blue.jpg"/>Mote of Pure Void</a></li>
+<li>4x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>1x <a class="rare" href="https://www.wowhead.com/item=242611" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_jewelcrafting_rare_gem_uncut_purple.jpg"/>Flawless Tenebrous Amethyst</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>10x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>3x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Vendor: Void Researcher Anomander (Voidstorm)</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236079" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Weapon - Worldsoul Cradle</a></td>
+<td><ul class="nostyle">
+<li>5x <a class="rare" href="https://www.wowhead.com/item=236950" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofprimalenergy_darkorange.jpg"/>Mote of Primal Energy</a></li>
+<li>4x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>1x <a class="rare" href="https://www.wowhead.com/item=242610" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_jewelcrafting_rare_gem_uncut_green.jpg"/>Flawless Harandar Peridot</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>10x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Auction House</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236080" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Weapon - Worldsoul Aegis</a></td>
+<td><ul class="nostyle">
+<li>5x <a class="rare" href="https://www.wowhead.com/item=236950" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofprimalenergy_darkorange.jpg"/>Mote of Primal Energy</a></li>
+<li>4x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>1x <a class="rare" href="https://www.wowhead.com/item=242610" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_jewelcrafting_rare_gem_uncut_green.jpg"/>Flawless Harandar Peridot</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>10x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Trainer (55)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<h3 class="gdskill">80 - 90</h3>
+<p>Rings will be yellow from this point, so unless you can sell them for profit, I would stop crafting them just for leveling. The chests are only good up to 85, but helm, weapon, and shoulder enchants remain orange until 90.</p>
+<h3 class="gdskill">90 - 100</h3>
+<p>For the last 10 points, only weapon enchants remain orange. Fortunately, one of them is from the trainer, so you can always craft it for leveling.</p>
+<table>
+<thead>
+<tr>
+<th>Enchant</th>
+<th>Materials</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236080" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Weapon - Worldsoul Aegis</a></td>
+<td><ul class="nostyle">
+<li>5x <a class="rare" href="https://www.wowhead.com/item=236950" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofprimalenergy_darkorange.jpg"/>Mote of Primal Energy</a></li>
+<li>4x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>1x <a class="rare" href="https://www.wowhead.com/item=242610" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_jewelcrafting_rare_gem_uncut_green.jpg"/>Flawless Harandar Peridot</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>10x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Trainer (55)</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236094" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Weapon - Flames of the Sin'dorei</a></td>
+<td><ul class="nostyle">
+<li>5x <a class="rare" href="https://www.wowhead.com/item=236949" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofpurelight_gold.jpg"/>Mote of Light</a></li>
+<li>4x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=239201" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_tailoring_rareclothbolt_gold.jpg"/>Sunfire Silk Bolt</a></li>
+<li>25x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>15x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Auction House</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236065" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Weapon - Strength of Halazzi</a></td>
+<td><ul class="nostyle">
+<li>5x <a class="rare" href="https://www.wowhead.com/item=236951" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofwildmadic_lightgreen.jpg"/>Mote of Wild Magic</a></li>
+<li>1x <a class="epic" href="https://www.wowhead.com/item=238528" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_skinning_animalparts_claws.jpg"/>Majestic Claw</a></li>
+<li>4x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>5x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Vendor: Magovu (Zul'Aman)</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236095" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Weapon - Acuity of the Ren'dorei</a></td>
+<td><ul class="nostyle">
+<li>5x <a class="rare" href="https://www.wowhead.com/item=236952" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofpurevoid_blue.jpg"/>Mote of Pure Void</a></li>
+<li>4x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>1x <a class="rare" href="https://www.wowhead.com/item=242611" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_jewelcrafting_rare_gem_uncut_purple.jpg"/>Flawless Tenebrous Amethyst</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>10x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>3x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Vendor: Void Researcher Anomander (Voidstorm)</td>
+</tr>
+<tr>
+<td><a class="rare" href="https://www.wowhead.com/spell=1236079" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantedvellum_blue.jpg"/>Enchant Weapon - Worldsoul Cradle</a></td>
+<td><ul class="nostyle">
+<li>5x <a class="rare" href="https://www.wowhead.com/item=236950" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_thematicfoozles_moteofprimalenergy_darkorange.jpg"/>Mote of Primal Energy</a></li>
+<li>4x <a class="rare" href="https://www.wowhead.com/item=251285" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_misc_herb_liferoot_stem.jpg"/>Petrified Root</a></li>
+<li>1x <a class="rare" href="https://www.wowhead.com/item=242610" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_jewelcrafting_rare_gem_uncut_green.jpg"/>Flawless Harandar Peridot</a></li>
+<li>20x <a class="white" href="https://www.wowhead.com/item=243599" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingdust_green.jpg"/>Eversinging Dust</a></li>
+<li>10x <a class="rare" href="https://www.wowhead.com/item=243602" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingshard_blue.jpg"/>Radiant Shard</a></li>
+<li>2x <a class="epic" href="https://www.wowhead.com/item=243605" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../external/wow.zamimg.com/images/wow/icons/small/inv_12_profession_enchanting_enchantingcrystal_orange.jpg"/>Dawn Crystal</a></li>
+</ul></td>
+<td>Auction House</td>
+</tr>
+</tbody>
+</table>
+</article>
+</main>
+<aside class="left-sidebar-menu sidebar-sticky">
+<nav>
+<h4>Quick Links</h4>
+<ul>
+<li><a href="../guides/wow-alchemy-leveling-guide/index.html">Alchemy</a></li>
+<li><a href="../guides/wow-blacksmithing-leveling-guide/index.html">Blacksmithing</a></li>
+<li><a href="../guides/wow-enchanting-leveling-guide/index.html">Enchanting</a></li>
+<li><a href="../guides/wow-inscription-leveling-guide/index.html">Inscription</a></li>
+<li><a href="../guides/wow-jewelcrafting-leveling-guide/index.html">Jewelcrafting</a></li>
+<li><a href="../guides/wow-leatherworking-leveling-guide/index.html">Leatherworking</a></li>
+<li><a href="../guides/wow-tailoring-leveling-guide/index.html">Tailoring</a></li>
+<li><a href="../guides/wow-herbalism-leveling-guide/index.html">Herbalism</a></li>
+<li><a href="../guides/wow-mining-leveling-guide/index.html">Mining</a></li>
+<li><a href="../guides/wow-skinning-leveling-guide/index.html">Skinning</a></li>
+<li><a href="../guides/wow-cooking-leveling-guide/index.html">Cooking</a></li>
+</ul>
+</nav>
+</aside>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../contact/index.html">Contact</a><a href="../privacy-policy/index.html">Privacy Policy</a><a href="../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

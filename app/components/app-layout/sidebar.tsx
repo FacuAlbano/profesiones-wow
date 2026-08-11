@@ -21,51 +21,60 @@ export function Sidebar() {
   const expansionMatch = pathname.match(/^\/expansion\/([^/]+)/);
   const expansionSlug = expansionMatch?.[1] ?? null;
   const isOnExpansion = expansionSlug && EXPANSIONS.some((e) => e.slug === expansionSlug);
+  const isOnProfessionPage = pathname.includes("/profesion/");
 
   return (
     <aside
-      className="sticky top-14 z-30 hidden h-[calc(100vh-3.5rem)] w-56 shrink-0 flex-col border-r border-border bg-card shadow-sm transition-colors duration-500 md:flex"
+      className="z-30 hidden w-56 shrink-0 flex-col self-stretch border-r border-border bg-card shadow-sm transition-colors duration-500 md:flex"
       aria-label="Navegación"
     >
-      <nav className="flex flex-col gap-1 overflow-y-auto p-3">
+      <nav className="sidebar-nav flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden p-4">
         <Button variant="ghost" size="sm" className={navLinkClass(isHome)} asChild>
           <Link to="/">Inicio</Link>
         </Button>
 
-        <Separator className="my-2" />
-        <p className="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Expansiones
-        </p>
-        <ul className="mt-1 space-y-0.5">
-          {EXPANSIONS.map((exp) => {
-            const href = `/expansion/${exp.slug}`;
-            const active = pathname === href || pathname.startsWith(href + "/");
-            return (
-              <li key={exp.slug}>
-                <Button variant="ghost" size="sm" className={navLinkClass(active)} asChild>
-                  <Link to={href} className="truncate">
-                    {exp.name}
-                  </Link>
-                </Button>
-              </li>
-            );
-          })}
-        </ul>
+        {/* Página de inicio: solo Expansiones */}
+        {!isOnExpansion && (
+          <>
+            <Separator className="my-3" />
+            <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Expansiones
+            </p>
+            <ul className="space-y-1">
+              {EXPANSIONS.map((exp) => {
+                const href = `/expansion/${exp.slug}`;
+                const active = pathname === href || pathname.startsWith(href + "/");
+                return (
+                  <li key={exp.slug}>
+                    <Button variant="ghost" size="sm" className={navLinkClass(active)} asChild>
+                      <Link to={href} className="truncate">
+                        {exp.name}
+                      </Link>
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        )}
 
+        {/* Dentro de una expansión: solo Profesiones */}
         {isOnExpansion && expansionSlug && (
           <>
-            <Separator className="my-2" />
-            <p className="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <Separator className="my-3" />
+            <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Profesiones
             </p>
-            <ul className="mt-1 space-y-0.5">
+            <ul className="space-y-1">
               {PROFESSIONS.map((prof) => {
                 const href = `/expansion/${expansionSlug}/profesion/${prof.slug}`;
                 const active = pathname === href;
                 return (
                   <li key={prof.slug}>
                     <Button variant="ghost" size="sm" className={navLinkClass(active)} asChild>
-                      <Link to={href}>{prof.name}</Link>
+                      <Link to={href} className="truncate">
+                        {prof.name}
+                      </Link>
                     </Button>
                   </li>
                 );

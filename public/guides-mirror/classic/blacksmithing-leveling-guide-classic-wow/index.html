@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="This Classic WoW Blacksmithing Leveling Guide will show you the fastest and easiest way to level your Blacksmithing skill up from 1 to 300." name="description"/>
+<meta content="WoW Classic Blacksmithing Leveling Guide 1-300" property="og:title"/>
+<meta content="This Classic WoW Blacksmithing Leveling Guide will show you the fastest and easiest way to level your Blacksmithing skill up from 1 to 300." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/classic/blacksmithing-leveling-guide-classic-wow" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>WoW Classic Blacksmithing Leveling Guide 1-300</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=yOjJ56_k1.Qt3ce3PcDdsegCt_PenhUzXl5aas_2sNQ-1771996703.3089914-1.0.1.1-G8CqiC9voPgfslJzTOJrygZfqQj7r.xRr0v6adTNVIo" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--4">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#shopping-list">Shopping List</a></li>
+<li><a href="#classic-blacksmithing-trainers">Blacksmithing Trainers</a></li>
+<li><a href="#Apprentice">Apprentice #1-75</a></li>
+<li><a href="#Journeyman">Journeyman #75-125</a></li>
+<li><a href="#Expert">Expert #125-225</a></li>
+<li><a href="#blacksmithing-specializations">Blacksmithing Specializations</a></li>
+<li><a href="#Artisan">Artisan #225-300</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">WoW Classic Blacksmithing Leveling Guide 1-300</h1>
+<article>
+<p><a name="top"></a><img align="left" height="64" src="../../images/icons/professions/blacksmithing.png" style="margin-right: 8px;" width="64"/>This Classic WoW Blacksmithing Leveling Guide will show you the fastest and easiest way to level your Blacksmithing skill up from 1 to 300.</p>
+<p>Blacksmithing uses a lot of ores, so I recommend leveling this profession together with Mining because you will need a lot of gold if you want to buy everything from the Auction House. Check out my <a href="../../classic/mining-leveling-guide-classic-wow/index.html">Classic Mining leveling guide 1-300</a> if you want to level Mining.</p>
+<p class="zygor">I recommend trying <a href="../../recommends/zygor-classic-leveling/index.html">Zygor's 1-60 Leveling Guide</a> if you are still leveling your character or just starting a new alt. It will help you to reach level 60 a lot faster.</p>
+<h2 class="gtitle" id="shopping-list">Shopping List</h2>
+<p>Below is the full list of materials needed to level Blacksmithing in WoW Classic.</p>
+<ul>
+<li>150x <a class="white" href="https://classic.wowhead.com/item=2835" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_stone_06.jpg"/>Rough Stone</a></li>
+<li>150x <a class="white" href="https://classic.wowhead.com/item=2840" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_02.jpg"/>Copper Bar</a></li>
+<li>95x <a class="white" href="https://classic.wowhead.com/item=2836" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_stone_09.jpg"/>Coarse Stone</a></li>
+<li>5x <a class="zold" href="https://classic.wowhead.com/item=2842" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_01.jpg"/>Silver Bar</a></li>
+<li>140x <a class="white" href="https://classic.wowhead.com/item=2841" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_bronze.jpg"/>Bronze Bar</a></li>
+<li>105x <a class="white" href="https://classic.wowhead.com/item=2838" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_stone_12.jpg"/>Heavy Stone</a></li>
+<li>5x <a class="zold" href="https://classic.wowhead.com/item=3577" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_03.jpg"/>Gold Bar</a></li>
+<li>230x <a class="white" href="https://classic.wowhead.com/item=3575" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_iron.jpg"/>Iron Bar</a></li>
+<li>35x <a class="white" href="https://classic.wowhead.com/item=2605" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_12.jpg"/>Green Dye</a> - Sold by Tailoring and Leatherworking supply vendors</li>
+<li>190x <a class="white" href="https://classic.wowhead.com/item=3859" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_steel.jpg"/>Steel Bar</a> - Made from 190 <a class="white" href="https://classic.wowhead.com/item=3575" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_iron.jpg"/>Iron Bar</a> + 190 Coal if you have Mining. The Blacksmithing Supply vendor sells the Coal.</li>
+<li>480x <a class="white" href="https://tbc.wowhead.com/item=7912" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_stone_10.jpg"/>Solid Stone</a> - If you can't get the <a class="zold" href="https://tbc.wowhead.com/item=7989" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_06.jpg"/>Plans: Mithril Spurs</a> from the Auction House, you will only need 120 Solid Stone, but depending on which recipes you can get, you will need more Mithril, Thorium, or Leathers. You can check the 260-270 part for more details.</li>
+<li>60x <a class="white" href="https://classic.wowhead.com/item=4338" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_fabric_mageweave_01.jpg"/>Mageweave Cloth</a> (you will need another 90x if you can't get the Mithril Spurs recipe)</li>
+<li>220x <a class="white" href="https://classic.wowhead.com/item=3860" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_06.jpg"/>Mithril Bar</a></li>
+<li>20x <a class="white" href="https://classic.wowhead.com/item=12365" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_stonetablet_07.jpg"/>Dense Stone</a></li>
+<li>730x <a class="white" href="https://classic.wowhead.com/item=12359" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_07.jpg"/>Thorium Bar</a></li>
+<li>30x <a class="zold" href="https://classic.wowhead.com/item=7910" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_ruby_02.jpg"/>Star Ruby</a></li>
+<li>5x <a class="zold" href="https://classic.wowhead.com/item=7909" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_crystal_02.jpg"/>Aquamarine</a></li>
+</ul>
+<p>If you have Mining and want to farm the ores, please see my farming guides:</p>
+<p class="text-align-center"><a class="gblock" href="../../classic/copper-ore-farming/index.html"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_copper_01.jpg"/>Copper Ore farming</a> <a class="gblock" href="../../classic/tin-ore-farming/index.html"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_tin_01.jpg"/>Tin Ore farming</a> <a class="gblock" href="../../classic/iron-ore-farming/index.html"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_iron_01.jpg"/>Iron Ore farming</a> <a class="gblock" href="../../classic/mithril-ore-farming/index.html"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_mithril_02.jpg"/>Mithril Ore farming</a> <a class="gblock" href="../../classic/thorium-ore-farming/index.html"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_thorium_02.jpg"/>Thorium Ore farming</a></p>
+<h2 class="gtitle" id="classic-blacksmithing-trainers">Classic Blacksmithing Trainers</h2>
+<p>You can learn Classic Blacksmithing from any of these NPCs below, but you have to reach level 5 before you can learn it.</p>
+<p>Just click on any of these links below to see the trainer's exact location. You can also walk up to a guard in any city and ask where the Blacksmithing trainer is, then it will be marked with a red flag on your map.</p>
+<div class="row guidegrid">
+<div class="col-xs-12 col-sm-12 col-md-6 guiderow">
+<p><b>Horde trainers:</b></p>
+<ul>
+<li><a href="../../npc/ugthok-blacksmithing-trainer-classic/index.html"><img height="15" src="../../images/icons/horde.png" width="15"/>Ug'thok</a> in Orgrimmar.</li>
+<li><a href="../../npc/basil-frye-blacksmithing-trainer-classic/index.html"><img height="15" src="../../images/icons/horde.png" width="15"/>Basil Frye</a> in Undercity.</li>
+<li><a href="../../npc/thrag-stonehoof-blacksmithing-trainer-classic/index.html"><img height="15" src="../../images/icons/horde.png" width="15"/>Thrag Stonehoof</a> in Thunder Bluff</li>
+<li><a href="../../npc/dwukk-blacksmithing-trainer-classic/index.html"><img height="15" src="../../images/icons/horde.png" width="15"/>Dwukk</a> in Durotar.</li>
+</ul>
+</div>
+<div class="col-xs-12 col-sm-12 col-md-6 guiderow">
+<p><b>Alliance trainers:</b></p>
+<ul>
+<li><a href="../../npc/groum-stonebeard-blacksmithing-trainer-classic/index.html"><img height="15" src="../../images/icons/alliance.png" width="15"/>Groum Stonebeard</a> in Ironforge.</li>
+<li><a href="../../npc/dane-lindgren-blacksmithing-trainer-classic/index.html"><img height="15" src="../../images/icons/alliance.png" width="15"/>Dane Lindgren</a> in Stormwind City.</li>
+<li><a href="../../npc/delfrum-flintbeard-blacksmithing-trainer-classic/index.html"><img height="15" src="../../images/icons/alliance.png" width="15"/>Delfrum Flintbeard</a> in Darkshore</li>
+<li><a href="../../npc/smith-argus-blacksmithing-trainer-classic/index.html"><img height="15" src="../../images/icons/alliance.png" width="15"/>Smith Argus</a> in Elwyn Forest.</li>
+<li><a href="../../npc/tognus-flintfire-blacksmithing-trainer-classic/index.html"><img height="15" src="../../images/icons/alliance.png" width="15"/>Tognus Flintfire</a> in Dun Morogh.</li>
+</ul>
+</div>
+</div>
+<h2 class="gtitle" id="Apprentice">Leveling Classic Blacksmithing</h2>
+<h3 class="gdskill">1 - 75</h3>
+<ul class="gd">
+<li><b>1 - 30</b><br/>
+	40x <a class="white" href="https://classic.wowhead.com/item=2862" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_stone_sharpeningstone_01.jpg"/>Rough Sharpening Stone</a> - 40 Rough Stone</li>
+</ul>
+<ul class="gd">
+<li><b>30 - 65</b><br/>
+	55x <a class="white" href="https://classic.wowhead.com/item=3470" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_stone_grindingstone_01.jpg"/>Rough Grinding Stone</a> - 110 Rough Stone
+<p>Save 10 Rough Grinding Stones.</p>
+</li></ul>
+<ul class="gd">
+<li><b>65 - 75</b><br/>
+	25x <a class="white" href="https://classic.wowhead.com/item=2863" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_stone_sharpeningstone_02.jpg"/>Coarse Sharpening Stone</a> - 25 Coarse Stone</li>
+</ul>
+<h2 class="gtitle" id="Journeyman">Blacksmithing Journeyman</h2>
+<p>You can only train Blacksmithing past 75 if you learn Journeyman Blacksmithing. Not every Blacksmithing trainer will teach you this skill, you have to find an Expert Blacksmith. (Requires level 10)</p>
+<p>You can learn Journeyman Blacksmithing from these NPCs below:</p>
+<div class="row guidegrid">
+<div class="col-xs-12 col-sm-12 col-md-6 guiderow">
+<p><b>Horde trainers:</b></p>
+<ul>
+<li><a href="../../npc/snarl-blacksmithing-trainer-classic/index.html"><img height="15" src="../../images/icons/horde.png" width="15"/>Snarl</a> in Orgrimmar.</li>
+<li><a href="../../npc/james-van-brunt-blacksmithing-trainer-classic/index.html"><img height="15" src="../../images/icons/horde.png" width="15"/>James Van Brunt</a> in Undercity.</li>
+<li><a href="../../npc/karn-stonehoof-blacksmithing-trainer-classic/index.html"><img height="15" src="../../images/icons/horde.png" width="15"/>Karn Stonehoof</a> in Thunder Bluff</li>
+</ul>
+</div>
+<div class="col-xs-12 col-sm-12 col-md-6 guiderow">
+<p><b>Alliance trainers:</b></p>
+<ul>
+<li><a href="../../npc/rotgath-stonebeard-blacksmithing-trainer-classic/index.html"><img height="15" src="../../images/icons/alliance.png" width="15"/>Rotgath Stonebeard</a> in Ironforge.</li>
+<li><a href="../../npc/therum-deepforge-blacksmithing-trainer-classic/index.html"><img height="15" src="../../images/icons/alliance.png" width="15"/>Therum Deepforge</a> in Stormwind City.</li>
+</ul>
+</div>
+</div>
+<h3 class="gdskill">75 - 125</h3>
+<ul>
+<li><b>75 - 90</b><br/>
+	35x <a class="white" href="https://classic.wowhead.com/item=3478" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_stone_grindingstone_02.jpg"/>Coarse Grinding Stone</a> - 70 Coarse Stone
+<p>Save the Coarse Grinding Stones.</p><p>If you didn't reach 90 by making these, you can still continue to the next step, but you will need a few more Copper Bars, or make a few more Coarse Grinding Stones.</p>
+</li></ul>
+<ul class="gd">
+<li><b>90 - 100</b><br/>
+	10x <a class="white" href="https://classic.wowhead.com/item=2857" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_belt_03.jpg"/>Runed Copper Belt</a> - 100 Copper Bar</li>
+</ul>
+<ul class="gd">
+<li><b>100 - 105</b><br/>
+	5x <a class="white" href="https://classic.wowhead.com/item=6338" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_01.jpg"/>Silver Rod</a> - 5 Silver Bar, 10 Rough Grinding Stone
+<p>You can also skip this part and just make Runed Copper Belt if you don't have any Silver Bar.</p>
+</li></ul>
+<ul class="gd">
+<li><b>105 - 110</b><br/>
+	5x <a class="white" href="https://classic.wowhead.com/item=2857" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_belt_03.jpg"/>Runed Copper Belt</a> - 50 Copper Bar</li>
+</ul>
+<ul class="gd">
+<li><b>110 - 125</b><br/>
+	15x <a class="zold" href="https://classic.wowhead.com/item=2865" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_pants_03.jpg"/>Rough Bronze Leggings</a> - 90 Bronze Bar</li>
+</ul>
+<h2 class="gtitle" id="Expert">Blacksmithing Expert</h2>
+<p>You can only train Blacksmithing past 150 if you learn Expert Blacksmithing. Not every Blacksmithing trainer will teach you this skill, you have to find an Artisan Blacksmith. (Requires level 20)</p>
+<p>Horde players can learn Expert Blacksmithing from <a href="../../npc/saru-steelfury-blacksmithing-trainer-classic/index.html"><img height="15" src="../../images/icons/horde.png" width="15"/>Saru Steelfury</a> in Orgrimmar and Alliance players can learn it from <a href="../../npc/bengus-deepforge-blacksmithing-trainer-classic/index.html"><img height="15" src="../../images/icons/alliance.png" width="15"/>Bengus Deepforge</a> in Ironforge.</p>
+<h3 class="gdskill">125 - 225</h3>
+<ul class="gd">
+<li><b>125 - 140</b><br/>
+	35x <a class="white" href="https://classic.wowhead.com/item=3486" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_stone_grindingstone_03.jpg"/>Heavy Grinding Stone</a> - 105 Heavy Stone
+<p>Keep the Heavy Grinding Stones. Make this one up to 150, if Heavy Stone is cheap.</p>
+</li></ul>
+<ul class="gd">
+<li><b>140 - 150</b><br/>
+	10x <a class="zold" href="https://classic.wowhead.com/spell=2672" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_bracer_07.jpg"/>Patterned Bronze Bracers</a> - 50 Bronze Bar, 20 Coarse Grinding Stone</li>
+</ul>
+<ul class="gd">
+<li><b>150 - 155</b><br/>
+	5x <a class="white" href="https://classic.wowhead.com/item=11128" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_10.jpg"/>Golden Rod</a> - 5 Gold Bar, 10 Coarse Grinding Stone</li>
+</ul>
+<p><a class="white" href="https://classic.wowhead.com/item=2605" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_12.jpg"/>Green Dye</a> is sold by Tailoring and Leatherworking supply vendors.</p>
+<ul class="gd">
+<li><b>155 - 165</b><br/>
+	10x <a class="zold" href="https://classic.wowhead.com/spell=3506" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_pants_05.jpg"/>Green Iron Leggings</a> - 80 Iron Bar, 10 Heavy Grinding Stone, 10 Green Dye</li>
+</ul>
+<ul class="gd">
+<li><b>165 - 190</b><br/>
+	25x <a class="white" href="https://classic.wowhead.com/spell=3501" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_bracer_06.jpg"/>Green Iron Bracers</a> - 150 Iron Bar, 25 Green Dye</li>
+</ul>
+<ul class="gd">
+<li><b>190 - 200</b><br/>
+	10x <a class="white" href="https://classic.wowhead.com/spell=7223" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_bracer_10.jpg"/>Golden Scale Bracers</a> - 50 Steel Bar, 20 Heavy Grinding Stone
+<p>Alliance players should keep 6 of these. You might need them if you choose Armorsmithing.</p>
+</li></ul>
+<ul class="gd">
+<li><b>200 - 210</b><br/>
+	30x <a class="white" href="https://classic.wowhead.com/spell=9920" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_stone_grindingstone_04.jpg"/>Solid Grinding Stone</a> - 120 Solid Stone
+<p>Keep at least 10 of these for the 225-235 part.</p><p>Keep all of them if you bought the <a class="zold" href="https://classic.wowhead.com/item=7989" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_06.jpg"/>Plans: Mithril Spurs</a>, and you will also have to make another 100. (you can make them later too)</p>
+</li></ul>
+<ul class="gd">
+<li><b>210 - 225</b><br/>
+	15x <a class="zold" href="https://classic.wowhead.com/spell=9928" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_gauntlets_27.jpg"/>Heavy Mithril Gauntlet</a> - 90 Mithril Bar, 60 Mageweave Cloth</li>
+</ul>
+<h2 class="gtitle" id="blacksmithing-specializations">Blacksmithing Specializations</h2>
+<p>At Blacksmithing skill 200 and character level 40, you can specialize in Armorsmithing or Weaponsmithing to craft powerful weapons or armors. (Choosing one is optional, you don't need it to level Blacksmithing. You can choose later too)</p>
+<p>For information on how to become an Armorsmith or a Weaponsmith, please see my separate guides:</p>
+<p class="text-align-center"><a class="gblock" href="../../classic/armorsmith-specialization-wow-classic/index.html"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_chest_plate04.jpg"/> Armorsmith Quest</a><a class="gblock" href="../../classic/weaponsmith-specialization-wow-classic/index.html"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_sword_25.jpg"/> Weaponsmith Quest</a></p>
+<p>If you are not sure which one to choose yet, you can check out the list I put together to see what each specialization can craft:</p>
+<p class="text-align-center"><a class="gblock" href="../../classic/weaponsmith-armorsmith-recipes-wow-classic/index.html">List of Weaponsmith and Armorsmith recipes</a></p>
+<h2 class="gtitle" id="Artisan">Blacksmithing Artisan</h2>
+<p>You can only train Blacksmithing past 225 if you learn Artisan Blacksmithing. Not every Blacksmithing trainer will teach you this skill, you have to find a Master Blacksmith. (Requires level 35)</p>
+<p>You can learn Artisan Blacksmithing from <a href="../../npc/classic/brikk-keencraft/index.html">Brikk Keencraft</a> in Booty Bay in Stranglethorn Vale.</p>
+<h3 class="gdskill">225 - 235</h3>
+<p>10x <a class="white" href="https://classic.wowhead.com/spell=9935" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helmet_03.jpg"/>Steel Plate Helm</a> - 140 Steel Bar, 10 Solid Grinding Stone</p>
+<p>Horde players should keep 4 of these. You might need them if you choose Armorsmithing.</p>
+<h3 class="gdskill">235 - 250</h3>
+<p>Buy <a class="zold" href="https://classic.wowhead.com/item=7989" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_06.jpg"/>Plans: Mithril Spurs</a> from the Auction House.</p>
+<p>15x <a class="zold" href="https://www.wowhead.com/classic/spell=9964" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_rogue_sprint.jpg"/>Mithril Spurs</a> - 60x Mithril Bar, 45x Solid Grinding Stone</p>
+<p><b>Alternative recipe</b></p>
+<p>15x <a class="zold" href="https://classic.wowhead.com/spell=9961" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_helmet_35.jpg"/>Mithril Coif</a> - 150 Mithril Bar, 90 Mageweave Cloth</p>
+<h3 class="gdskill">250 - 260</h3>
+<p>20x <a class="white" href="https://classic.wowhead.com/item=12404" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_stone_sharpeningstone_05.jpg"/>Dense Sharpening Stone</a> - 20 Dense Stone</p>
+<h3 class="gdskill">260 - 270</h3>
+<p>20x <a class="zold" href="https://classic.wowhead.com/spell=9964" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_rogue_sprint.jpg"/>Mithril Spurs</a> - 80 Mithril Bar, 60 Solid Grinding Stone</p>
+<h4><b>Alternative recipes</b></h4>
+<p>If you couldn't get the <a class="zold" href="https://classic.wowhead.com/item=7989" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_06.jpg"/>Plans: Mithril Spurs</a> recipe, then you can try to buy one of these: <a class="zold" href="https://classic.wowhead.com/item=12684" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_06.jpg"/>Plans: Thorium Bracers</a>, <a class="zold" href="https://classic.wowhead.com/item=12683" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_06.jpg"/>Plans: Thorium Belt</a>, <a class="zold" href="https://classic.wowhead.com/item=12685" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_06.jpg"/>Plans: Radiant Belt</a>.</p>
+<ul>
+<li>10x <a class="zold" href="https://classic.wowhead.com/spell=16644" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_bracer_13.jpg"/>Thorium Bracers</a> - 120 Thorium Bar, 40 Blue Power Crystal</li>
+<li>10x <a class="zold" href="https://classic.wowhead.com/spell=16643" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_belt_30.jpg"/>Thorium Belt</a> - 120 Thorium Bar, 40 Red Power Crystal</li>
+<li>10x <a class="zold" href="https://classic.wowhead.com/spell=16645" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_belt_11.jpg"/>Radiant Belt</a> - 100 Thorium Bar, 20 Heart of Fire</li>
+</ul>
+<h4>Recipes from the trainer</h4>
+<p>You can make these if you cannot get any of the recipes above.</p>
+<ul>
+<li><b>260-265</b><br/>
+	8x <a class="zold" href="https://www.wowhead.com/classic/spell=9968" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_boots_plate_01.jpg"/>Heavy Mithril Boots</a> - 112 Mithril Bar, 32 Thick Leather</li>
+</ul>
+<ul>
+<li><b>265-270</b><br/>
+	5x <a class="zold" href="https://classic.wowhead.com/spell=16647" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_belt_01.jpg"/>Imperial Plate Belt</a> - 110 Thorium Bar, 30 Rugged Leather, 5 Aquamarine
+<p>You can get the recipe from the <a href="https://tbc.wowhead.com/quest=7653" rel="nofollow noopener noreferrer" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Imperial Plate Belt</a> (req lvl 50.) quest in Tanaris from <a href="https://tbc.wowhead.com/npc=14567" rel="nofollow" target="_blank">Derotain Mudsipper</a>. You will need 20x <a class="white" href="https://tbc.wowhead.com/item=12359" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_07.jpg"/>Thorium Bar</a> to complete the quest.</p>
+<p><strong>The next two recipes are also from the same NPC</strong>, so make sure to bring at least 190x <a class="white" href="https://tbc.wowhead.com/item=12359" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_07.jpg"/>Thorium Bar</a> with you to craft 5x <a class="zold" href="https://classic.wowhead.com/spell=16647" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_belt_01.jpg"/>Imperial Plate Belt</a> and buy all 3 recipes!</p>
+</li>
+</ul>
+<h3 class="gdskill">270 - 295</h3>
+<p>25x <a class="zold" href="https://classic.wowhead.com/spell=16649" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_bracer_19.jpg"/>Imperial Plate Bracers</a> - 500 Thorium Bar, 25 Star Ruby</p>
+<p>You can get the <a class="zold" href="https://classic.wowhead.com/item=12690" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Plans: Imperial Plate Bracers</a> after you complete the <a href="https://classic.wowhead.com/quest=7655" rel="nofollow" target="_blank"><img height="15" src="../../images/icons/quest_start.gif" width="15"/>Imperial Plate Bracer</a> (req lvl 50.) quest in Tanaris for <a href="https://classic.wowhead.com/npc=14567" rel="nofollow" target="_blank">Derotain Mudsipper</a>. The quest requires 20 <a class="white" href="https://classic.wowhead.com/item=12359" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_07.jpg"/>Thorium Bar</a>.</p>
+<p>The recipe will be yellow for the last 5 points, so you might have to make a few more.</p>
+<h3 class="gdskill">295 - 300</h3>
+<p>5x <a class="zold" href="https://classic.wowhead.com/spell=16657" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_boots_plate_01.jpg"/>Imperial Plate Boots</a> - 170 Thorium Bar, 5 Star Ruby, 5 Aquamarine</p>
+<p>You can get the recipe from the same NPC as the previous one, but this quest requires 40 <a class="white" href="https://classic.wowhead.com/item=12359" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_07.jpg"/>Thorium Bar</a>.</p>
+<p><br/>
+Congratulations on reaching 300! Please <a href="../../contact/index.html" rel="nofollow">send feedback</a> about the guide if you think there are parts I could improve, or you found typos, errors, wrong material numbers!</p>
+<p class="text-align-center"><a href="#top">(Return to Top)</a></p>
+</article>
+</main>
+<aside class="left-sidebar-menu sidebar-sticky">
+<nav>
+<h4>Quick Links</h4>
+<ul>
+<li><a href="../../classic/alchemy-leveling-guide-classic-wow/index.html">Alchemy</a></li>
+<li><a href="../../classic/blacksmithing-leveling-guide-classic-wow/index.html">Blacksmithing</a></li>
+<li><a href="../../classic/enchanting-leveling-guide-classic-wow/index.html">Enchanting</a></li>
+<li><a href="../../classic/engineering-leveling-guide-classic-wow/index.html">Engineering</a></li>
+<li><a href="../../classic/leatherworking-leveling-guide-classic-wow/index.html">Leatherworking</a></li>
+<li><a href="../../classic/tailoring-leveling-guide-classic-wow/index.html">Tailoring</a></li>
+<li><a href="../../classic/herbalism-leveling-guide-classic-wow/index.html">Herbalism</a></li>
+<li><a href="../../classic/mining-leveling-guide-classic-wow/index.html">Mining</a></li>
+<li><a href="../../classic/skinning-leveling-guide-classic-wow/index.html">Skinning</a></li>
+<li><a href="../../classic/fishing-and-cooking-leveling-guide-classic-wow/index.html">Fishing+Cooking</a></li>
+<li><a href="../../classic/cooking-leveling-guide-classic-wow/index.html">Cooking</a></li>
+<li><a href="../../classic/fishing-leveling-guide-classic-wow/index.html">Fishing</a></li>
+<li><a href="../../classic/first-aid-leveling-guide-classic-wow/index.html">First Aid</a></li>
+<li><a href="../../classic/lockpicking-leveling-guide-classic-wow/index.html">Lockpicking</a></li>
+</ul>
+</nav>
+</aside>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

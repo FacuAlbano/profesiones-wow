@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="Quick overview of profession bonuses, perks, and changes in Mists of Pandaria Classic. Find out what's new and which profession to choose." name="description"/>
+<meta content="MoP Classic Professions: Bonuses, Perks, Reputation Recipes &amp; Changes" property="og:title"/>
+<meta content="Quick overview of profession bonuses, perks, and changes in Mists of Pandaria Classic. Find out what's new and which profession to choose." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/mop/mop-classic-profession-bonuses-perks-changes" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>MoP Classic Professions: Bonuses, Perks, Reputation Recipes &amp; Changes</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=_W_EQM1lGlVqS1tOkMD5GmRI7.a6Ly33K86b2xF_mdI-1771996771.4628596-1.0.1.1-sEwjddY3jIZeQlYXcaMM5ttJ.jRywSeabkqkCGALZ_4" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--3">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#profession-combat-bonuses">Profession Combat Bonuses</a></li>
+<li><a href="#reputation-recipes">Reputation-Gated Recipes</a></li>
+<li><a href="#alchemy">Alchemy</a></li>
+<li><a href="#blacksmithing">Blacksmithing</a></li>
+<li><a href="#enchanting">Enchanting</a></li>
+<li><a href="#engineering">Engineering</a></li>
+<li><a href="#inscription">Inscription</a></li>
+<li><a href="#jewelcrafting">Jewelcrafting</a></li>
+<li><a href="#leatherworking">Leatherworking</a></li>
+<li><a href="#tailoring">Tailoring</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">MoP Classic Professions: Bonuses, Perks, Reputation Recipes &amp; Changes</h1>
+<article>
+<p>This guide covers all the profession bonuses, perks, and changes in Mists of Pandaria Classic. Useful if you're deciding which profession to pick or just want to know what's different in MoP.</p>
+<h2 class="gtitle" id="profession-combat-bonuses">Profession Combat Bonuses</h2>
+<p>In Mists of Pandaria, these bonuses remain largely the same as in Cataclysm, but with higher stat values to match the new level cap.</p>
+<p>The table below summarizes the main combat bonuses for each profession in MoP Classic. For more details on profession perks, daily cooldowns, and new items, see the sections further down in this guide.</p>
+<p><b>Main Stat</b> = Agility, Intellect, Strength</p>
+<table>
+<thead>
+<tr>
+<th>Profession</th>
+<th>Unique Bonus</th>
+<th>Stat Gain</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="nowrap-table"><img class="icon" height="17" src="../../images/icons/professions/alchemy-m.png" width="17"/>Alchemy</td>
+<td>More Stats from Flasks</td>
+<td>+320 Main Stat or +480 Stamina, Spirit</td>
+</tr>
+<tr>
+<td class="nowrap-table"><img class="icon" height="17" src="../../images/icons/professions/blacksmithing-m.png" width="17"/>Blacksmithing</td>
+<td>Sockets: Bracers, Gloves</td>
+<td>+320 Main Stat or +480 Stamina or +640 Any Secondary Stat</td>
+</tr>
+<tr>
+<td class="nowrap-table"><img class="icon" height="17" src="../../images/icons/professions/enchanting-m.png" width="17"/>Enchanting</td>
+<td>Rings Enchants</td>
+<td>+320 Main Stat or +480 Stamina</td>
+</tr>
+<tr>
+<td class="nowrap-table"><img class="icon" height="17" src="../../images/icons/professions/engineering-m.png" width="17"/>Engineering</td>
+<td>Gloves Tinker</td>
+<td>+1920 Main Stat for 10s (1min CD)</td>
+</tr>
+<tr>
+<td class="nowrap-table"><img class="icon" height="17" src="../../images/icons/professions/herbalism-m.png" width="17"/>Herbalism</td>
+<td>Lifebloom spell</td>
+<td>+2880 Haste for 20s (2 min CD)</td>
+</tr>
+<tr>
+<td class="nowrap-table"><img class="icon" height="17" src="../../images/icons/professions/inscription-m.png" width="17"/>Inscription</td>
+<td>Better Shoulder Enchant</td>
+<td>+320 Main Stat or +480 Stamina</td>
+</tr>
+<tr>
+<td class="nowrap-table"><img class="icon" height="17" src="../../images/icons/professions/jewelcrafting-m.png" width="17"/>Jewelcrafting</td>
+<td>2x Serpent's Eye Gems</td>
+<td>+320 Main Stat or +480 Stamina or +320 Any secondary Stat</td>
+</tr>
+<tr>
+<td class="nowrap-table"><img class="icon" height="17" src="../../images/icons/professions/leatherworking-m.png" width="17"/>Leatherworking</td>
+<td>Better Bracer Enchants</td>
+<td>+320 Main Stat or +750 Stamina (compared to +170 Dodge)</td>
+</tr>
+<tr>
+<td class="nowrap-table"><img class="icon" height="17" src="../../images/icons/professions/mining-m.png" width="17"/>Mining</td>
+<td>Passive</td>
+<td>+480 Stamina</td>
+</tr>
+<tr>
+<td class="nowrap-table"><img class="icon" height="17" src="../../images/icons/professions/skinning-m.png" width="17"/>Skinning</td>
+<td>Passive</td>
+<td>+480 Crit</td>
+</tr>
+<tr>
+<td><img class="icon" height="17" src="../../images/icons/professions/tailoring-m.png" width="17"/>Tailoring</td>
+<td>Better Cloak Enchant</td>
+<td>+2000 Int, +3000 Spirit, or +4000 AP proc for 15s (1min ICD)</td>
+</tr>
+</tbody>
+</table>
+<h2 class="gtitle" id="reputation-recipes">Reputation-Gated Recipes in MoP Classic</h2>
+<p>This table compiles MoP reputation-gated recipes by profession from this overview.</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>Profession</th>
+<th>Faction</th>
+<th>Reputation</th>
+<th>Notable Recipes / Unlocks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="nowrap-table"><img class="icon" height="17" src="../../images/icons/professions/alchemy-m.png" width="17"/> Alchemy</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td class="nowrap-table"><img class="icon" height="17" src="../../images/icons/professions/blacksmithing-m.png" width="17"/> Blacksmithing</td>
+<td>The Klaxxi</td>
+<td>Honored</td>
+<td>ilvl 476 Chest &amp; Gloves; ilvl 463 Weapons.</td>
+</tr>
+<tr>
+<td class="nowrap-table" rowspan="2"><img class="icon" height="17" src="../../images/icons/professions/enchanting-m.png" width="17"/> Enchanting</td>
+<td>Shado-Pan</td>
+<td>Revered</td>
+<td>Dancing Steel, Jade Spirit, River's Song (weapon enchants).</td>
+</tr>
+<tr>
+<td>The August Celestials</td>
+<td>Revered</td>
+<td>Greater Agility, Super Intellect, Exceptional Strength (bracer enchants).</td>
+</tr>
+<tr>
+<td class="nowrap-table"><img class="icon" height="17" src="../../images/icons/professions/engineering-m.png" width="17"/> Engineering</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td class="nowrap-table"><img class="icon" height="17" src="../../images/icons/professions/inscription-m.png" width="17"/> Inscription</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td class="nowrap-table"><img class="icon" height="17" src="../../images/icons/professions/jewelcrafting-m.png" width="17"/> Jewelcrafting</td>
+<td>Order of the Cloud Serpent</td>
+<td>Honored / Revered / Exalted</td>
+<td>Panther mount designs (Jade/Sunstone at Honored, Sapphire/Ruby at Revered, Jeweled Onyx at Exalted).</td>
+</tr>
+<tr>
+<td class="nowrap-table"><img class="icon" height="17" src="../../images/icons/professions/leatherworking-m.png" width="17"/> Leatherworking</td>
+<td>Golden Lotus</td>
+<td>Honored</td>
+<td>Leg Armor Kits; ilvl 476 Chest &amp; Gloves.</td>
+</tr>
+<tr>
+<td class="nowrap-table" rowspan="2"><img class="icon" height="17" src="../../images/icons/professions/tailoring-m.png" width="17"/> Tailoring</td>
+<td>Golden Lotus</td>
+<td>Honored</td>
+<td>Leg Spellthreads; ilvl 476 Chest &amp; Gloves.</td>
+</tr>
+<tr>
+<td>The August Celestials</td>
+<td>Exalted</td>
+<td>Royal Satchel (28-slot bag).</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 class="gtitle" id="alchemy"><img height="25" src="../../images/icons/professions/alchemy-m.png" width="25"/> Alchemy</h2>
+<p>Alchemy in MoP Classic keeps most of the familiar systems: you still choose a specialization and have a daily cooldown. There are no cauldrons, and most recipes are unlocked through crafting and discovery rather than from trainers.</p>
+<h4 class="dashed-h4-title">Profession Bonus</h4>
+<p>You keep the <a class="white" href="https://www.wowhead.com/spell=53042" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_potion_112.jpg"/>Mixology</a> perk. It doubles flask duration and boosts their stats.</p>
+<h4 class="dashed-h4-title">Unique Flask</h4>
+<p><a class="rare" href="https://www.wowhead.com/item=75525" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_endlesspotion.jpg"/>Alchemist's Flask</a> gives you flask bonuses without consuming one. Great for leveling or old content where using a real flask isn’t worth it.</p>
+<h4 class="dashed-h4-title">Cauldron</h4>
+<p>No cauldrons in MoP. Everyone has to bring their own flasks to raids.</p>
+<h4 class="dashed-h4-title">Specializations</h4>
+<p>Potion, Elixir, and Transmutation masteries are still around and work the same way as before.</p>
+<h4 class="dashed-h4-title">Daily CD</h4>
+<p><a class="zold" href="https://www.wowhead.com/mop-classic/spell=114780" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ingot_livingsteel.jpg"/>Transmute: Living Steel</a> is your main daily cooldown. Living Steel is used for high-end crafts and <b>every</b> belt buckle, so this cooldown will be valuable all patch long.</p>
+<h4 class="dashed-h4-title">Trinket</h4>
+<p>No epic trinket this time. You only get the <a class="rare" href="https://www.wowhead.com/mop-classic/item=75274" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_pet_scorchedstone.jpg"/>Zen Alchemist Stone</a>, but it was solid in challenge modes back in retail MoP.</p>
+<br/>
+<p class="text-align-center"><a class="gblock" href="../../mop/alchemy-overview/index.html">Full Alchemy Overview</a> <a class="gblock" href="../../mop/alchemy-leveling-guide-mop-classic/index.html">MoP Alchemy Leveling Guide</a></p>
+<h2 class="gtitle" id="blacksmithing"><img height="25" src="../../images/icons/professions/blacksmithing-m.png" width="25"/> Blacksmithing</h2>
+<p>Blacksmithing in MoP Classic offers the same profession bonus as before, with extra gem sockets for bracers and gloves. You can craft epic ilvl 476 gear from Klaxxi reputation and higher ilvl 496 pieces from raid drops.</p>
+<h4 class="dashed-h4-title">Profession Bonus</h4>
+<p><a class="white" href="https://www.wowhead.com/mop-classic/spell=55628" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/item_socketedbracer.jpg"/>Socket Bracer</a> and <a class="white" href="https://www.wowhead.com/mop-classic/spell=55641" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_addsocketglove.jpg"/>Socket Gloves</a> let you add an extra gem slot to both slots.</p>
+<h4 class="dashed-h4-title">Reputation Recipes</h4>
+<ul>
+<li>ilvl 476 Gloves and Chest - <b>The Klaxxi</b> (Honored)</li>
+<li>ilvl 463 Weapons - <b>The Klaxxi</b> (Honored)</li>
+</ul>
+<h4 class="dashed-h4-title">Raid Recipes</h4>
+<p>ilvl 496 Chest and Glove recipes drop in Mogu'shan Vaults, Terrace of Endless Spring, and Heart of Fear. These are BoE and can also be bought from the Auction House.</p>
+<br/>
+<p class="text-align-center"><a class="gblock" href="../../mop/blacksmithing-overview-mop-classic/index.html">Full Blacksmithing Overview</a> <a class="gblock" href="../../mop/blacksmithing-leveling-guide-mop-classic/index.html">MoP Blacksmithing Leveling Guide</a></p>
+<h2 class="gtitle" id="enchanting"><img height="25" src="../../images/icons/professions/enchanting-m.png" width="25"/> Enchanting</h2>
+<p>Enchanting in MoP Classic keeps the usual ring enchants as your profession bonus. You can convert materials up and down between tiers, and most formulas come from the trainer. High-end weapon and bracer enchants are gated behind Shado-Pan and August Celestials reputation.</p>
+<h4 class="dashed-h4-title">Profession Bonus</h4>
+<ul>
+<li><a class="white" href="https://www.wowhead.com/mop-classic/spell=103461" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_note_01.jpg"/>Enchant Ring - Greater Agility</a></li>
+<li><a class="white" href="https://www.wowhead.com/mop-classic/spell=103462" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_note_01.jpg"/>Enchant Ring - Greater Intellect</a></li>
+<li><a class="white" href="https://www.wowhead.com/mop-classic/spell=103463" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_note_01.jpg"/>Enchant Ring - Greater Stamina</a></li>
+<li><a class="white" href="https://www.wowhead.com/mop-classic/spell=103465" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_note_01.jpg"/>Enchant Ring - Greater Strength</a></li>
+</ul>
+<h4 class="dashed-h4-title">New Conversions</h4>
+<p>Enchanters can now convert most MoP materials between tiers, giving more flexibility than before. But, you want to avoid having to shatter for the most part because you're losing mats when you convert down.</p>
+<ul>
+<li>Combining: 125 <a class="white" href="https://www.wowhead.com/mop-classic/item=74249" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_powder_copper.jpg"/>Spirit Dust</a> = 25 <a class="zold" href="https://www.wowhead.com/mop-classic/item=74250" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_enchanting_greatermysteriousessence.jpg"/>Mysterious Essence</a> = 5 <a class="rare" href="https://www.wowhead.com/mop-classic/item=74247" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_enchanting_largeetherealshard.jpg"/>Ethereal Shard</a> = 1 <a class="epic" href="https://www.wowhead.com/mop-classic/item=74248" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_crystalepic2.jpg"/>Sha Crystal</a></li>
+<li>Shattering: 1 <a class="epic" href="https://www.wowhead.com/mop-classic/item=74248" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_crystalepic2.jpg"/>Sha Crystal</a> = 2 <a class="rare" href="https://www.wowhead.com/mop-classic/item=74247" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_enchanting_largeetherealshard.jpg"/>Ethereal Shard</a> = 6 <a class="zold" href="https://www.wowhead.com/mop-classic/item=74250" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_enchanting_greatermysteriousessence.jpg"/>Mysterious Essence</a> = 18 <a class="white" href="https://www.wowhead.com/mop-classic/item=74249" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_powder_copper.jpg"/>Spirit Dust</a></li>
+</ul>
+<h4 class="dashed-h4-title">Reputation Recipes</h4>
+<p>Most enchants are learned directly from trainers. High-end enchants require reputation:</p>
+<b>Shado-Pan</b> - Revered
+<ul>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=84584" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_formulasuperior_01.jpg"/>Formula: Enchant Weapon - Dancing Steel</a></li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=84583" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_formulasuperior_01.jpg"/>Formula: Enchant Weapon - Jade Spirit</a></li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=84580" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_formulasuperior_01.jpg"/>Formula: Enchant Weapon - River's Song</a></li>
+</ul>
+<b>The August Celestials</b> - Revered
+<ul>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=84557" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_formulasuperior_01.jpg"/>Formula: Enchant Bracer - Greater Agility</a></li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=84561" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_formulasuperior_01.jpg"/>Formula: Enchant Bracer - Exceptional Strength</a></li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/item=84559" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_enchant_formulasuperior_01.jpg"/>Formula: Enchant Bracer - Super Intellect</a></li>
+</ul>
+<br/>
+<p class="text-align-center"><a class="gblock" href="../../mop/enchanting-overview-mop-classic/index.html">Full Enchanting Overview</a> <a class="gblock" href="../../mop/enchanting-leveling-guide-mop-classic/index.html">MoP Enchanting Leveling Guide</a></p>
+<h2 class="gtitle" id="engineering"><img height="25" src="../../images/icons/professions/engineering-m.png" width="25"/> Engineering</h2>
+<p>Engineering in MoP Classic delivers powerful glove tinkers, handy utility gadgets, and BoP epic goggles.</p>
+<h4 class="dashed-h4-title">Profession Bonus</h4>
+<ul>
+<li><a class="white" href="https://www.wowhead.com/mop-classic/spell=126731" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_engineering.jpg"/>Synapse Springs</a> - 1920 main stat for 10s</li>
+<li><a class="white" href="https://www.wowhead.com/mop-classic/spell=108789" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_engineering.jpg"/>Phase Fingers</a> - 2880 Dodge for 10s</li>
+</ul>
+<h4 class="dashed-h4-title">Epic Goggles</h4>
+<p>You can craft BoP ilvl 476 epic goggles. They have two unique cogwheel sockets, so you can customize the secondary stats you want.</p>
+<h4 class="dashed-h4-title">Teleporter</h4>
+<p><a class="rare" href="https://www.wowhead.com/item=87215" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/sha_spell_fire_felfirenova.jpg"/>Wormhole Generator: Pandaria</a> - Teleports you to somewhere in Pandaria. (15 min CD)</p>
+<h4 class="dashed-h4-title">Other Tinkers</h4>
+<ul>
+<li>Cloak - <a class="white" href="https://www.wowhead.com/spell=126392" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_engineering.jpg"/>Goblin Glider</a> - Deploy a goblin glider and fall slowly for 30 sec. (5 min CD)</li>
+<li>Belt - <a class="white" href="https://www.wowhead.com/spell=109099" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/trade_engineering.jpg"/>Watergliding Jets</a> - Walk on water and swim quickly for 12 sec. (30 sec CD)</li>
+</ul>
+<br/>
+<p class="text-align-center"><a class="gblock" href="../../mop/engineering-overview-mop-classic/index.html">Full Engineering Overview</a> <a class="gblock" href="../../mop/engineering-leveling-guide-mop-classic/index.html">MoP Engineering Leveling Guide</a></p>
+<h2 class="gtitle" id="inscription"><img height="25" src="../../images/icons/professions/inscription-m.png" width="25"/> Inscription</h2>
+<p>Inscription in MoP Classic gives exclusive shoulder enchants, Darkmoon Cards, epic off-hands, and a daily Scroll of Wisdom.</p>
+<h4 class="dashed-h4-title">Profession Bonus</h4>
+<ul>
+<li><a class="epic" href="https://www.wowhead.com/mop-classic/spell=127020" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_mastersinscription.jpg"/>Secret Tiger Fang Inscription</a></li>
+<li><a class="epic" href="https://www.wowhead.com/mop-classic/spell=127024" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_mastersinscription.jpg"/>Secret Ox Horn Inscription</a></li>
+<li><a class="epic" href="https://www.wowhead.com/mop-classic/spell=127021" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_mastersinscription.jpg"/>Secret Tiger Claw Inscription</a></li>
+<li><a class="epic" href="https://www.wowhead.com/mop-classic/spell=127023" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_mastersinscription.jpg"/>Secret Crane Wing Inscription</a></li>
+</ul>
+<h4 class="dashed-h4-title">Shoulder Enchants</h4>
+<p>Scribes are the only source for shoulder enchants in MoP. These replace the old rep enchants.</p>
+<h4 class="dashed-h4-title">Darkmoon Cards</h4>
+<p>You can discover one random Darkmoon Card every day with <a class="rare" href="https://www.wowhead.com/mop-classic/spell=111830" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_inscription_tooltip_darkmooncard_mop.jpg"/>Darkmoon Card of Mists</a>.</p>
+<ul>
+<li><a class="epic" href="https://www.wowhead.com/mop-classic/item=79325" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_inscription_deck_redcrane.jpg"/>Crane Deck</a> - Trinket: <a class="epic" href="https://www.wowhead.com/mop-classic/item=79330" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_inscription_trinket_crane.jpg"/>Relic of Chi-Ji</a> (heal)</li>
+<li><a class="epic" href="https://www.wowhead.com/mop-classic/item=79324" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_inscription_deck_blackox.jpg"/>Ox Deck</a> - Trinket: <a class="epic" href="https://www.wowhead.com/mop-classic/item=79329" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_inscription_trinket_ox.jpg"/>Relic of Niuzao</a> (tank)</li>
+<li><a class="epic" href="https://www.wowhead.com/mop-classic/item=79326" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_inscription_deck_jadeserpent.jpg"/>Serpent Deck</a> - Trinket: <a class="epic" href="https://www.wowhead.com/mop-classic/item=79331" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_inscription_trinket_dragon.jpg"/>Relic of Yu'lon</a> (spell)</li>
+<li><a class="epic" href="https://www.wowhead.com/mop-classic/item=79323" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_inscription_deck_whitetiger.jpg"/>Tiger Deck</a> - Trinket: <a class="epic" href="https://www.wowhead.com/mop-classic/item=79328" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_inscription_trinket_tiger.jpg"/>Relic of Xuen</a> / <a class="epic" href="https://www.wowhead.com/mop-classic/item=79327" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_inscription_trinket_tiger.jpg"/>Relic of Xuen</a> (melee)</li>
+</ul>
+<h4 class="dashed-h4-title">Epic Off-hands</h4>
+<p>Craftable ilvl 476 BoE off-hands for healers and casters. Each requires a Scroll of Wisdom. You can learn these from the trainer.</p>
+<h4 class="dashed-h4-title">Bind to account Staffs</h4>
+<p>These bind to your account, so you can send them to your other characters when you get a better one later. <b>You can't sell them</b> on the auction house.</p>
+<ul>
+<li><a class="epic" href="https://www.wowhead.com/mop-classic/item=79340" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_2h_pandariatradeskill_c_03.jpg"/>Inscribed Crane Staff</a> - healer</li>
+<li><a class="epic" href="https://www.wowhead.com/mop-classic/item=79341" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_2h_pandariatradeskill_c_05.jpg"/>Inscribed Serpent Staff</a> - spell dps</li>
+<li><a class="epic" href="https://www.wowhead.com/mop-classic/item=79343" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_staff_2h_pandariatradeskill_c_02.jpg"/>Inscribed Tiger Staff</a> - Agility dps</li>
+</ul>
+<h4 class="dashed-h4-title">Daily CD</h4>
+<p><a class="rare" href="https://www.wowhead.com/mop-classic/spell=112996" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_inscription_scrollofwisdom_02.jpg"/>Scroll of Wisdom</a> is your daily CD. This scroll will always proc a glyph you haven't learned. <a class="rare" href="https://www.wowhead.com/mop-classic/item=79731" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_inscription_scrollofwisdom_02.jpg"/>Scroll of Wisdom</a> is BoP and used in Darkmoon Cards and all high level crafted gear.</p>
+<br/>
+<p class="text-align-center"><a class="gblock" href="../../mop/inscription-overview-mop-classic/index.html">Full Inscription Overview</a> <a class="gblock" href="../../mop/inscription-leveling-guide-mop-classic/index.html">MoP Inscription Leveling Guide</a></p>
+<h2 class="gtitle" id="jewelcrafting"><img height="25" src="../../images/icons/professions/jewelcrafting-m.png" width="25"/> Jewelcrafting</h2>
+<p>Jewelcrafting in MoP Classic uses daily discoveries for gem cuts, JC-only gems, and the panther mounts via Cloud Serpent reputation.</p>
+<h4 class="dashed-h4-title">Profession Perk</h4>
+<p>2x JC-only gems</p>
+<h4 class="dashed-h4-title">Learning Gem Recipes</h4>
+<p>You no longer need to do daily quests. Instead, you discover gem recipes by using spells like <a class="rare" href="https://www.wowhead.com/mop-classic/spell=131686" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_variety_02.jpg"/>Primordial Ruby</a>. This discovery system has a <b>shared daily cooldown</b> across all six gem colors, so you can only learn one new cut per day.</p>
+<p>You can bypass this cooldown with <a class="rare" href="https://www.wowhead.com/mop-classic/spell=131759" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_gem_variety_02.jpg"/>Secrets of the Stone</a>, but it costs a <a class="rare" href="https://www.wowhead.com/item=76061" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_spiritofharmony_2.jpg"/>Spirit of Harmony</a>, which will be quite expensive early on.</p>
+<h4 class="dashed-h4-title">Mounts</h4>
+<p>Jewelcrafters can craft a new flying mount in MoP Classic: the <a class="epic" href="https://www.wowhead.com/mop-classic/spell=120045" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_mount_onyxpanther.jpg"/>Jeweled Onyx Panther</a>. It’s created by combining four other Jewelcrafting panther mounts:</p>
+<ul>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/spell=121843" rel="nofollow" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_mount_onyxpanther_yellow.jpg"/>Sunstone Panther</a></li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/spell=121844" rel="nofollow" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_mount_onyxpanther_green.jpg"/>Jade Panther</a></li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/spell=121841" rel="nofollow" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_mount_onyxpanther_red.jpg"/>Ruby Panther</a></li>
+<li><a class="rare" href="https://www.wowhead.com/mop-classic/spell=121842" rel="nofollow" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_mount_onyxpanther_blue.jpg"/>Sapphire Panther</a></li>
+</ul>
+<p>Each one requires an <a class="rare" href="https://www.wowhead.com/mop-classic/item=83092" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_enchantedpearla.jpg"/>Orb of Mystery</a> (20,000 gold), so crafting the full set is very expensive.</p>
+<p>You can buy the recipes from <a href="https://www.wowhead.com/npc=58414" rel="nofollow noopener noreferrer" target="_blank">San Redscale</a> with <b>Order of the Cloud Serpent</b> reputation:</p>
+<ul>
+<li><a class="white" href="https://www.wowhead.com/mop-classic/item=83845" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Design: Jade Panther</a> – Honored</li>
+<li><a class="white" href="https://www.wowhead.com/mop-classic/item=83830" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Design: Sunstone Panther</a> – Honored</li>
+<li><a class="white" href="https://www.wowhead.com/mop-classic/item=83932" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Design: Sapphire Panther</a> – Revered</li>
+<li><a class="white" href="https://www.wowhead.com/mop-classic/item=83931" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Design: Ruby Panther</a> – Revered</li>
+<li><a class="white" href="https://www.wowhead.com/mop-classic/item=83877" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_scroll_03.jpg"/>Design: Jeweled Onyx Panther</a> – Exalted</li>
+</ul>
+<br/>
+<p class="text-align-center"><a class="gblock" href="../../mop/jewelcrafting-overview-mop-classic/index.html">Full Jewelcrafting Overview</a> <a class="gblock" href="../../mop/jewelcrafting-leveling-guide-mop-classic/index.html">MoP Jewelcrafting Leveling Guide</a></p>
+<h2 class="gtitle" id="leatherworking"><img height="25" src="../../images/icons/professions/leatherworking-m.png" width="25"/> Leatherworking</h2>
+<p>Leatherworking in MoP Classic offers better bracer enchants, cheap leg reinforcements, and Golden Lotus patterns for early epics.</p>
+<h4 class="dashed-h4-title">Profession Bonus</h4>
+<ul>
+<li><a class="white" href="https://www.wowhead.com/mop-classic/spell=124551" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_pelt_13.jpg"/>Fur Lining - Agility</a> +500</li>
+<li><a class="white" href="https://www.wowhead.com/mop-classic/spell=124552" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_pelt_11.jpg"/>Fur Lining - Intellect</a> +500</li>
+<li><a class="white" href="https://www.wowhead.com/mop-classic/spell=124554" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_pelt_12.jpg"/>Fur Lining - Strength</a> +500</li>
+<li><a class="white" href="https://www.wowhead.com/mop-classic/spell=124553" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_pelt_10.jpg"/>Fur Lining - Stamina</a> +750</li>
+</ul>
+<h4 class="dashed-h4-title">Cheap Leg Enchants</h4>
+<p>These give the same bonus as the normal Leg Enchants, but they are basically free to make compared to the normal ones.</p>
+<ul>
+<li><a class="white" href="https://www.wowhead.com/mop-classic/spell=124561" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_cataclysmarmorkit_11.jpg"/>Draconic Leg Reinforcements</a> - +285 Strength, +165 Crit</li>
+<li><a class="white" href="https://www.wowhead.com/mop-classic/spell=124563" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_cataclysmarmorkit_10.jpg"/>Heavy Leg Reinforcements</a> - +430 Stamina, +165 Dodge</li>
+<li><a class="white" href="https://www.wowhead.com/mop-classic/spell=124559" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_cataclysmarmorkit_12.jpg"/>Primal Leg Reinforcements</a> - +285 Agility, +165 Crit</li>
+</ul>
+<h4 class="dashed-h4-title">Reputation Recipes</h4>
+<p>Several recipes are unlocked through the <b>Golden Lotus</b> faction:</p>
+<ul>
+<li>Leg Armor Kits (Tank, Melee) – Honored</li>
+<li>ilvl 476 Chests and Gloves – Honored</li>
+</ul>
+<h4 class="dashed-h4-title">Raid Recipes</h4>
+<p>ilvl 496 Chest and Gloves recipes drop from Mogu'shan Vaults, Heart of Fear, and Terrace of Endless Spring. These recipes are not Bind on Pickup, so you can also buy them from the Auction House.</p>
+<br/>
+<p class="text-align-center"><a class="gblock" href="../../mop/leatherworking-overview-mop-classic/index.html">Full Leatherworking Overview</a> <a class="gblock" href="../../mop/leatherworking-leveling-guide-mop-classic/index.html">MoP Leatherworking Leveling Guide</a></p>
+<h2 class="gtitle" id="tailoring"><img height="25" src="../../images/icons/professions/tailoring-m.png" width="25"/> Tailoring</h2>
+<p>Tailoring in MoP Classic revolves around cloak enchants, cheap leg enchants, and making bags for the new expansion.</p>
+<h4 class="dashed-h4-title">Profession Bonus</h4>
+<ul>
+<li><a class="white" href="https://www.wowhead.com/mop-classic/spell=125482" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_thread_01.jpg"/>Darkglow Embroidery</a> - Spirit</li>
+<li><a class="white" href="https://www.wowhead.com/mop-classic/spell=125481" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_thread_01.jpg"/>Lightweave Embroidery</a> - Intellect</li>
+<li><a class="white" href="https://www.wowhead.com/mop-classic/spell=125483" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_thread_01.jpg"/>Swordguard Embroidery</a> - Attack Power</li>
+</ul>
+<h4 class="dashed-h4-title">Daily CD</h4>
+<p><a class="rare" href="https://www.wowhead.com/mop-classic/spell=125557" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_food_vendor_boiledsilkwormpupa.jpg"/>Imperial Silk</a> is your daily cooldown to create <a class="rare" href="https://www.wowhead.com/mop-classic/item=82447" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_fabric_imperialsilk.jpg"/>Imperial Silk</a>. You can bypass this CD with <a class="rare" href="https://www.wowhead.com/mop-classic/spell=130325" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_fabric_imperialsilk.jpg"/>Song of Harmony</a>, but it costs 3x <a class="rare" href="https://www.wowhead.com/mop-classic/item=76061" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_elemental_spiritofharmony_2.jpg"/>Spirit of Harmony</a>, which will be quite expensive early on.</p>
+<h4 class="dashed-h4-title">Cheap Leg Enchants</h4>
+<p>Tailors can use these leg enchants on their own gear. They give the same stats as regular enchants but only cost 3x <a class="white" href="https://www.wowhead.com/mop-classic/item=38426" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_thread_01.jpg"/>Eternium Thread</a>.</p>
+<ul>
+<li><a class="white" href="https://www.wowhead.com/mop-classic/spell=125497" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_nature_astralrecalgroup.jpg"/>Sanctified Spellthread</a></li>
+<li><a class="white" href="https://www.wowhead.com/mop-classic/spell=125496" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_nature_astralrecalgroup.jpg"/>Master's Spellthread</a></li>
+</ul>
+<h4 class="dashed-h4-title">Reputation Recipes</h4>
+<p>Several recipes are unlocked through factions:</p>
+<ul>
+<li><b>Golden Lotus:</b> Leg Armor Kits (Healer, Spell DPS) – Honored</li>
+<li><b>Golden Lotus:</b> ilvl 476 Chests and Gloves – Honored</li>
+<li><b>The August Celestials:</b> <a class="epic" href="https://www.wowhead.com/mop-classic/item=82446" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_misc_bag_31.jpg"/>Royal Satchel</a> (28-slot BoE bag) – Exalted</li>
+</ul>
+<h4 class="dashed-h4-title">Raid Recipes</h4>
+<p>ilvl 496 Chest and Gloves recipes drop from Mogu'shan Vaults, Heart of Fear, and Terrace of Endless Spring. These recipes are not Bind on Pickup, so you can also buy them from the Auction House.</p>
+<p class="text-align-center"><a class="gblock" href="../../mop/tailoring-overview-mop-classic/index.html">Full Tailoring Overview</a> <a class="gblock" href="../../mop/tailoring-leveling-guide-mop-classic/index.html">MoP Tailoring Leveling Guide</a></p>
+</article>
+</main>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

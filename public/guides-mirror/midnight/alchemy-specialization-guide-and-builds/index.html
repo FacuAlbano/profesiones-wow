@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="Midnight Alchemy specialization builds for Potion Prowess, Fluent in Flasks, Transmutation Authority, and Alchemical Mastery. Step-by-step Knowledge Point allocation for flask duration, selling consumables, and transmute gold-making." name="description"/>
+<meta content="Midnight Alchemy Specialization Guide &amp; Best Builds" property="og:title"/>
+<meta content="Midnight Alchemy specialization builds for Potion Prowess, Fluent in Flasks, Transmutation Authority, and Alchemical Mastery. Step-by-step Knowledge Point allocation for flask duration, selling consumables, and transmute gold-making." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/midnight/alchemy-specialization-guide-and-builds" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>Midnight Alchemy Specialization Guide &amp; Best Builds</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=ogw_5hkwEeGaViDJ1N9vSF2TzMIJ0sx2EGqU5z6677k-1771996629.9047868-1.0.1.1-PEiKkT2iOyZhgSsS4aFzzDkSPCpU8uNnUyermcv.c3I" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--3">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<nav class="toc">
+<h4 class="sidebar-header">Table of Contents</h4>
+<ul>
+<li><a href="#knowledge">Getting Knowledge Points</a></li>
+<li><a href="#timeline">Timeline &amp; Unlock Pace</a></li>
+<li><a href="#specs">Specialization Overview</a></li>
+<li><a href="#gear">Best Profession Gear &amp; Stats</a></li>
+<li><a href="#builds">Builds &amp; Talent Trees</a></li>
+</ul>
+</nav>
+<!-- Related links -->
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">Midnight Alchemy Specialization Guide &amp; Best Builds</h1>
+<article>
+<p>This guide covers the four Alchemy specialization trees in Midnight: Potion Prowess, Fluent in Flasks, Transmutation Authority, and Alchemical Mastery. I made 3 builds with step-by-step point allocation, one for getting the flask duration bonus (raiding &amp; M+), one for selling consumables on the AH, and one for making gold with transmutes.</p>
+<h2 class="line-header" id="knowledge">Getting Knowledge Points</h2>
+<p>This guide is only about builds and where to put your points. If you need help finding Knowledge Points or need a leveling path, check out these guides:</p>
+<p class="text-align-center">
+<a class="gblock" href="../../midnight/alchemy-guide/index.html">
+        Recipes &amp; Knowledge Points
+    </a> <a class="gblock" href="../../guides/wow-alchemy-leveling-guide/index.html">
+        Leveling Guide (1 - 100)
+    </a>
+</p>
+<h2 class="line-header" id="timeline">Timeline &amp; Unlock Pace</h2>
+<p>You can get around 40-50 Knowledge Points on your first day from first crafts and one-time treasures, plus 10 more if you have enough renown to buy the Knowledge book. After that, you get about 15 per week from weekly quests, treasure drops, and treatises.</p>
+<p>The builds below are based on that first 40-50 point mark, and I added suggestions for what to do after that as you get more points.</p>
+<h2 class="line-header" id="specs">Specialization Overview</h2>
+<div class="table-container">
+<table class="tbl-desc">
+<thead>
+<tr>
+<th>Specialization</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><b>Potion Prowess</b></td>
+<td>Potion recipes split into two branches: Void Potions and Light Potions. Also unlocks the Potion Cauldron recipe at 30 points.</td>
+</tr>
+<tr>
+<td><b>Fluent in Flasks</b></td>
+<td>Flasks and phials, plus a passive duration bonus early in the tree. Also unlocks the Flask Cauldron recipe at 30 points.</td>
+</tr>
+<tr>
+<td><b>Transmutation Authority</b></td>
+<td>Mote transmutes, material conversions (leather into ore, fish into gems, etc.), the Wondrous Synergist daily craft, and the Alchemist Stone trinket.</td>
+</tr>
+<tr>
+<td><b>Alchemical Mastery</b></td>
+<td>Crafting stat boosts for all Alchemy. Separate Resourcefulness branches for flasks, potions, and reagents.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 class="line-header" id="gear">Best Profession Gear and Stats for Alchemy</h2>
+<p>Which stat you want depends on what you're crafting. <b>The simple rule: if a craft can Multicraft, use Multicraft</b>. If it can't, use Resourcefulness.</p>
+<p>How do you know if it can Multicraft? Check the recipe in your profession window, if you see Multicraft listed on the right side, it can Multicraft. If not, it can't.</p>
+<ul class="minimal-list">
+<li><b>Flasks, potions, and phials</b> can Multicraft, so use a Multicraft tool with a Multicraft enchant. Every proc gives you extra items for free.</li>
+<li><b>Mote transmutes and Wondrous Synergist</b> can also Multicraft. Same tool.</li>
+<li><b>Material transmutes</b> (Bouquet of Herbs, Box of Rocks, School of Gems) cannot Multicraft. The only useful stat here is Resourcefulness.</li>
+</ul>
+<p>If you're mainly crafting consumables or doing mote transmutes, a Multicraft tool is your default. If you also do material transmutes, keep a Resourcefulness tool to swap in.</p>
+<h2 class="line-header" id="builds">Builds &amp; Talent Trees</h2>
+<h3>Which Build Should You Choose?</h3>
+<p>Pick the one that fits your playstyle. The Selling Consumables build has sub-paths for flasks, potions, and phials.</p>
+<ul class="minimal-list">
+<li><b>Extra Flask Duration:</b> Start here if you raid or do Mythic+. Gets you the flask duration increase first, then branches into selling.</li>
+<li><b>Selling Consumables:</b> Maximizes Multicraft and Resourcefulness for AH profit. Pick one product line (flasks, potions, or phials) and go deep.</li>
+<li><b>Transmutes:</b> Gold making through daily cooldown crafts and mote conversions.</li>
+</ul>
+<div class="tab-container build-tabs">
+<div class="tabs">
+<div class="tab-button active" data-tab="standard">
+<span class="tab-title">Extra Flask Duration</span>
+<span class="tab-sub">Raiding / Mythic+</span>
+</div>
+<div class="tab-button" data-tab="selling">
+<span class="tab-title">Selling Consumables</span>
+<span class="tab-sub">Auction House</span>
+</div>
+<div class="tab-button" data-tab="transmutes">
+<span class="tab-title">Transmutes</span>
+<span class="tab-sub">Daily CDs &amp; Motes</span>
+</div>
+</div>
+<!-- 1. STANDARD BUILD -->
+<div class="tab-content active" id="standard">
+<h3>Extra Flask Duration</h3>
+<p>This is not a full build on its own. If you play any kind of M+, raiding, or any content where you regularly use flasks, make sure to start here. It's almost the same as the Flask Selling path, but <b>you put 5 more points into Fluent in Flasks to maximize the duration increase.</b></p>
+<p>Put 15 points into Fluent in Flasks root node. You unlock the flask and phial duration increase at 5 and 15 points.</p><p class="text-align-center"><img alt="Alchemy Fluent in Flasks specialization tree" class="lightbox guide-img" height="882" src="../../images/midnight/alc-standard.jpg" width="1138"/></p><p>Once you're done here, just pick the <b>Flask build</b> in the <b>Selling Consumables</b> tab. That's the best follow-up for most players.</p></div>
+<!-- 2. SELLING CONSUMABLES -->
+<div class="tab-content" id="selling">
+<h3>Selling Consumables</h3>
+<p>This build is for selling consumables at the Auction House. Pick <b>one product line</b> and go deep before branching out.</p><h3 class="line-header">Pick Your Path</h3><ul class="minimal-list">
+<li><b>Flasks:</b> Highest demand. Every raider and Mythic+ player needs them.</li>
+<li><b>Potions:</b> Same as flasks, high demand. Every raider and Mythic+ player needs them.</li>
+<li><b>Phials:</b> Smaller market but less competition. I don't recommend this unless you know what you're doing.</li>
+</ul><h3 class="line-header">Where to Spend Points</h3><div class="tab-container">
+<div class="pill-tabs">
+<button class="pill-btn tab-button active" data-tab="sell-flasks">Flasks</button>
+<button class="pill-btn tab-button" data-tab="sell-phials">Phials</button>
+<button class="pill-btn tab-button" data-tab="sell-potions">Potions</button>
+</div><!-- FLASKS -->
+<div class="tab-content active" id="sell-flasks"><h4>Phase 1: Multicraft (0-40 Points)</h4><ol class="step-list">
+<li>Put 10 points into Fluent in Flasks (root node).</li>
+<li>Put 10 points into Sin'dorei Specialist.</li>
+<li>Put 20 points into Flask Abundance.</li>
+</ol><p class="text-align-center"><img alt="Flask Multicraft specialization tree" class="lightbox guide-img" height="882" src="../../images/midnight/alc-spec-2-1.jpg" width="1138"/></p><h4>Phase 2: Resourcefulness (40-70 Points)</h4><ol class="step-list">
+<li>Put 10 points into Alchemical Mastery.</li>
+<li>Put 20 points into Recycle. Resourcefulness means you sometimes use fewer materials. Combined with Multicraft, this is how you actually make profit on the AH.</li>
+</ol><p class="text-align-center"><img alt="Flask Resourcefulness specialization tree" class="lightbox guide-img" height="882" src="../../images/midnight/alc-spec-2-2.jpg" width="1138"/></p><h4>Phase 3: Gold Quality + Cauldrons (70-130 Points)</h4><p>Now fill out everything that increases your skill so you can craft Gold Quality flasks. Basically max out the nodes you already put points into, in this order:</p><ol class="step-list"><li>20 points into Fluent in Flasks. This unlocks the <b>Cauldron of Sin'dorei Flasks</b> recipe.</li>
+<li>20 points into Sin'dorei Specialist</li>
+<li>20 points into Alchemical Mastery.</li></ol></div><!-- PHIALS -->
+<div class="tab-content" id="sell-phials"><h4>Phase 1: Multicraft (0-40 Points)</h4><ol class="step-list">
+<li>Put 10 points into Fluent in Flasks (root node).</li>
+<li>Put 10 points into Haranir Secrets.</li>
+<li>Put 20 points into Phial Abundance.</li>
+</ol><p class="text-align-center"><img alt="Phial Multicraft specialization tree" class="lightbox guide-img" height="882" src="../../images/midnight/alc-spec-3-1.jpg" width="1138"/></p><h4>Phase 2: Resourcefulness (40-70 Points)</h4>
+<ol class="step-list">
+<li>Put 10 points into Alchemical Mastery.</li>
+<li>Put 20 points into Recycle. Resourcefulness means you sometimes use fewer materials. Combined with Multicraft, this is how you actually make profit on the AH.</li>
+</ol><p class="text-align-center"><img alt="Phial Resourcefulness specialization tree" class="lightbox guide-img" height="882" src="../../images/midnight/alc-spec-2-2.jpg" width="1138"/></p><h4>Phase 3: Gold Quality + Cauldrons (70-130 Points)</h4><p>Now fill out everything that increases your skill so you can craft Gold Quality phials. Basically max out the nodes you already put points into, in this order:</p><ol class="step-list"><li>20 points into Fluent in Flasks.</li>
+<li>20 points into Haranir Secrets.</li>
+<li>20 points into Alchemical Mastery.</li></ol></div><!-- POTIONS -->
+<div class="tab-content" id="sell-potions"><h4>Phase 1: Multicraft (0-40 Points)</h4><ol class="step-list">
+<li>Put 10 points into Potion Prowess (root node). Unlocks the sub-specializations.</li>
+<li>Put 10 points into Path of Void or Path of Light. Unlocks the Multicraft node.</li>
+<li>Put 20 points into Prolific Potioneer - Void or Light. Max this out for Multicraft.</li>
+</ol><h4 class="text-align-center">Light Potions</h4><p class="text-align-center"><img alt="Light Potion Multicraft specialization tree" class="lightbox guide-img" height="882" src="../../images/midnight/alc-spec-4-1.jpg" width="1138"/></p><h4 class="text-align-center">Void Potions</h4><p class="text-align-center"><img alt="Void Potion Multicraft specialization tree" class="lightbox guide-img" height="882" src="../../images/midnight/alc-spec-4-2.jpg" width="1138"/></p><h4>Phase 2: Resourcefulness (40-70 Points)</h4><ol class="step-list">
+<li>Put 10 points into Alchemical Mastery.</li>
+<li>Put 20 points into Reuse. Resourcefulness for potion crafts.</li>
+</ol><p class="text-align-center"><img alt="Potion Resourcefulness specialization tree" class="lightbox guide-img" height="882" src="../../images/midnight/alc-spec-4-3.jpg" width="1138"/></p>
+<h4>Phase 3: Gold Quality + Cauldron (70-130 Points)</h4><p>Now fill out everything that increases your skill so you can craft Gold Quality potions. Basically max out the nodes you already put points into, in this order:</p><ol class="step-list">
+<li>Max Potion Prowess to 30. This unlocks the Voidlight Potion Cauldron recipe.</li>
+<li>Max Path of Void (or Light) to 30.</li>
+<li>Max Alchemical Mastery to 30.</li>
+</ol><!-- TODO: Add spec tree screenshot -->
+</div>
+</div><h3 class="line-header">Next Steps</h3><p>After 130 points, branch into a <b>second product line</b>. If you started with Flasks, add Potions (or the other way around). You can also go into the other sub-path within your tree to cover more recipes.</p><p>For your profession tool, use a <b>Multicraft tool</b> with a <b>Multicraft enchant</b>. Multicraft is the most important stat for consumable sellers.</p></div>
+<!-- 3. TRANSMUTES -->
+<div class="tab-content" id="transmutes">
+<h3>Transmutes</h3>
+<h3 class="line-header">The Two Types of Transmutes</h3><p>Transmutes fall into two categories. Mote transmutes and the Wondrous Synergist daily can Multicraft, so you want Multicraft stats for those. <b>Material transmutes cannot Multicraft</b>, so Resourcefulness is the only useful stat. <b>Resourcefulness works for both types</b>, so it's always worth having. This matters when you pick your profession tool and where you spend your points.</p><h3 class="line-header">Where to Spend Points</h3>
+<p>Most transmuters will want the Multicraft build since mote transmutes and the Wondrous Synergist daily are where the gold is. Material transmutes (Bouquet of Herbs, Box of Rocks, School of Gems) can't Multicraft, but they still benefit from the Resourcefulness you pick up along the way.</p>
+<h4>Phase 1: Multicraft + Daily CD (0-30 Points)</h4><ol class="step-list">
+<li>10 points into the Root node. Unlock <b>Metamorphic Mastery</b> and <b>Synthesis Synergy</b>. Synthesis Synergy will teach you the daily transmute <a class="rare" href="https://www.wowhead.com/spell=1230856" rel="nofollow noopener noreferrer" target="_blank"><img align="absmiddle" class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_animaardenweald_orb.jpg"/>Wondrous Synergist</a></li><li>20 points into Metamorphic Mastery</li>
+</ol><p class="text-align-center"><img alt="Transmute Multicraft specialization tree" class="lightbox guide-img" height="882" src="../../images/midnight/alc-spec-5-1.jpg" width="1138"/></p><h4>Phase 2: Resourcefulness or CD Reduction (30-60 Points)</h4><p>You can either go into the Resourcefulness nodes to save materials on all your transmutes, or put more points into Synthesis Synergy to reduce the Wondrous Synergist cooldown. With CD reduction, you can craft the daily more often for extra procs and more Multicraft chances on your motes.</p><p>Which one is better depends on the Wondrous Synergist price. If the daily CD craft is worth a lot on the AH, reducing the cooldown will make you more gold. If it's not worth much, go for Resourcefulness to save materials on all your crafts. I'll update this with more specific recommendations once the market settles.</p><h4 class="text-align-center">Option A: CD Reduction</h4><p>This drops the cooldown from 18 hours to around 9 hours.</p>
+<p class="text-align-center"><img alt="Transmute CD Reduction specialization tree" class="lightbox guide-img" height="882" src="../../images/midnight/alc-spec-5-3.jpg" width="1138"/></p>
+<h4 class="text-align-center">Option B: Resourcefulness</h4><ol class="step-list">
+<li>10 points into the Alchemy Mastery root node.</li>
+<li>20 points into Reduce to get more Resourcefulness.</li>
+</ol><p class="text-align-center"><img alt="Transmute Resourcefulness specialization tree" class="lightbox guide-img" height="882" src="../../images/midnight/alc-spec-5-2.jpg" width="1138"/></p><h4>Phase 3: Gold Quality (60-100 Points)</h4><p>I'm not 100% sure about this part yet. Motes don't benefit from extra skill since they have no quality. Only the daily CD and material transmutes benefit from it. Without knowing the price of each item, it's hard to say if it's worth going for Gold Quality. Here is what I tested so far:</p><ul>
+<li>Silver Quality transmutes can give you Gold Quality materials.</li>
+<li>Gold Quality transmutes just have a lot higher chance to give Gold Quality materials, but you still get Silver Quality.</li>
+</ul><p>Whether this is worth the points depends on the price gap between Silver and Gold materials on your server.</p><ol class="step-list">
+<li>30 points into the root node in Transmutation Authority</li>
+<li>20 points into Synthesis Synergy</li>
+<li>Go back to the Alchemy Mastery tree and max out the root node.</li>
+</ol><p class="text-align-center"><img alt="Gold Quality Transmutation Authority tree" class="lightbox guide-img" height="882" src="../../images/midnight/alc-spec-5-4.jpg" width="1138"/></p><p class="text-align-center"><img alt="Gold Quality Alchemical Mastery tree" class="lightbox guide-img" height="882" src="../../images/midnight/alc-spec-6-3.jpg" width="1138"/></p><p>I'll update this section once I see how the first two phases play out and what players end up using the Wondrous Synergist for.</p></div>
+</div>
+</article>
+</main>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

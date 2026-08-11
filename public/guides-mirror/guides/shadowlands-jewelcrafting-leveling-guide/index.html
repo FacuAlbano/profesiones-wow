@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<script class="ad-related" id="inmobi-consent-script">
+  (function() {
+    var host = window.location.hostname;
+    var element = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
+    var url = 'https://cmp.inmobi.com'
+      .concat('/choice/', 'R49-_XfAAzJmS', '/', host, '/choice.js?tag_version=V3');
+    var uspTries = 0;
+    var uspTriesLimit = 3;
+    element.async = true;
+    element.type = 'text/javascript';
+    element.src = url;
+  
+    firstScript.parentNode.insertBefore(element, firstScript);
+  
+    function makeStub() {
+      var TCF_LOCATOR_NAME = '__tcfapiLocator';
+      var queue = [];
+      var win = window;
+      var cmpFrame;
+  
+      function addFrame() {
+        var doc = win.document;
+        var otherCMP = !!(win.frames[TCF_LOCATOR_NAME]);
+  
+        if (!otherCMP) {
+          if (doc.body) {
+            var iframe = doc.createElement('iframe');
+  
+            iframe.style.cssText = 'display:none';
+            iframe.name = TCF_LOCATOR_NAME;
+            doc.body.appendChild(iframe);
+          } else {
+            setTimeout(addFrame, 5);
+          }
+        }
+        return !otherCMP;
+      }
+  
+      function tcfAPIHandler() {
+        var gdprApplies;
+        var args = arguments;
+  
+        if (!args.length) {
+          return queue;
+        } else if (args[0] === 'setGdprApplies') {
+          if (
+            args.length > 3 &&
+            args[2] === 2 &&
+            typeof args[3] === 'boolean'
+          ) {
+            gdprApplies = args[3];
+            if (typeof args[2] === 'function') {
+              args[2]('set', true);
+            }
+          }
+        } else if (args[0] === 'ping') {
+          var retr = {
+            gdprApplies: gdprApplies,
+            cmpLoaded: false,
+            cmpStatus: 'stub'
+          };
+  
+          if (typeof args[2] === 'function') {
+            args[2](retr);
+          }
+        } else {
+          if(args[0] === 'init' && typeof args[3] === 'object') {
+            args[3] = Object.assign(args[3], { tag_version: 'V3' });
+          }
+          queue.push(args);
+        }
+      }
+  
+      function postMessageEventHandler(event) {
+        var msgIsString = typeof event.data === 'string';
+        var json = {};
+  
+        try {
+          if (msgIsString) {
+            json = JSON.parse(event.data);
+          } else {
+            json = event.data;
+          }
+        } catch (ignore) {}
+  
+        var payload = json.__tcfapiCall;
+  
+        if (payload) {
+          window.__tcfapi(
+            payload.command,
+            payload.version,
+            function(retValue, success) {
+              var returnMsg = {
+                __tcfapiReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: payload.callId
+                }
+              };
+              if (msgIsString) {
+                returnMsg = JSON.stringify(returnMsg);
+              }
+              if (event && event.source && event.source.postMessage) {
+                event.source.postMessage(returnMsg, '*');
+              }
+            },
+            payload.parameter
+          );
+        }
+      }
+  
+      while (win) {
+        try {
+          if (win.frames[TCF_LOCATOR_NAME]) {
+            cmpFrame = win;
+            break;
+          }
+        } catch (ignore) {}
+  
+        if (win === window.top) {
+          break;
+        }
+        win = win.parent;
+      }
+      if (!cmpFrame) {
+        addFrame();
+        win.__tcfapi = tcfAPIHandler;
+        win.addEventListener('message', postMessageEventHandler, false);
+      }
+    };
+  
+    makeStub();
+  
+    function makeGppStub() {
+      const CMP_ID = 10;
+      const SUPPORTED_APIS = [
+        '2:tcfeuv2',
+        '6:uspv1',
+        '7:usnatv1',
+        '8:usca',
+        '9:usvav1',
+        '10:uscov1',
+        '11:usutv1',
+        '12:usctv1'
+      ];
+  
+      window.__gpp_addFrame = function (n) {
+        if (!window.frames[n]) {
+          if (document.body) {
+            var i = document.createElement("iframe");
+            i.style.cssText = "display:none";
+            i.name = n;
+            document.body.appendChild(i);
+          } else {
+            window.setTimeout(window.__gpp_addFrame, 10, n);
+          }
+        }
+      };
+      window.__gpp_stub = function () {
+        var b = arguments;
+        __gpp.queue = __gpp.queue || [];
+        __gpp.events = __gpp.events || [];
+  
+        if (!b.length || (b.length == 1 && b[0] == "queue")) {
+          return __gpp.queue;
+        }
+  
+        if (b.length == 1 && b[0] == "events") {
+          return __gpp.events;
+        }
+  
+        var cmd = b[0];
+        var clb = b.length > 1 ? b[1] : null;
+        var par = b.length > 2 ? b[2] : null;
+        if (cmd === "ping") {
+          clb(
+            {
+              gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+              cmpStatus: "stub", // possible values: stub, loading, loaded, error
+              cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+              signalStatus: "not ready", // possible values: not ready, ready
+              supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+              cmpId: CMP_ID, // IAB assigned CMP ID, may be 0 during stub/loading
+              sectionList: [],
+              applicableSections: [-1],
+              gppString: "",
+              parsedSections: {},
+            },
+            true
+          );
+        } else if (cmd === "addEventListener") {
+          if (!("lastId" in __gpp)) {
+            __gpp.lastId = 0;
+          }
+          __gpp.lastId++;
+          var lnr = __gpp.lastId;
+          __gpp.events.push({
+            id: lnr,
+            callback: clb,
+            parameter: par,
+          });
+          clb(
+            {
+              eventName: "listenerRegistered",
+              listenerId: lnr, // Registered ID of the listener
+              data: true, // positive signal
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // list of supported APIs
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "removeEventListener") {
+          var success = false;
+          for (var i = 0; i < __gpp.events.length; i++) {
+            if (__gpp.events[i].id == par) {
+              __gpp.events.splice(i, 1);
+              success = true;
+              break;
+            }
+          }
+          clb(
+            {
+              eventName: "listenerRemoved",
+              listenerId: par, // Registered ID of the listener
+              data: success, // status info
+              pingData: {
+                gppVersion: "1.1", // must be “Version.Subversion”, current: “1.1”
+                cmpStatus: "stub", // possible values: stub, loading, loaded, error
+                cmpDisplayStatus: "hidden", // possible values: hidden, visible, disabled
+                signalStatus: "not ready", // possible values: not ready, ready
+                supportedAPIs: SUPPORTED_APIS, // list of supported APIs
+                cmpId: CMP_ID, // CMP ID
+                sectionList: [],
+                applicableSections: [-1],
+                gppString: "",
+                parsedSections: {},
+              },
+            },
+            true
+          );
+        } else if (cmd === "hasSection") {
+          clb(false, true);
+        } else if (cmd === "getSection" || cmd === "getField") {
+          clb(null, true);
+        }
+        //queue all other commands
+        else {
+          __gpp.queue.push([].slice.apply(b));
+        }
+      };
+      window.__gpp_msghandler = function (event) {
+        var msgIsString = typeof event.data === "string";
+        try {
+          var json = msgIsString ? JSON.parse(event.data) : event.data;
+        } catch (e) {
+          var json = null;
+        }
+        if (typeof json === "object" && json !== null && "__gppCall" in json) {
+          var i = json.__gppCall;
+          window.__gpp(
+            i.command,
+            function (retValue, success) {
+              var returnMsg = {
+                __gppReturn: {
+                  returnValue: retValue,
+                  success: success,
+                  callId: i.callId,
+                },
+              };
+              event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, "*");
+            },
+            "parameter" in i ? i.parameter : null,
+            "version" in i ? i.version : "1.1"
+          );
+        }
+      };
+      if (!("__gpp" in window) || typeof window.__gpp !== "function") {
+        window.__gpp = window.__gpp_stub;
+        window.addEventListener("message", window.__gpp_msghandler, false);
+        window.__gpp_addFrame("__gppLocator");
+      }
+    };
+  
+    makeGppStub();
+  
+    var uspStubFunction = function() {
+      var arg = arguments;
+      if (typeof window.__uspapi !== uspStubFunction) {
+        setTimeout(function() {
+          if (typeof window.__uspapi !== 'undefined') {
+            window.__uspapi.apply(window.__uspapi, arg);
+          }
+        }, 500);
+      }
+    };
+  
+    var checkIfUspIsReady = function() {
+      uspTries++;
+      if (window.__uspapi === uspStubFunction && uspTries < uspTriesLimit) {
+        console.warn('USP is not accessible');
+      } else {
+        clearInterval(uspInterval);
+      }
+    };
+  
+    if (typeof window.__uspapi === 'undefined') {
+      window.__uspapi = uspStubFunction;
+      var uspInterval = setInterval(checkIfUspIsReady, 6000);
+    }
+  })();
+  </script>
+<!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.2) -->
+<!-- Google tag (gtag.js) -->
+<script async="" class="ad-related" src="../../external/www.googletagmanager.com/gtag/js"></script>
+<script class="ad-related">
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-WCX9MQDXGQ');
+</script>
+<!-- Meta Tags -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="This Shadowlands Jewelcrafting leveling guide will show you the fastest and easiest way how to level your Shadowlands Jewelcrafting skill up from 1 to 100." name="description"/>
+<meta content="Shadowlands Jewelcrafting Leveling Guide 1 - 100" property="og:title"/>
+<meta content="This Shadowlands Jewelcrafting leveling guide will show you the fastest and easiest way how to level your Shadowlands Jewelcrafting skill up from 1 to 100." property="og:description"/>
+<meta content="https://www.wow-professions.com/assets/img/share-icon.png" property="og:image"/>
+<meta content="website" property="og:type"/>
+<meta content="https://www.wow-professions.com/guides/shadowlands-jewelcrafting-leveling-guide" property="og:url"/>
+<!-- Favicons -->
+<link href="../../assets/img/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/img/apple-touch-icon.png" rel="apple-touch-icon"/><!-- 180×180 -->
+<title>Shadowlands Jewelcrafting Leveling Guide 1 - 100</title>
+<script async="" src="../../external/wow.zamimg.com/widgets/power.js" type="text/javascript"></script>
+<!-- Styles and JS -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== "system") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  })();
+</script>
+<link href="../../assets/styles-58e5f081.css" rel="stylesheet"/>
+<script defer="" src="../../assets/scripts-ac541ff8.js"></script>
+<script defer="" src="../../assets/js/session-manager.js"></script>
+<!-- Wowhead tooltips -->
+<script>var whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };</script>
+<!-- Freestar preconnect start -->
+<link class="ad-related" crossorigin="" href="../../external/a.pub.network/index" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://b.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://c.pub.network/" rel="preconnect">
+<link class="ad-related" crossorigin="" href="https://d.pub.network/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://c.amazon-adsystem.com" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="../../external/s.amazon-adsystem.com/index" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://api.btloader.com/" rel="preconnect"/>
+<link class="ad-related" crossorigin="" href="https://cdn.confiant-integrations.net" rel="preconnect"/>
+<!-- Freestar preconnect end -->
+<script async="" class="ad-related" src="//secure.freestar.com/config.js"></script>
+<script async="" class="ad-related" src="//secure.freestar.com/api.js"></script>
+<link class="ad-related" href="../../external/a.pub.network/wow-professions-com/cls.css" rel="stylesheet"/>
+<!-- Freestar -->
+<script class="ad-related" data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script async="" class="ad-related" data-cfasync="false" src="../../external/a.pub.network/wow-professions-com/pubfig.min.js"></script>
+</link></link></link></head>
+<body><a aria-hidden="true" href="https://www.wow-professions.com/cdn-cgi/content?id=s5KRfpwm6JZx9Tl0GyOFnQ4zBMjOcVcaNzQL9QOECLI-1771997099.4639316-1.0.1.1-UVvhtMzZW2k8dFsQfz_hnOcKVA1jBQT78fpLLUiUq2A" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+<!-- SVG Icon Sprite -->
+<!-- Font Awesome Style SVG Icon Sprite -->
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+<!-- Success/Check Circle (fa-check-circle) -->
+<symbol id="icon-success" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple Checkmark (fa-check) -->
+<symbol id="icon-checkmark" viewbox="0 0 448 512">
+<path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" fill="currentColor"></path>
+</symbol>
+<!-- Error/X Circle (fa-times-circle) -->
+<symbol id="icon-error" viewbox="0 0 512 512">
+<path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z" fill="currentColor"></path>
+</symbol>
+<!-- Simple X/Cross (fa-times) -->
+<symbol id="icon-cross" viewbox="0 0 384 512">
+<path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"></path>
+</symbol>
+<!-- Warning Triangle (fa-exclamation-triangle) -->
+<symbol id="icon-warning" viewbox="0 0 512 512">
+<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" fill="currentColor"></path>
+</symbol>
+<!-- Loading Spinner (fa-spinner) -->
+<symbol id="icon-loading" viewbox="0 0 512 512">
+<path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z" fill="currentColor"></path>
+</symbol>
+<!-- Star/Celebration (fa-star) -->
+<symbol id="icon-celebration" viewbox="0 0 576 512">
+<path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" fill="currentColor"></path>
+</symbol>
+</svg>
+<header class="navbar">
+<div class="container">
+<!-- Logo / Brand -->
+<div class="navbar-header">
+<a class="navbar-brand" href="../../index.html">
+<img alt="" height="40" src="../../assets/img/logo.svg" width="40"/>
+</a>
+</div>
+<!-- Desktop Navigation -->
+<nav class="desktop-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+</nav>
+<div class="navbar-widgets">
+<!-- NEW: Go Ad-Free Button (Desktop)  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Feedback Desktop -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<!-- Theme Switcher (Right) -->
+<div class="theme-switcher" id="desktop-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon" src="../../assets/img/theme-light.svg" width="16"/>
+            Theme
+          </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle" class="theme-dropdown hidden" id="theme-menu">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+              </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+              </span>
+</button></li>
+</ul>
+</div>
+<!-- Search Widget -->
+<script src="../../pagefind/pagefind-ui.js"></script>
+<div id="search"></div>
+<script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+          new PagefindUI({
+            element: "#search",
+            showSubResults: false,
+            excerptLength: 0,
+            ranking: {
+              termSaturation: 2.0,
+              termFrequency: 0.2,
+              termSimilarity: 10.0
+            },
+            excerptLength: 7,
+          });
+        });
+      </script>
+</div>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-button" id="mobile-menu-toggle">
+      ☰
+    </button>
+<!-- Mobile Navigation (Hidden by Default) -->
+<nav class="mobile-nav" id="mobile-nav">
+<ul>
+<li><a href="../../midnight/index.html">Midnight</a></li>
+<li><a href="../../the-war-within/index.html">War Within</a></li>
+<li><a href="../../classic/index.html">Classic Era</a></li>
+<li><a href="../../tbc-classic/index.html">TBC</a></li>
+<li><a href="../../mop/index.html">MoP</a></li>
+<li><a href="../../profession-leveling-guides/index.html">Profession Leveling</a></li>
+<li><a href="../../farming-guides/index.html">Farming</a></li>
+</ul>
+<!-- Mobile Theme Switcher -->
+<div class="mobile-navbar-widgets">
+<!-- Mobile Go Ad-Free Button  -->
+<a class="go-ad-free-btn hide-for-supporters-global" href="../../support/index.html">Go Ad Free</a>
+<a class="supporter-badge show-for-supporters-global" href="../../support/index.html" style="display: none;">✨ Supporter</a>
+<!-- Mobile Feedback button  -->
+<div class="feedback-container"><a href="../../contact/index.html"><svg fill="none" height="20px" viewbox="0 0 24 24" width="20px" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#fff" fill-rule="evenodd"></path>
+</svg>Feedback</a></div>
+<div class="theme-switcher" id="mobile-theme-switcher">
+<button aria-expanded="false" aria-haspopup="menu" class="theme-button" id="theme-toggle-mobile" type="button">
+<span class="theme-button-wrap">
+<img alt="Theme Switcher" height="16" id="theme-icon-mobile" src="../../assets/img/theme-light.svg" width="16"/>
+              Theme
+            </span>
+<svg aria-hidden="true" class="" fill="currentColor" height="18" viewbox="0 0 24 24" width="18">
+<path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"></path>
+</svg>
+</button>
+<ul aria-labelledby="theme-toggle-mobile" class="theme-dropdown hidden" id="theme-menu-mobile">
+<li><button class="theme-option" data-theme-option="system" type="button">
+<span class="theme-option-wrap">
+<img alt="Auto" height="16" src="../../assets/img/theme-os-default.svg" width="16"/> Auto
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="light" type="button">
+<span class="theme-option-wrap">
+<img alt="Light Mode" height="16" src="../../assets/img/theme-light.svg" width="16"/> Light
+                </span>
+</button></li>
+<li><button class="theme-option" data-theme-option="dark" type="button">
+<span class="theme-option-wrap">
+<img alt="Dark Mode" height="16" src="../../assets/img/theme-dark.svg" width="16"/> Dark
+                </span>
+</button></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<div class="wrapper">
+<div class="grid-layout grid--3">
+<aside class="sidebar-sticky left">
+<!-- TOC logic stays the same -->
+<!-- Related links -->
+<div class="related-guides" data-pagefind-ignore="all">
+<h4 class="sidebar-header">Jewelcrafting Guides</h4>
+<ul>
+<li>
+<a href="../../guides/vanilla-jewelcrafting-leveling/index.html">
+                        Vanilla 1-300
+                      </a>
+</li>
+<li>
+<a href="../../guides/outland-jewelcrafting-leveling/index.html">
+                        Outland 1-75
+                      </a>
+</li>
+<li>
+<a href="../../guides/northrend-jewelcrafting-leveling/index.html">
+                        Northrend 1-75
+                      </a>
+</li>
+<li>
+<a href="../../guides/cataclysm-jewelcrafting-leveling/index.html">
+                        Cataclysm 1-75
+                      </a>
+</li>
+<li>
+<a href="../../guides/pandaria-jewelcrafting-leveling/index.html">
+                        Pandaria 1-75
+                      </a>
+</li>
+<li>
+<a href="../../guides/draenor-jewelcrafting-leveling/index.html">
+                        Draenor 1-100
+                      </a>
+</li>
+<li>
+<a href="../../guides/legion-jewelcrafting-leveling/index.html">
+                        Legion 1-100
+                      </a>
+</li>
+<li>
+<a href="../../guides/zandalari-kul-tiran-bfa-jewelcrafting-leveling-guide/index.html">
+                        BfA 1-175
+                      </a>
+</li>
+<li class="active">
+<a class="active" href="../../guides/shadowlands-jewelcrafting-leveling-guide/index.html">
+                        Shadowlands 1-100
+                      </a>
+</li>
+<li>
+<a href="../../guides/dragon-isles-jewelcrafting-leveling-guide-dragonflight/index.html">
+                        Dragonflight 1-100
+                      </a>
+</li>
+<li>
+<a href="../../the-war-within/khaz-algar-jewelcrafting-leveling-guide/index.html">
+                        The War Within 1-100
+                      </a>
+</li>
+<li>
+<a href="../../guides/wow-jewelcrafting-leveling-guide/index.html">
+                        Midnight 1-100
+                      </a>
+</li>
+</ul>
+</div>
+</aside>
+<main class="content" data-pagefind-body="">
+<h1 data-pagefind-weight="10">Shadowlands Jewelcrafting Leveling Guide 1 - 100</h1>
+<article>
+<p><img align="left" height="64" src="../../images/icons/professions/jewelcrafting.png" style="margin-right: 8px;" width="64"/><a name="top"></a>This Shadowlands Jewelcrafting leveling guide will show you the fastest and easiest way how to level your Shadowlands Jewelcrafting skill up from 1 to 100.</p>
+<p>The guide's primary focus is to show you how to level this profession, so if you are looking for more detailed information about Shadowlands Jewelcrafting, check out my <a href="/guides/shadowlands-jewelcrafting-guide ">Shadowlands Jewelcrafting guide</a></p>
+<p>Jewelcrafting is the best combined with Mining because you can save a lot of gold if you gather the materials instead of buying them, so check out the <a href="../../guides/shadowlands-mining-leveling-guide/index.html">Mining leveling guide</a> if you want to level Mining. If you don't have mining, power leveling your Jewelcrafting will be expensive. </p>
+<h3>Shadowlands Jewelcrafting Trainer Location</h3>
+<p>You can learn Shadowlands Jewelcrafting from <a href="https://shadowlands.wowhead.com/npc=156670" rel="nofollow" target="_blank">Appraiser Au'vesk</a> in Oribos in the Hall of Shapes. (Coordinates: 35.2, 41.8)</p>
+<p>Oribos is the new Shadowlands city hub for both factions. You will arrive there after you finish the Shadowlands intro quests, so you can learn the new profession recipes before you head out questing.</p>
+<h4>Appraiser Au'vesk</h4>
+<img class="maps" height="420" src="../../images/general/shadowlands-jewelcrafting-trainer-location.jpg" width="630"/>
+<h3>Approximate Materials Required</h3>
+<p>This is the list of approximate materials required to reach 100. <strong>Don't prospect all of your ores yet</strong>, read the rest of the leveling guide!</p>
+<ul>
+<li>400x <a class="white" href="https://www.wowhead.com/item=171828" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_lastrite.jpg"/>Laestrite Ore</a></li>
+<li>100x from one of these: <a class="zold" href="https://shadowlands.wowhead.com/item=171829" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_solenium.jpg"/>Solenium Ore</a>, <a class="zold" href="https://shadowlands.wowhead.com/item=171830" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_oxxein.jpg"/>Oxxein Ore</a>, <a class="zold" href="https://shadowlands.wowhead.com/item=171831" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_phaedrite.jpg"/>Phaedrum Ore</a>, <a class="zold" href="https://shadowlands.wowhead.com/item=171832" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_sinvyr.jpg"/>Sinvyr Ore</a></li>
+<li>Another 10-20 from each of these ores: <a class="zold" href="https://shadowlands.wowhead.com/item=171829" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_solenium.jpg"/>Solenium Ore</a>, <a class="zold" href="https://shadowlands.wowhead.com/item=171830" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_oxxein.jpg"/>Oxxein Ore</a>, <a class="zold" href="https://shadowlands.wowhead.com/item=171831" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_phaedrite.jpg"/>Phaedrum Ore</a>, <a class="zold" href="https://shadowlands.wowhead.com/item=171832" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_sinvyr.jpg"/>Sinvyr Ore</a>. It's hard to tell which ones you will need and how many since it will depend on what ores you get from prospecting. You can buy these later, or just get 20 from each, then sell the ones you don't need at the end.</li>
+</ul>
+<p>Check out my farming guides if you want to farm any of these ores:</p>
+<ul>
+<li><a href="../../farming/laestrite-ore-farming/index.html"><img height="20" src="../../images/icons/ores/laestrite-ore-s.jpg" width="20"/> Laestrite Ore farming</a></li>
+<li><a href="../../farming/solenium-ore-farming/index.html"><img height="20" src="../../images/icons/ores/solenium-ore-s.jpg" width="20"/> Solenium Ore farming</a></li>
+<li><a href="../../farming/oxxein-ore-farming/index.html"><img height="20" src="../../images/icons/ores/oxxein-ore-s.jpg" width="20"/> Oxxein Ore farming</a></li>
+<li><a href="../../farming/phaedrum-ore-farming/index.html"><img height="20" src="../../images/icons/ores/phaedrum-ore-s.jpg" width="20"/> Phaedrum Ore farming</a></li>
+<li><a href="../../farming/sinvyr-ore-farming/index.html"><img height="20" src="../../images/icons/ores/sinvyr-ore-s.jpg" width="20"/> Sinvyr Ore farming</a></li>
+<li><a href="../../farming/elethium-ore-farming/index.html"><img height="20" src="../../images/icons/ores/elethium-ore-s.jpg" width="20"/> Elethium Ore farming</a></li>
+</ul>
+<h2 class="gtitle">Leveling Shadowlands Jewelcrafting</h2>
+<p><b>Draenei </b>characters have +10 Jewelcrafting skill because of their passive <a class="white" href="https://www.wowhead.com/spell=28875" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/spell_misc_conjuremanajewel.jpg"/>Gemcutting</a>, and <b>Kul Tiran</b> characters have +5 from the trait <a class="white" href="https://ptr.wowhead.com/spell=291442" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/ability_racial_jackofalltrades.jpg"/>Jack of All Trades</a>. Any extra Jewelcrafting skill means recipes stay orange for more points. You can save a lot of gold by doing lower level recipes for more points.</p>
+<p><a class="white" href="https://shadowlands.wowhead.com/item=20815" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_box_02.jpg"/>Jeweler's Kit</a>, <a class="zold" href="https://shadowlands.wowhead.com/item=173168" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_laestritesetting.jpg"/>Laestrite Setting</a>, and <a class="white" href="https://shadowlands.wowhead.com/item=183954" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_delicatecopperwire.jpg"/>Malleable Wire</a> are all sold by <a href="https://shadowlands.wowhead.com/npc=156733" rel="nofollow" target="_blank">Distributor Au'kharn</a> near your trainer.</p>
+<h3 class="gdskill">1 - 20</h3>
+<p>Prospect ores until you reach 20. (around 150-200 ores) <strong>Don't prospect all of your ores yet!</strong></p>
+<p>You can prospect any ore, but you should save at least 200 Laestrite Ore for the next part.</p>
+<h3 class="gdskill">20 - 30</h3>
+<p>10 x <a class="white" href="https://shadowlands.wowhead.com/spell=311948" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_lastrite.jpg"/>Mass Prospect Laestrite</a> - 200 Laestrite Ore.</p>
+<h3 class="gdskill">30 - 35</h3>
+<p>Mass prospect 100 from these 4 ores:</p>
+<ul>
+<li><a class="zold" href="https://shadowlands.wowhead.com/item=171829" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_solenium.jpg"/>Solenium Ore</a></li>
+<li><a class="zold" href="https://shadowlands.wowhead.com/item=171830" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_oxxein.jpg"/>Oxxein Ore</a></li>
+<li><a class="zold" href="https://shadowlands.wowhead.com/item=171831" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_phaedrite.jpg"/>Phaedrum Ore</a></li>
+<li><a class="zold" href="https://shadowlands.wowhead.com/item=171832" rel="nofollow noopener noreferrer" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_sinvyr.jpg"/>Sinvyr Ore</a></li>
+</ul>
+<p>You prospected enough ores that you should have enough gems to reach 100. But, if you want to sell gems/necks/rings at the Auction House, you should use the mass prospect until 50. It's just simply better to prospect the ores now while they give skill points if you are going to make a lot of these anyway.</p>
+<p><strong>Make sure to keep around 20 from each of these ores</strong> because you will still need them at the last step in the guide. It's hard to tell which ones you will need and how many since it will depend on what ores you get from prospecting. Just try to keep around 10-20 from each.</p>
+<h3 class="gdskill">35 - 40</h3>
+<ol>
+<li>6 x <a class="zold" href="https://www.wowhead.com/spell=311866" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_cutuncommon_blue.jpg"/>Versatile Jewel Doublet</a> - 12 Umbryl</li>
+<li>4 x <a class="zold" href="https://www.wowhead.com/spell=311871" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_cutuncommon_yellow.jpg"/>Quick Jewel Doublet</a> - 8 Oriblase</li>
+</ol>
+<p>You will use both of these in the next recipes, so keep them. These gem recipes will be yellow for the last few points, but you will probably get around 7-8 skill points for making 10 gems.</p>
+<h3 class="gdskill">40 - 50</h3>
+<ul>
+<li>2 x <a class="zold" href="https://www.wowhead.com/spell=311903" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_lvlupneck_yellow.jpg"/>Quick Laestrite Choker</a> - 4 Quick Jewel Doublet, 4 Laestrite Ore</li>
+<li>3 x <a class="zold" href="https://www.wowhead.com/spell=311905" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_lvlupneck_blue.jpg"/>Versatile Laestrite Choker</a> - 6 Versatile Jewel Doublet, 6 Laestrite Ore</li>
+</ul>
+<h3 class="gdskill">50 - 74</h3>
+<p>Turn all your uncommon gems into rare gems in this order:</p>
+<ol>
+<li>6 x <a class="rare" href="https://www.wowhead.com/spell=311863" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_rarecut_orange.jpg"/>Deadly Jewel Cluster</a> - 12 x <a class="zold" href="https://www.wowhead.com/item=173109" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_gem_red.jpg"/>Angerseye</a>, 12 x <a class="zold" href="https://www.wowhead.com/item=173108" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_gem_yellow.jpg"/>Oriblase</a></li>
+<li>4 x <a class="rare" href="https://www.wowhead.com/spell=311865" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_rarecut_yellow.jpg"/>Quick Jewel Cluster</a> - 16 x <a class="zold" href="https://www.wowhead.com/item=173108" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_gem_yellow.jpg"/>Oriblase</a> (or 4 more <a class="rare" href="https://www.wowhead.com/spell=311863" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_rarecut_orange.jpg"/>Deadly Jewel Cluster</a>)</li>
+<li>6 x <a class="rare" href="https://www.wowhead.com/spell=311864" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_rarecut_purple.jpg"/>Masterful Jewel Cluster</a> - 12 x <a class="zold" href="https://www.wowhead.com/item=173109" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_gem_red.jpg"/>Angerseye</a>, 12 x <a class="zold" href="https://www.wowhead.com/item=173110" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_gem_blue.jpg"/>Umbryl</a> (or 6 more <a class="rare" href="https://www.wowhead.com/spell=311863" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_rarecut_orange.jpg"/>Deadly Jewel Cluster</a>, <a class="rare" href="https://www.wowhead.com/spell=311865" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_rarecut_yellow.jpg"/>Quick Jewel Cluster</a> )</li>
+<li>Make around 10 <a class="rare" href="https://www.wowhead.com/spell=311863" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_rarecut_orange.jpg"/>Deadly Jewel Cluster</a>, <a class="rare" href="https://www.wowhead.com/spell=311859" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_rarecut_blue.jpg"/>Versatile Jewel Cluster</a>, <a class="rare" href="https://www.wowhead.com/spell=311865" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_rarecut_yellow.jpg"/>Quick Jewel Cluster</a>, or <a class="rare" href="https://www.wowhead.com/spell=311864" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_rarecut_purple.jpg"/>Masterful Jewel Cluster</a>. Make them in pairs because you will use these in the neck/ring recipes next and you will need 2 from 1 color to make a neck/ring.</li>
+</ol>
+<h3 class="gdskill">74 - 100</h3>
+<p>Make 13 necks/rings using the rare gems you made before. You might have to make a few more if you were unlucky with the skill gains while making the rare gems.</p>
+<div class="table-container">
+<table>
+<tbody>
+<tr>
+<th>Item</th>
+<th>Materials</th>
+<th>Skill</th>
+</tr>
+<tr>
+<td class="text-align-center"><a class="rare" href="https://www.wowhead.com/spell=311884" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_maxlvlring_orange.jpg"/>Deadly Sinvyr Ring</a>
+</td><td class="text-align-center">2 x <a class="rare" href="https://www.wowhead.com/item=173127" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_rarecut_orange.jpg"/>Deadly Jewel Cluster</a>, 2 x <a class="zold" href="https://www.wowhead.com/item=171832" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_sinvyr.jpg"/>Sinvyr Ore</a>
+</td><td class="text-align-center">70
+		</td></tr>
+<tr>
+<td class="text-align-center"><a class="rare" href="https://www.wowhead.com/spell=311906" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_maxlvlneck_orange.jpg"/>Deadly Sinvyr Necklace</a>
+</td><td class="text-align-center">2 x <a class="rare" href="https://www.wowhead.com/item=173127" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_rarecut_orange.jpg"/>Deadly Jewel Cluster</a>, 2 x <a class="zold" href="https://www.wowhead.com/item=171832" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_sinvyr.jpg"/>Sinvyr Ore</a>
+</td><td class="text-align-center">70
+		</td></tr>
+<tr>
+<td class="text-align-center"><a class="rare" href="https://www.wowhead.com/spell=311885" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_maxlvlring_yellow.jpg"/>Quick Oxxein Ring</a>
+</td><td class="text-align-center">2 x <a class="rare" href="https://www.wowhead.com/item=173128" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_rarecut_yellow.jpg"/>Quick Jewel Cluster</a>, 2 x <a class="zold" href="https://www.wowhead.com/item=171830" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_oxxein.jpg"/>Oxxein Ore</a>
+</td><td class="text-align-center">75
+		</td></tr>
+<tr>
+<td class="text-align-center"><a class="rare" href="https://www.wowhead.com/spell=311907" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_maxlvlneck_yellow.jpg"/>Quick Oxxein Necklace</a>
+</td><td class="text-align-center">2 x <a class="rare" href="https://www.wowhead.com/item=173128" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_rarecut_yellow.jpg"/>Quick Jewel Cluster</a>, 2 x <a class="zold" href="https://www.wowhead.com/item=171830" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_oxxein.jpg"/>Oxxein Ore</a>
+</td><td class="text-align-center">75
+		</td></tr>
+<tr>
+<td class="text-align-center"><a class="rare" href="https://www.wowhead.com/spell=311908" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_maxlvlneck_purple.jpg"/>Masterful Phaedrum Necklace</a>
+</td><td class="text-align-center">2 x <a class="rare" href="https://www.wowhead.com/item=173130" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_rarecut_purple.jpg"/>Masterful Jewel Cluster</a>, 2 x <a class="zold" href="https://www.wowhead.com/item=171831" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_phaedrite.jpg"/>Phaedrum Ore</a>
+</td><td class="text-align-center">80
+		</td></tr>
+<tr>
+<td class="text-align-center"><a class="rare" href="https://www.wowhead.com/spell=311886" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_maxlvlring_purple.jpg"/>Masterful Phaedrum Ring</a>
+</td><td class="text-align-center">2 x <a class="rare" href="https://www.wowhead.com/item=173130" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_rarecut_purple.jpg"/>Masterful Jewel Cluster</a>, 2 x <a class="zold" href="https://www.wowhead.com/item=171831" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_phaedrite.jpg"/>Phaedrum Ore</a>
+</td><td class="text-align-center">80
+		</td></tr>
+<tr>
+<td class="text-align-center"><a class="rare" href="https://www.wowhead.com/spell=311909" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_maxlvlneck_blue.jpg"/>Versatile Solenium Necklace</a>
+</td><td class="text-align-center">2 x <a class="rare" href="https://www.wowhead.com/item=173129" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_rarecut_blue.jpg"/>Versatile Jewel Cluster</a>, 2 x <a class="zold" href="https://www.wowhead.com/item=171829" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_solenium.jpg"/>Solenium Ore</a>
+</td><td class="text-align-center">85
+		</td></tr>
+<tr>
+<td class="text-align-center"><a class="rare" href="https://www.wowhead.com/spell=311887" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_maxlvlring_blue.jpg"/>Versatile Solenium Ring</a>
+</td><td class="text-align-center">2 x <a class="rare" href="https://www.wowhead.com/item=173129" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_jewelcrafting_90_rarecut_blue.jpg"/>Versatile Jewel Cluster</a>, 2 x <a class="zold" href="https://www.wowhead.com/item=171829" rel="nofollow" target="_blank"><img class="icon" src="../../external/wow.zamimg.com/images/wow/icons/small/inv_ore_solenium.jpg"/>Solenium Ore</a>
+</td><td class="text-align-center">85
+		</td></tr>
+</tbody>
+</table>
+</div>
+<p><br/>
+I hope you liked this Shadowlands Jewelcrafting leveling guide, congratulations on reaching 100! Please <a href="../../contact/index.html" rel="nofollow">send feedback</a> about the guide if you think there are parts I could improve, or if you found typos, errors, or wrong material numbers!</p>
+<p class="text-align-center"><a href="#top">(Return to Top)</a></p>
+</article>
+</main>
+<aside class="sidebar-right">
+<aside class="sticky-ad ad-related">
+<div class="ad-slot">
+<!-- Tag ID: wowprofessions_medrec_right -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right", slotId: "wowprofessions_medrec_right" });
+                        </script>
+</div>
+</div>
+<div class="ad-slot second-ad">
+<!-- Tag ID: wowprofessions_medrec_right_2 -->
+<div align="center" data-freestar-ad="__300x250" id="wowprofessions_medrec_right_2">
+<script data-cfasync="false" type="text/javascript">
+                          freestar.config.enabled_slots.push({ placementName: "wowprofessions_medrec_right_2", slotId: "wowprofessions_medrec_right_2" });
+                        </script>
+</div>
+</div>
+</aside>
+</aside>
+</div>
+<div class="leaderboard-ad ad-related">
+<div class="leader-ad-slot">
+<!-- Tag ID: wowprofessions_leaderboard_btf -->
+<div align="center" data-freestar-ad="__320x100 __970x90" id="wowprofessions_leaderboard_btf">
+<script data-cfasync="false" type="text/javascript">
+                  freestar.config.enabled_slots.push({ placementName: "wowprofessions_leaderboard_btf", slotId: "wowprofessions_leaderboard_btf" });
+                </script>
+</div>
+</div>
+</div>
+<footer>
+<div class="flex-container" style="justify-content: center; flex-direction: column;">
+<div style="display: flex; gap: 2rem; justify-content: center;"><a href="../../contact/index.html">Contact</a><a href="../../privacy-policy/index.html">Privacy Policy</a><a href="../../disclaimer/index.html">Disclaimer</a></div><span>© 2026 WoW-Professions.com</span>
+</div>
+</footer>
+<!-- Map Modal -->
+<div aria-hidden="true" class="map-modal" id="map-modal">
+<div class="map-modal-overlay"></div>
+<div class="map-modal-container">
+<div class="map-modal-header">
+<span class="map-modal-title" id="map-modal-title"></span>
+<button aria-label="Close" class="map-modal-close">×</button>
+</div>
+<div class="map-modal-actions">
+<button class="btn-waypoint" id="map-modal-tomtom">TomTom</button>
+<button class="btn-waypoint" id="map-modal-ingame">In-Game Pin</button>
+</div>
+<div class="map-modal-body">
+<div class="map-viewport">
+<div class="map-image" id="map-image-container">
+<div class="map-pin" data-pulse="" id="map-pin"></div>
+</div>
+</div>
+<div class="map-screenshot" id="map-screenshot">
+<img alt="" id="map-screenshot-img" src="../../index.html"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Image Lightbox -->
+<div aria-hidden="true" class="lightbox-modal" id="lightbox">
+<div class="lightbox-overlay"></div>
+<div class="lightbox-container">
+<div class="lightbox-header">
+<span class="lightbox-title" id="lightbox-title"></span>
+<button aria-label="Close" class="lightbox-close">×</button>
+</div>
+<div class="lightbox-body">
+<img alt="" id="lightbox-image" src="../../index.html"/>
+</div>
+</div>
+</div>
+<!-- Cloudflare Pages Analytics --><script data-cf-beacon='{"token": "7b64878bef804239928fdc05ff3a5600"}' defer="" src="../../external/static.cloudflareinsights.com/beacon.min.js"></script><!-- Cloudflare Pages Analytics --></div></body>
+</html>

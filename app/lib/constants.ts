@@ -8,20 +8,24 @@ export const EXPANSION_SLUGS = [
   "cataclysm",
   "mists-of-pandaria",
   "warlords-of-draenor",
+  "battle-for-azeroth",
+  "shadowlands",
 ] as const;
 
 export type ExpansionSlug = (typeof EXPANSION_SLUGS)[number];
 
-/** Datos de cada expansión: nombre, abreviatura y logo */
+/** Datos de cada expansión: nombre en español, abreviatura y logo */
 export const EXPANSIONS = [
-  { slug: "the-war-within" as const, name: "The War Within", short: "TWW", logo: "/images/logo-tww.png" },
-  { slug: "midnight" as const, name: "Midnight", short: "Midnight", logo: "/images/logo-midnight.png" },
-  { slug: "classic" as const, name: "World of Warcraft Classic", short: "Classic", logo: "/images/logo-classic.png" },
-  { slug: "the-burning-crusade" as const, name: "The Burning Crusade", short: "TBC", logo: "/images/logo-tbc.png" },
-  { slug: "wrath-of-the-lich-king" as const, name: "Wrath of the Lich King", short: "WotLK", logo: "/images/logo-lk.png" },
+  { slug: "the-war-within" as const, name: "La Guerra Interior", short: "TWW", logo: "/images/logo-tww.png" },
+  { slug: "midnight" as const, name: "Medianoche", short: "Midnight", logo: "/images/logo-midnight.png" },
+  { slug: "classic" as const, name: "World of Warcraft Clásico", short: "Clásico", logo: "/images/logo-classic.png" },
+  { slug: "the-burning-crusade" as const, name: "La Cruzada Ardiente", short: "TBC", logo: "/images/logo-tbc.png" },
+  { slug: "wrath-of-the-lich-king" as const, name: "La Ira del Rey Exánime", short: "WotLK", logo: "/images/logo-lk.png" },
   { slug: "cataclysm" as const, name: "Cataclysm", short: "Cata", logo: "/images/logo-cata.png" },
-  { slug: "mists-of-pandaria" as const, name: "Mists of Pandaria", short: "MoP", logo: "/images/logo-mop.png" },
+  { slug: "mists-of-pandaria" as const, name: "Mistos de Pandaria", short: "MoP", logo: "/images/logo-mop.png" },
   { slug: "warlords-of-draenor" as const, name: "Warlords of Draenor", short: "WoD", logo: "/images/logo-draenor.png" },
+  { slug: "battle-for-azeroth" as const, name: "Batalla por Azeroth", short: "BfA", logo: null },
+  { slug: "shadowlands" as const, name: "Shadowlands", short: "SL", logo: null },
 ] as const;
 
 /** Mapa slug → nombre para meta y títulos */
@@ -44,7 +48,7 @@ export const PROFESSIONS = [
   { slug: "skinning", name: "Desuello" },
   { slug: "cooking", name: "Cocina" },
   { slug: "fishing", name: "Pesca" },
-  { slug: "archaeology", name: "Arqueología" },
+  { slug: "fishing-cooking", name: "Pesca + Cocina" },
 ] as const;
 
 export type ProfessionSlug = (typeof PROFESSIONS)[number]["slug"];

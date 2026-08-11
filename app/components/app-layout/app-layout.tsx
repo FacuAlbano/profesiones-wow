@@ -14,9 +14,13 @@ interface AppLayoutProps {
 }
 
 const NAV_ITEMS = [
+  { path: "/expansion/midnight", label: "Medianoche" },
+  { path: "/expansion/the-war-within", label: "La Guerra Interior" },
+  { path: "/expansion/classic", label: "Clásico" },
+  { path: "/expansion/the-burning-crusade", label: "TBC" },
+  { path: "/expansion/mists-of-pandaria", label: "MoP" },
+  { path: "/guia", label: "Guías" },
   { path: "/", label: "Inicio" },
-  { path: "/expansion/the-war-within", label: "The War Within" },
-  { path: "/expansion/midnight", label: "Midnight" },
 ];
 
 export function AppLayout({ children, className }: AppLayoutProps) {
@@ -31,11 +35,11 @@ export function AppLayout({ children, className }: AppLayoutProps) {
   return (
     <div
       className={cn(
-        "min-h-screen flex flex-col bg-background text-foreground transition-colors duration-500",
+        "flex h-screen flex-col overflow-hidden bg-background text-foreground transition-colors duration-500",
         className
       )}
     >
-      <header className="sticky top-0 z-50 border-b border-border bg-header text-header-foreground shadow-sm transition-colors duration-500 pt-[env(safe-area-inset-top)]">
+      <header className="z-50 shrink-0 border-b border-border bg-header text-header-foreground shadow-sm transition-colors duration-500 pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex h-14 min-h-[3.5rem] max-w-full items-center justify-between gap-2 px-3 py-2 sm:gap-4 sm:px-6 sm:py-0">
           <Link
             to="/"
@@ -61,7 +65,7 @@ export function AppLayout({ children, className }: AppLayoutProps) {
           <nav className="flex min-w-0 flex-1 items-center justify-end gap-0.5 overflow-x-auto overflow-y-hidden py-1 scrollbar-none sm:flex-initial sm:overflow-visible [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden">
             {NAV_ITEMS.map((item) => (
               <Button
-                key={item.path}
+                key={item.label}
                 variant="ghost"
                 size="sm"
                 asChild
@@ -81,14 +85,14 @@ export function AppLayout({ children, className }: AppLayoutProps) {
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 overflow-x-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
         <Sidebar />
-        <main className="min-w-0 flex-1 overflow-x-hidden">
+        <main className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
           {children}
         </main>
       </div>
 
-      <footer className="border-t border-border bg-muted/50 px-3 py-4 text-center text-sm text-muted-foreground transition-colors duration-500 sm:px-6 sm:py-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <footer className="shrink-0 border-t border-border bg-muted/50 px-3 py-4 text-center text-sm text-muted-foreground transition-colors duration-500 sm:px-6 sm:py-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         <p>
           Guías basadas en{" "}
           <a
