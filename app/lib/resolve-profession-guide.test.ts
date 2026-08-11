@@ -97,6 +97,35 @@ describe("resolveProfessionGuide", () => {
     });
   });
 
+  it.each([
+    ["blacksmithing", "blacksmithing-tbc"],
+    ["enchanting", "enchanting-tbc"],
+    ["engineering", "engineering-tbc"],
+    ["leatherworking", "leatherworking-tbc"],
+    ["tailoring", "tailoring-tbc"],
+    ["mining", "mining-tbc"],
+    ["skinning", "skinning-tbc"],
+    ["cooking", "cooking-tbc"],
+    ["fishing", "fishing-tbc"],
+    ["jewelcrafting", "jewelcrafting-tbc"],
+  ] as const)("resuelve %s The Burning Crusade como Subida de nivel nativa", (profession, nativeId) => {
+    expect(resolveProfessionGuide("the-burning-crusade", profession)).toMatchObject({
+      kind: "nativa",
+      tipo: "subida-de-nivel",
+      path: `/expansion/the-burning-crusade/profesion/${profession}`,
+      nativeId,
+    });
+  });
+
+  it("deja Recetas y conocimiento de Herrería The Burning Crusade como vacío", () => {
+    expect(
+      resolveProfessionGuide("the-burning-crusade", "blacksmithing", "recetas-y-conocimiento"),
+    ).toMatchObject({
+      kind: "vacio",
+      tipo: "recetas-y-conocimiento",
+    });
+  });
+
   it("resuelve Herboristería TBC como nativa", () => {
     expect(resolveProfessionGuide("the-burning-crusade", "herbalism").kind).toBe(
       "nativa",
@@ -107,11 +136,6 @@ describe("resolveProfessionGuide", () => {
     expect(resolveProfessionGuide("shadowlands", "tailoring").kind).toBe("nativa");
   });
 
-  it("resuelve Herrería TBC como provisional", () => {
-    expect(resolveProfessionGuide("the-burning-crusade", "blacksmithing").kind).toBe(
-      "provisional",
-    );
-  });
 
   it("resuelve Alquimia Warlords como vacío", () => {
     expect(resolveProfessionGuide("warlords-of-draenor", "alchemy").kind).toBe(

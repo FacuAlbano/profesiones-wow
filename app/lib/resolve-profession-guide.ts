@@ -28,6 +28,16 @@ export type NativeGuideId =
   | "alchemy-tbc"
   | "alchemy-midnight"
   | "herbalism-tbc"
+  | "blacksmithing-tbc"
+  | "enchanting-tbc"
+  | "engineering-tbc"
+  | "leatherworking-tbc"
+  | "tailoring-tbc"
+  | "mining-tbc"
+  | "skinning-tbc"
+  | "cooking-tbc"
+  | "fishing-tbc"
+  | "jewelcrafting-tbc"
   | "tailoring-shadowlands"
   | "blacksmithing-midnight"
   | "enchanting-midnight"
@@ -68,6 +78,16 @@ export type ProfessionPageResolution = {
 const NATIVE_SUBIDA: Record<string, NativeGuideId> = {
   "the-burning-crusade:alchemy": "alchemy-tbc",
   "the-burning-crusade:herbalism": "herbalism-tbc",
+  "the-burning-crusade:blacksmithing": "blacksmithing-tbc",
+  "the-burning-crusade:enchanting": "enchanting-tbc",
+  "the-burning-crusade:engineering": "engineering-tbc",
+  "the-burning-crusade:leatherworking": "leatherworking-tbc",
+  "the-burning-crusade:tailoring": "tailoring-tbc",
+  "the-burning-crusade:mining": "mining-tbc",
+  "the-burning-crusade:skinning": "skinning-tbc",
+  "the-burning-crusade:cooking": "cooking-tbc",
+  "the-burning-crusade:fishing": "fishing-tbc",
+  "the-burning-crusade:jewelcrafting": "jewelcrafting-tbc",
   "shadowlands:tailoring": "tailoring-shadowlands",
   "midnight:alchemy": "alchemy-midnight",
   "midnight:blacksmithing": "blacksmithing-midnight",

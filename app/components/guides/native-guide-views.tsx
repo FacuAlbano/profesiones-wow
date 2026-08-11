@@ -17,6 +17,9 @@ import {
 } from "~/components/guides/shadowlands-tailoring-guide";
 import { MIDNIGHT_SUBIDA_GUIDES } from "~/lib/midnight-subida-guides";
 import type { MidnightSubidaSpec } from "~/lib/midnight-subida-types";
+import { TbcSubidaGuide, tbcSubidaIndex } from "~/components/guides/tbc-subida-guide";
+import { TBC_SUBIDA_GUIDES } from "~/lib/tbc-subida-guides";
+import type { TbcSubidaSpec } from "~/lib/tbc-subida-types";
 import { TwwSubidaGuide, twwSubidaIndex } from "~/components/guides/tww-subida-guide";
 import { TWW_SUBIDA_GUIDES } from "~/lib/tww-subida-guides";
 import type { TwwSubidaSpec } from "~/lib/tww-subida-types";
@@ -35,6 +38,17 @@ function midnightSubidaView(spec: MidnightSubidaSpec): NativeGuideView {
     index: midnightSubidaIndex(spec),
     summary:
       "Subida de nivel 1-100 para Midnight. Lista de compras, entrenador y ruta por rangos.",
+  };
+}
+
+function tbcSubidaView(spec: TbcSubidaSpec): NativeGuideView {
+  return {
+    Guide: function TbcNativeGuide() {
+      return <TbcSubidaGuide spec={spec} />;
+    },
+    index: tbcSubidaIndex(spec),
+    summary:
+      "Subida de nivel 1-375 para The Burning Crusade. Lista de compras, entrenadores y ruta por rangos.",
   };
 }
 
@@ -66,8 +80,18 @@ export const NATIVE_GUIDE_VIEWS: Record<NativeGuideId, NativeGuideView> = {
     Guide: HerbalismTBCGuide,
     index: HERBALISM_TBC_INDEX,
     summary:
-      "Guía de nivelado 1-375 para TBC Classic. Instructores y rutas por rangos de herboristería.",
+      "Subida de nivel 1-375 para The Burning Crusade. Instructores y rutas por rangos de herboristería.",
   },
+  "blacksmithing-tbc": tbcSubidaView(TBC_SUBIDA_GUIDES["blacksmithing-tbc"]),
+  "enchanting-tbc": tbcSubidaView(TBC_SUBIDA_GUIDES["enchanting-tbc"]),
+  "engineering-tbc": tbcSubidaView(TBC_SUBIDA_GUIDES["engineering-tbc"]),
+  "leatherworking-tbc": tbcSubidaView(TBC_SUBIDA_GUIDES["leatherworking-tbc"]),
+  "tailoring-tbc": tbcSubidaView(TBC_SUBIDA_GUIDES["tailoring-tbc"]),
+  "mining-tbc": tbcSubidaView(TBC_SUBIDA_GUIDES["mining-tbc"]),
+  "skinning-tbc": tbcSubidaView(TBC_SUBIDA_GUIDES["skinning-tbc"]),
+  "cooking-tbc": tbcSubidaView(TBC_SUBIDA_GUIDES["cooking-tbc"]),
+  "fishing-tbc": tbcSubidaView(TBC_SUBIDA_GUIDES["fishing-tbc"]),
+  "jewelcrafting-tbc": tbcSubidaView(TBC_SUBIDA_GUIDES["jewelcrafting-tbc"]),
   "tailoring-shadowlands": {
     Guide: ShadowlandsTailoringGuide,
     index: SHADOWLANDS_TAILORING_INDEX,
