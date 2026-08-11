@@ -68,7 +68,7 @@ export function Sidebar() {
             <ul className="space-y-1">
               {PROFESSIONS.map((prof) => {
                 const href = `/expansion/${expansionSlug}/profesion/${prof.slug}`;
-                const active = pathname === href;
+                const active = pathname === href || pathname.startsWith(`${href}/`);
                 return (
                   <li key={prof.slug}>
                     <Button variant="ghost" size="sm" className={navLinkClass(active)} asChild>
@@ -82,6 +82,15 @@ export function Sidebar() {
             </ul>
           </>
         )}
+        <Separator className="my-3" />
+        <Button
+          variant="ghost"
+          size="sm"
+          className={navLinkClass(pathname === "/fuentes")}
+          asChild
+        >
+          <Link to="/fuentes">Acerca de / Fuentes</Link>
+        </Button>
       </nav>
     </aside>
   );

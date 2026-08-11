@@ -10,6 +10,18 @@ export const GUIDE_TIPOS = [
 
 export type GuideTipo = (typeof GUIDE_TIPOS)[number];
 
+export const GUIDE_TIPO_LABELS: Record<GuideTipo, string> = {
+  "subida-de-nivel": "Subida de nivel",
+  "recetas-y-conocimiento": "Recetas y conocimiento",
+  especializaciones: "Especializaciones",
+  farming: "Farming",
+};
+
+export function parseGuideTipo(slug?: string | null): GuideTipo | null {
+  if (slug == null || slug === "") return "subida-de-nivel";
+  return (GUIDE_TIPOS as readonly string[]).includes(slug) ? (slug as GuideTipo) : null;
+}
+
 export type ProfessionPageKind = "nativa" | "provisional" | "vacio";
 
 export type NativeGuideId = "alchemy-tbc" | "herbalism-tbc" | "tailoring-shadowlands";

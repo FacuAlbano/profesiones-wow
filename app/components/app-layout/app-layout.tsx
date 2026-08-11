@@ -94,16 +94,11 @@ export function AppLayout({ children, className }: AppLayoutProps) {
 
       <footer className="shrink-0 border-t border-border bg-muted/50 px-3 py-4 text-center text-sm text-muted-foreground transition-colors duration-500 sm:px-6 sm:py-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         <p>
-          Guías basadas en{" "}
-          <a
-            href="https://www.wow-professions.com"
-            target="_blank"
-            rel="noreferrer noopener"
-            className="text-primary underline decoration-primary/50 underline-offset-2 hover:decoration-primary link-faction"
-          >
-            wow-professions.com
-          </a>
-          {" "}· Traducidas al español · eldonqu
+          Inspirado en la comunidad y fuentes públicas ·{" "}
+          <Link to="/fuentes" className="text-primary underline decoration-primary/50 underline-offset-2 hover:decoration-primary link-faction">
+            Acerca de / Fuentes
+          </Link>
+          {" "}· eldonqu
         </p>
       </footer>
 
