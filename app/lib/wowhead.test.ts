@@ -34,6 +34,30 @@ describe("wowheadEntity", () => {
     });
   });
 
+  it("usa prefijo cata para Cataclysm", () => {
+    expect(wowheadEntity({ tipo: "objeto", id: 52983, juego: "cata" })).toEqual({
+      href: "https://es.wowhead.com/cata/item=52983",
+      dataWowhead: "item=52983&domain=es",
+      wowheadKind: "item",
+    });
+  });
+
+  it("usa prefijo mop-classic para MoP Classic", () => {
+    expect(wowheadEntity({ tipo: "objeto", id: 72234, juego: "mop-classic" })).toEqual({
+      href: "https://es.wowhead.com/mop-classic/item=72234",
+      dataWowhead: "item=72234&domain=es",
+      wowheadKind: "item",
+    });
+  });
+
+  it("usa host ES sin prefijo para retail (MoP retail, WoD, BfA)", () => {
+    expect(wowheadEntity({ tipo: "objeto", id: 152505, juego: "retail" })).toEqual({
+      href: "https://es.wowhead.com/item=152505",
+      dataWowhead: "item=152505&domain=es",
+      wowheadKind: "item",
+    });
+  });
+
   it("usa prefijo the-war-within para The War Within", () => {
     expect(wowheadEntity({ tipo: "objeto", id: 210796, juego: "the-war-within" })).toEqual({
       href: "https://es.wowhead.com/the-war-within/item=210796",

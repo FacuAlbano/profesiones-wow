@@ -165,14 +165,47 @@ describe("resolveProfessionGuide", () => {
   });
 
   it("resuelve Sastrería Shadowlands como nativa", () => {
-    expect(resolveProfessionGuide("shadowlands", "tailoring").kind).toBe("nativa");
+    expect(resolveProfessionGuide("shadowlands", "tailoring")).toMatchObject({
+      kind: "nativa",
+      nativeId: "tailoring-shadowlands",
+    });
   });
 
+  it.each([
+    ["cataclysm", "alchemy", "alchemy-cata"],
+    ["cataclysm", "inscription", "inscription-cata"],
+    ["mists-of-pandaria", "alchemy", "alchemy-mop"],
+    ["mists-of-pandaria", "inscription", "inscription-mop"],
+    ["warlords-of-draenor", "alchemy", "alchemy-wod"],
+    ["warlords-of-draenor", "jewelcrafting", "jewelcrafting-wod"],
+    ["battle-for-azeroth", "alchemy", "alchemy-bfa"],
+    ["battle-for-azeroth", "inscription", "inscription-bfa"],
+    ["shadowlands", "alchemy", "alchemy-shadowlands"],
+    ["shadowlands", "inscription", "inscription-shadowlands"],
+    ["classic-era", "alchemy", "alchemy-classic-era"],
+    ["classic-era", "fishing", "fishing-classic-era"],
+    ["classic-hardcore", "alchemy", "alchemy-classic-hardcore"],
+    ["classic-hardcore", "fishing", "fishing-classic-hardcore"],
+    ["season-of-discovery", "alchemy", "alchemy-sod"],
+    ["season-of-discovery", "fishing", "fishing-sod"],
+    ["mop-classic", "alchemy", "alchemy-mop-classic"],
+    ["mop-classic", "inscription", "inscription-mop-classic"],
+  ] as const)("resuelve %s/%s como Subida de nivel nativa", (expansion, profession, nativeId) => {
+    expect(resolveProfessionGuide(expansion, profession)).toMatchObject({
+      kind: "nativa",
+      tipo: "subida-de-nivel",
+      path: `/expansion/${expansion}/profesion/${profession}`,
+      nativeId,
+    });
+  });
 
-  it("resuelve Alquimia Warlords como vacío", () => {
-    expect(resolveProfessionGuide("warlords-of-draenor", "alchemy").kind).toBe(
-      "vacio",
-    );
+  it("deja Recetas y conocimiento de Alquimia Cataclysm como vacío", () => {
+    expect(
+      resolveProfessionGuide("cataclysm", "alchemy", "recetas-y-conocimiento"),
+    ).toMatchObject({
+      kind: "vacio",
+      tipo: "recetas-y-conocimiento",
+    });
   });
 
   it("trata tipo explícito Subida de nivel igual que omitirlo", () => {
