@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveProfessionGuide } from "./resolve-profession-guide";
+import { parseGuideTipo, resolveProfessionGuide } from "./resolve-profession-guide";
 
 describe("resolveProfessionGuide", () => {
   it("resuelve Alquimia TBC omitiendo tipo como Subida de nivel nativa", () => {
@@ -56,6 +56,25 @@ describe("resolveProfessionGuide", () => {
     });
   });
 
+  it("resuelve Recetas y conocimiento de Alquimia TBC como vacío", () => {
+    expect(
+      resolveProfessionGuide("the-burning-crusade", "alchemy", "recetas-y-conocimiento"),
+    ).toMatchObject({
+      kind: "vacio",
+      tipo: "recetas-y-conocimiento",
+      path: "/expansion/the-burning-crusade/profesion/alchemy/recetas-y-conocimiento",
+    });
+  });
+
+  it("resuelve Especializaciones de Alquimia Midnight como vacío", () => {
+    expect(
+      resolveProfessionGuide("midnight", "alchemy", "especializaciones"),
+    ).toMatchObject({
+      kind: "vacio",
+      tipo: "especializaciones",
+    });
+  });
+
   it("no sirve la nativa de Subida cuando el tipo es Farming", () => {
     expect(
       resolveProfessionGuide("the-burning-crusade", "alchemy", "farming"),
@@ -64,5 +83,23 @@ describe("resolveProfessionGuide", () => {
       tipo: "farming",
       path: "/expansion/the-burning-crusade/profesion/alchemy/farming",
     });
+  });
+});
+
+describe("parseGuideTipo", () => {
+  it("trata tipo omitido como Subida de nivel", () => {
+    expect(parseGuideTipo(undefined)).toBe("subida-de-nivel");
+  });
+
+  it("acepta slugs de tipo del glosario", () => {
+    expect(parseGuideTipo("subida-de-nivel")).toBe("subida-de-nivel");
+    expect(parseGuideTipo("recetas-y-conocimiento")).toBe("recetas-y-conocimiento");
+    expect(parseGuideTipo("especializaciones")).toBe("especializaciones");
+    expect(parseGuideTipo("farming")).toBe("farming");
+  });
+
+  it("marca un slug inválido como no encontrado", () => {
+    expect(parseGuideTipo("nivelado")).toBeNull();
+    expect(parseGuideTipo("leveling")).toBeNull();
   });
 });
