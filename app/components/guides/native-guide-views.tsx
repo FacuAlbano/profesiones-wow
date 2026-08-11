@@ -29,7 +29,7 @@ export const NATIVE_GUIDE_VIEWS: Record<NativeGuideId, NativeGuideView> = {
     Guide: AlchemyMidnightGuide,
     index: ALCHEMY_MIDNIGHT_INDEX,
     summary:
-      "Esqueleto de Subida de nivel 1-100 para Midnight. Entrenador, lista de compras y el primer rango.",
+      "Subida de nivel 1-100 para Midnight. Lista de compras, entrenador y ruta por rangos.",
   },
   "herbalism-tbc": {
     Guide: HerbalismTBCGuide,
