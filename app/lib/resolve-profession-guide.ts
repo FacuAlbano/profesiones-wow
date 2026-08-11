@@ -24,7 +24,11 @@ export function parseGuideTipo(slug?: string | null): GuideTipo | null {
 
 export type ProfessionPageKind = "nativa" | "provisional" | "vacio";
 
-export type NativeGuideId = "alchemy-tbc" | "herbalism-tbc" | "tailoring-shadowlands";
+export type NativeGuideId =
+  | "alchemy-tbc"
+  | "alchemy-midnight"
+  | "herbalism-tbc"
+  | "tailoring-shadowlands";
 
 export type ProfessionPageResolution = {
   kind: ProfessionPageKind;
@@ -40,6 +44,7 @@ const NATIVE_SUBIDA: Record<string, NativeGuideId> = {
   "the-burning-crusade:alchemy": "alchemy-tbc",
   "the-burning-crusade:herbalism": "herbalism-tbc",
   "shadowlands:tailoring": "tailoring-shadowlands",
+  "midnight:alchemy": "alchemy-midnight",
 };
 
 function nativeKey(expansion: ExpansionSlug, profession: ProfessionSlug): string {

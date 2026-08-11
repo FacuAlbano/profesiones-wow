@@ -1,6 +1,10 @@
 import type { ComponentType } from "react";
 import type { GuideIndexSection } from "~/lib/guide-types";
 import type { NativeGuideId } from "~/lib/resolve-profession-guide";
+import {
+  AlchemyMidnightGuide,
+  ALCHEMY_MIDNIGHT_INDEX,
+} from "~/components/guides/alchemy-midnight-guide";
 import { AlchemyTBCGuide, ALCHEMY_TBC_INDEX } from "~/components/guides/alchemy-tbc-guide";
 import { HerbalismTBCGuide, HERBALISM_TBC_INDEX } from "~/components/guides/herbalism-tbc-guide";
 import {
@@ -20,6 +24,12 @@ export const NATIVE_GUIDE_VIEWS: Record<NativeGuideId, NativeGuideView> = {
     index: ALCHEMY_TBC_INDEX,
     summary:
       "Guía de nivelado 1-375 para TBC Classic. Lista de compras, instructores y pasos por rangos.",
+  },
+  "alchemy-midnight": {
+    Guide: AlchemyMidnightGuide,
+    index: ALCHEMY_MIDNIGHT_INDEX,
+    summary:
+      "Esqueleto de Subida de nivel 1-100 para Midnight. Entrenador, lista de compras y el primer rango.",
   },
   "herbalism-tbc": {
     Guide: HerbalismTBCGuide,
